@@ -3,6 +3,7 @@ package httpsvc
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/inoth/ino-toybox/components/config"
+	"github.com/inoth/ino-toybox/services/httpsvc/middleware"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -27,6 +28,14 @@ func Instance(port ...string) *GinService {
 		gsvc.port = config.Cfg.GetString("ServerPort")
 	}
 	gsvc.engine.MaxMultipartMemory = 10 << 20
+	return gsvc
+}
+
+func (gsvc *GinService) SetDefaultMiddleware() *GinService {
+	gsvc.SetMiddleware(
+		middleware.GinGlobalException(),
+		middleware.Cors(),
+	)
 	return gsvc
 }
 
