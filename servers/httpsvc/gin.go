@@ -3,7 +3,7 @@ package httpsvc
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/inoth/ino-toybox/components/config"
-	"github.com/inoth/ino-toybox/services/httpsvc/middleware"
+	"github.com/inoth/ino-toybox/servers/httpsvc/middleware"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -31,7 +31,7 @@ func Instance(port ...string) *GinServer {
 	return gsvc
 }
 
-func (gsvc *GinService) SetDefaultMiddleware() *GinService {
+func (gsvc *GinServer) SetDefaultMiddleware() *GinServer {
 	gsvc.SetMiddleware(
 		middleware.GinGlobalException(),
 		middleware.Cors(),
@@ -39,7 +39,7 @@ func (gsvc *GinService) SetDefaultMiddleware() *GinService {
 	return gsvc
 }
 
-func (gsvc *GinService) SetMiddleware(mids ...gin.HandlerFunc) *GinService {
+func (gsvc *GinServer) SetMiddleware(mids ...gin.HandlerFunc) *GinServer {
 	gsvc.engine.Use(mids...)
 	return gsvc
 }
