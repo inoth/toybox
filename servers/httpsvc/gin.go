@@ -12,13 +12,13 @@ type GinRouters interface {
 	LoadRouter(router *gin.RouterGroup)
 }
 
-type GinService struct {
+type GinServer struct {
 	port   string
 	engine *gin.Engine
 }
 
-func Instance(port ...string) *GinService {
-	gsvc := &GinService{
+func Instance(port ...string) *GinServer {
+	gsvc := &GinServer{
 		engine: gin.New(),
 	}
 	if len(port) > 0 {
@@ -30,12 +30,12 @@ func Instance(port ...string) *GinService {
 	return gsvc
 }
 
-func (gsvc *GinService) SetMiddleware(mids ...gin.HandlerFunc) *GinService {
+func (gsvc *GinServer) SetMiddleware(mids ...gin.HandlerFunc) *GinServer {
 	gsvc.engine.Use(mids...)
 	return gsvc
 }
 
-func (gsvc *GinService) SetSwagger() *GinService {
+func (gsvc *GinServer) SetSwagger() *GinServer {
 	ginSwagger.WrapHandler(swaggerfiles.Handler,
 		ginSwagger.URL("http://localhost:8080/swagger/doc.json"),
 		ginSwagger.DefaultModelsExpandDepth(-1))
@@ -43,13 +43,13 @@ func (gsvc *GinService) SetSwagger() *GinService {
 	return gsvc
 }
 
-func (gsvc *GinService) SetRouter(routers ...GinRouters) *GinService {
+func (gsvc *GinServer) SetRouter(routers ...GinRouters) *GinServer {
 	for _, router := range routers {
 		router.LoadRouter(gsvc.engine.Group(router.Prefix()))
 	}
 	return gsvc
 }
 
-func (gsvc *GinService) Start() error {
+func (gsvc *GinServer) Start() error {
 	return gsvc.engine.Run(gsvc.port)
 }

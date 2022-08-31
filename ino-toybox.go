@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/inoth/ino-toybox/components"
-	"github.com/inoth/ino-toybox/services"
+	"github.com/inoth/ino-toybox/servers"
 )
 
 var once sync.Once
@@ -47,9 +47,9 @@ func (itb *InoToyBox) Init() *InoToyBox {
 	return itb
 }
 
-func (itb *InoToyBox) SubStart(svcs ...services.Service) *InoToyBox {
+func (itb *InoToyBox) SubStart(svcs ...servers.Server) *InoToyBox {
 	for _, svc := range svcs {
-		go func(ctx context.Context, service services.Service) {
+		go func(ctx context.Context, service servers.Server) {
 			defer func() {
 				if exception := recover(); exception != nil {
 					if err, ok := exception.(error); ok {
@@ -67,7 +67,7 @@ func (itb *InoToyBox) SubStart(svcs ...services.Service) *InoToyBox {
 	return itb
 }
 
-func (itb *InoToyBox) Start(svcs services.Service) error {
+func (itb *InoToyBox) Start(svcs servers.Server) error {
 	return svcs.Start()
 }
 
