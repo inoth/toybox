@@ -13,16 +13,16 @@ import (
 
 var Zap *zap.Logger
 
-type ZapLogger struct {
+type ZapComponent struct {
 	hooks []func(zapcore.Entry) error
 }
 
-func (zpl *ZapLogger) SetHooks(hooks ...func(zapcore.Entry) error) *ZapLogger {
+func (zpl *ZapComponent) SetHooks(hooks ...func(zapcore.Entry) error) *ZapComponent {
 	zpl.hooks = hooks
 	return zpl
 }
 
-func (zpl *ZapLogger) Init() error {
+func (zpl *ZapComponent) Init() error {
 	Zap = newLogger(zpl.hooks...)
 	return nil
 }

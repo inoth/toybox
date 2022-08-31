@@ -21,9 +21,9 @@ var Rdc *gredis.ClusterClient
 //   Passwd: "123456789"
 //   PoolSize: 10
 //   PoolTimeout: 3
-type RedisConnectCluster struct{}
+type RedisComponent struct{}
 
-func (RedisConnectCluster) Init() error {
+func (RedisComponent) Init() error {
 
 	hosts := config.Cfg.GetStringSlice("Redis.Host")
 	password := config.Cfg.GetString("Redis.Passwd")

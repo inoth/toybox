@@ -22,9 +22,9 @@ var Mysql *gorm.DB
 //   MaxIdleTime: 30
 //   MaxOpenConns: 100
 //   MaxLifeTime: 60
-type MysqlConnect struct{}
+type MysqlComponent struct{}
 
-func (m *MysqlConnect) Init() error {
+func (m *MysqlComponent) Init() error {
 
 	host := config.Cfg.GetString("Mysql.Host")
 	port := config.Cfg.GetInt("Mysql.Port")

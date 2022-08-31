@@ -14,7 +14,7 @@ import (
 // const confKeyPrefix = "defaultProject_"
 
 var (
-	Cfg  *ViperConfig
+	Cfg  *ViperComponent
 	once sync.Once
 )
 
@@ -24,16 +24,16 @@ func init() {
 	lastChangeTime = time.Now()
 }
 
-type ViperConfig struct {
+type ViperComponent struct {
 	defaultValue  map[string]interface{}
 	viper         *viper.Viper
 	path          string
 	confKeyPrefix string
 }
 
-func Instance(path ...string) *ViperConfig {
+func Instance(path ...string) *ViperComponent {
 	once.Do(func() {
-		Cfg = &ViperConfig{
+		Cfg = &ViperComponent{
 			defaultValue: make(map[string]interface{}),
 			viper:        viper.New(),
 		}
@@ -46,20 +46,20 @@ func Instance(path ...string) *ViperConfig {
 	return Cfg
 }
 
-func (m *ViperConfig) SetDefaultValue(defaultValue map[string]interface{}) *ViperConfig {
+func (m *ViperComponent) SetDefaultValue(defaultValue map[string]interface{}) *ViperComponent {
 	for k, v := range defaultValue {
 		m.defaultValue[k] = v
 	}
 	return m
 }
 
-func (m *ViperConfig) loadDefaultValue() {
+func (m *ViperComponent) loadDefaultValue() {
 	for k, v := range m.defaultValue {
 		m.viper.SetDefault(k, v)
 	}
 }
 
-func (m *ViperConfig) Init() error {
+func (m *ViperComponent) Init() error {
 	m.viper.AddConfigPath(m.path)
 	m.viper.SetConfigName(selectConfigName())
 	m.viper.SetConfigType("yaml")
@@ -81,7 +81,7 @@ func selectConfigName() string {
 }
 
 // isCached 判断相关键是否已经缓存
-func (y *ViperConfig) isCached(key string) bool {
+func (y *ViperComponent) isCached(key string) bool {
 	if _, ok := cache.Cache.IsExist(y.confKeyPrefix + key); ok {
 		return true
 	}
@@ -89,22 +89,22 @@ func (y *ViperConfig) isCached(key string) bool {
 }
 
 // cache 对键值进行缓存
-func (y *ViperConfig) cache(key string, value interface{}) bool {
+func (y *ViperComponent) cache(key string, value interface{}) bool {
 	return cache.Cache.Set(y.confKeyPrefix+key, value)
 }
 
 // getFromCache 通过键获取缓存的值
-func (y *ViperConfig) getFromCache(key string) interface{} {
+func (y *ViperComponent) getFromCache(key string) interface{} {
 	return cache.Cache.Get(y.confKeyPrefix + key)
 }
 
 // clearCache 清空配置项
-func (y *ViperConfig) clearCache() {
+func (y *ViperComponent) clearCache() {
 	cache.Cache.FuzzyDelete(y.confKeyPrefix)
 }
 
 // ConfigFileChangeListen 监听文件变化
-func (y *ViperConfig) ConfigFileChangeListen() {
+func (y *ViperComponent) ConfigFileChangeListen() {
 	y.viper.OnConfigChange(func(changeEvent fsnotify.Event) {
 		if time.Now().Sub(lastChangeTime).Seconds() >= 1 {
 			if changeEvent.Op.String() == "WRITE" {
@@ -118,7 +118,7 @@ func (y *ViperConfig) ConfigFileChangeListen() {
 }
 
 // Get 获取原始值。先尝试从cache读取，若读取不到，从配置文件读取
-func (y *ViperConfig) Get(key string) interface{} {
+func (y *ViperComponent) Get(key string) interface{} {
 	if y.isCached(key) {
 		return y.getFromCache(key)
 	} else {
@@ -129,7 +129,7 @@ func (y *ViperConfig) Get(key string) interface{} {
 }
 
 // GetString 获取字符串类型的值
-func (y *ViperConfig) GetString(key string) string {
+func (y *ViperComponent) GetString(key string) string {
 	if y.isCached(key) {
 		return y.getFromCache(key).(string)
 	} else {
@@ -141,7 +141,7 @@ func (y *ViperConfig) GetString(key string) string {
 }
 
 // GetBool 获取布尔类型的值
-func (y *ViperConfig) GetBool(key string) bool {
+func (y *ViperComponent) GetBool(key string) bool {
 	if y.isCached(key) {
 		return y.getFromCache(key).(bool)
 	} else {
@@ -152,7 +152,7 @@ func (y *ViperConfig) GetBool(key string) bool {
 }
 
 // GetInt 获取int类型的值
-func (y *ViperConfig) GetInt(key string) int {
+func (y *ViperComponent) GetInt(key string) int {
 	if y.isCached(key) {
 		return y.getFromCache(key).(int)
 	} else {
@@ -163,7 +163,7 @@ func (y *ViperConfig) GetInt(key string) int {
 }
 
 // GetInt32 获取int32类型的值
-func (y *ViperConfig) GetInt32(key string) int32 {
+func (y *ViperComponent) GetInt32(key string) int32 {
 	if y.isCached(key) {
 		return y.getFromCache(key).(int32)
 	} else {
@@ -174,7 +174,7 @@ func (y *ViperConfig) GetInt32(key string) int32 {
 }
 
 // GetInt64 获取int64类型的值
-func (y *ViperConfig) GetInt64(key string) int64 {
+func (y *ViperComponent) GetInt64(key string) int64 {
 	if y.isCached(key) {
 		return y.getFromCache(key).(int64)
 	} else {
@@ -185,7 +185,7 @@ func (y *ViperConfig) GetInt64(key string) int64 {
 }
 
 // GetFloat64 获取浮点数类型的值
-func (y *ViperConfig) GetFloat64(key string) float64 {
+func (y *ViperComponent) GetFloat64(key string) float64 {
 	if y.isCached(key) {
 		return y.getFromCache(key).(float64)
 	} else {
@@ -196,7 +196,7 @@ func (y *ViperConfig) GetFloat64(key string) float64 {
 }
 
 // GetDuration 获取time.Duration类型的值
-func (y *ViperConfig) GetDuration(key string) time.Duration {
+func (y *ViperComponent) GetDuration(key string) time.Duration {
 	if y.isCached(key) {
 		return y.getFromCache(key).(time.Duration)
 	} else {
@@ -207,7 +207,7 @@ func (y *ViperConfig) GetDuration(key string) time.Duration {
 }
 
 // GetStringSlice 获取字符串切片的值
-func (y *ViperConfig) GetStringSlice(key string) []string {
+func (y *ViperComponent) GetStringSlice(key string) []string {
 	if y.isCached(key) {
 		return y.getFromCache(key).([]string)
 	} else {
