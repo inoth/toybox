@@ -24,6 +24,9 @@ func init() {
 	lastChangeTime = time.Now()
 }
 
+// path: config/config.yaml
+// ServerPort: :8080
+// ServerName: default_project
 type ViperComponent struct {
 	defaultValue  map[string]interface{}
 	viper         *viper.Viper

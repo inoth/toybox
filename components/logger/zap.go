@@ -6,13 +6,22 @@ import (
 	"time"
 
 	"github.com/inoth/ino-toybox/components/config"
-	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
 
 var Zap *zap.Logger
 
+// ZapLog:
+//   ErrLog: log/err.log
+//   WarnLog: log/warn.log
+//   InfoLog: log/info.log
+//   Maxsize: 100
+//   MaxAge: 15
+//   MaxBackup: 30
+//   Compress: true
+//   Json: true
 type ZapComponent struct {
 	hooks []func(zapcore.Entry) error
 }
