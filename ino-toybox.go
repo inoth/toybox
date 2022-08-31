@@ -13,18 +13,16 @@ import (
 var once sync.Once
 
 type InoToyBox struct {
-	configPath string
-	cmps       []components.Component
+	cmps []components.Component
 }
 
-func NewToyBox(configPath string, cmps ...components.Component) *InoToyBox {
+func NewToyBox(cmps ...components.Component) *InoToyBox {
 	if len(cmps) <= 0 {
 		fmt.Println("Err: No components have been loaded yet.")
 		os.Exit(1)
 	}
 	return &InoToyBox{
-		configPath: configPath,
-		cmps:       cmps,
+		cmps: cmps,
 	}
 }
 
