@@ -11,8 +11,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-// const confKeyPrefix = "defaultProject_"
-
 var (
 	Cfg  *ViperComponent
 	once sync.Once
