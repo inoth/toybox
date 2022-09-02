@@ -1,5 +1,5 @@
 # ino-toybox
-项目手脚架, 常用组件封装, 模块式装载
+**常用库使用初始化过程简化, 避免定义过多死板规则, 尽量还原原有操作**
 
 ~~稍微试试范型吧~~
 
@@ -20,10 +20,9 @@ import (
 func main() {
 	err := inotoybox.NewToyBox(
 		&cache.CacheComponent{},
-		config.Instance(),
-		&logger.LogrusComponent{},
 	).Init().Start(
-		httpsvc.Instance(":8080").SetRouter(&DemoRouter{}),
+		httpsvc.Instance(":8080").
+		SetRouter(&DemoRouter{}),
 	)
 	if err != nil {
 		os.Exit(1)
@@ -35,7 +34,6 @@ type DemoRouter struct{}
 func (DemoRouter) Prefix() string { return "" }
 func (DemoRouter) LoadRouter(router *gin.RouterGroup) {
 	router.GET("", func(c *gin.Context) {
-		logger.Log.Info("ok")
 		c.String(200, "ok")
 	})
 }

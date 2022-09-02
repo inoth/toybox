@@ -13,13 +13,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func UUID(n ...int) string {
-	if len(n) > 0 {
-		return uuid.New().String()[:n[0]]
-	}
-	return uuid.New().String()[:8]
-}
-
 // https://segmentfault.com/a/1190000017346458
 // 加解密算法：对称性加密算法、非对称性加密算法、散列算法，其中散列算法不可逆，无法解密，故而只能用于签名校验、身份验证
 // 对称性加密算法：DES、3DES、AES
@@ -133,4 +126,24 @@ func EncryptWithSha256(data string) string {
 	h.Write([]byte(tmp))
 	bs := h.Sum(nil)
 	return hex.EncodeToString(bs)
+}
+
+func Max[T int | int32 | int64 | float32 | float64 | uint | uint32 | uint64](a, b T) T {
+	if a > b {
+		return a
+	}
+	return b
+}
+func Min[T int | int32 | int64 | float32 | float64 | uint | uint32 | uint64](a, b T) T {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func UUID(n ...int) string {
+	if len(n) > 0 {
+		return uuid.New().String()[:n[0]]
+	}
+	return uuid.New().String()[:8]
 }
