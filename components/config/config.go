@@ -217,3 +217,7 @@ func (y *ViperComponent) GetStringSlice(key string) []string {
 		return value
 	}
 }
+
+func (y *ViperComponent) UnmarshalKey(key string, rawVal interface{}) error {
+	return y.viper.UnmarshalKey(key, rawVal)
+}
