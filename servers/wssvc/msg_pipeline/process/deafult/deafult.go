@@ -3,7 +3,7 @@ package callmsg
 import (
 	"github.com/inoth/ino-toybox/servers/wssvc/accumulator"
 	"github.com/inoth/ino-toybox/servers/wssvc/models"
-	"github.com/inoth/ino-toybox/servers/wssvc/msg_pipline/process"
+	"github.com/inoth/ino-toybox/servers/wssvc/msg_pipeline/process"
 )
 
 type DeafultMsgProcess struct{}

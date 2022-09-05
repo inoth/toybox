@@ -6,7 +6,7 @@ import (
 	"github.com/inoth/ino-toybox/components/logger"
 	"github.com/inoth/ino-toybox/servers/wssvc/accumulator"
 	"github.com/inoth/ino-toybox/servers/wssvc/models"
-	"github.com/inoth/ino-toybox/servers/wssvc/msg_pipline/parsers"
+	"github.com/inoth/ino-toybox/servers/wssvc/msg_pipeline/parsers"
 )
 
 type JsonParser struct{}

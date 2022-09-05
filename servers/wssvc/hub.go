@@ -6,8 +6,8 @@ import (
 	"github.com/inoth/ino-toybox/components/config"
 	"github.com/inoth/ino-toybox/components/logger"
 	"github.com/inoth/ino-toybox/servers/wssvc/models"
-	"github.com/inoth/ino-toybox/servers/wssvc/msg_pipline/parsers"
-	"github.com/inoth/ino-toybox/servers/wssvc/msg_pipline/process"
+	"github.com/inoth/ino-toybox/servers/wssvc/msg_pipeline/parsers"
+	"github.com/inoth/ino-toybox/servers/wssvc/msg_pipeline/process"
 )
 
 /*
