@@ -1,7 +1,7 @@
 package process
 
 import (
-	"errors"
+	"fmt"
 
 	"github.com/inoth/ino-toybox/servers/wssvc/accumulator"
 	"github.com/inoth/ino-toybox/servers/wssvc/models"
@@ -21,5 +21,5 @@ func GetParsers(key string) (MsgProcess, error) {
 	if p, ok := Process[key]; ok {
 		return p, nil
 	}
-	return nil, errors.New("not found process.")
+	return nil, fmt.Errorf("not found process %v", key)
 }

@@ -26,10 +26,8 @@ var ChatHub *HubServer
 //   Parser: "json"
 //   Process:
 //     - "source"
-//     - "default"
+//     - "normal"
 type HubServer struct {
-	done chan struct{}
-
 	clients         map[string]*Client
 	broadcastInput  chan []byte             // 房间消息输入
 	broadcastOutPut chan models.MessageBody // 房间消息输出
@@ -47,13 +45,11 @@ func (h *HubServer) Init() error {
 		return err
 	}
 
-	h = &HubServer{
-		clients:         make(map[string]*Client),
-		broadcastInput:  make(chan []byte, hubCfg.MaxMsgChan),
-		broadcastOutPut: make(chan models.MessageBody, hubCfg.MaxMsgChan),
-		register:        make(chan *Client),
-		unregister:      make(chan *Client),
-	}
+	h.clients = make(map[string]*Client)
+	h.broadcastInput = make(chan []byte, hubCfg.MaxMsgChan)
+	h.broadcastOutPut = make(chan models.MessageBody, hubCfg.MaxMsgChan)
+	h.register = make(chan *Client, 5)
+	h.unregister = make(chan *Client, 5)
 
 	// 装配消息解析管道
 	if hubCfg.Parser == "" {
@@ -96,21 +92,16 @@ func (h *HubServer) Start() (err error) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-h.done:
-			cancel()
-			return
 		case reg := <-h.register:
 			if _, ok := h.clients[reg.user.Id]; !ok {
 				h.clients[reg.user.Id] = reg
 				logger.Log.Info(fmt.Sprintf("[%v:%v] Connect.", reg.user.Id, reg.user.Name))
-				// rh.broadcastOutPut <- rh.roomSystemMsg(fmt.Sprintf("[%v:%v] join room [%v]", reg.Id, reg.Name, rh.Rid))
 			}
 		case unreg := <-h.unregister:
 			if _, ok := h.clients[unreg.user.Id]; ok {
 				logger.Log.Info(fmt.Sprintf("[%v:%v] Disconnect.", unreg.user.Id, unreg.user.Name))
 				delete(h.clients, unreg.user.Id)
 				unreg.Close()
-				// rh.broadcastOutPut <- rh.roomSystemMsg(fmt.Sprintf("[%v:%v] exit room [%v]", unreg.Id, unreg.Name, rh.Rid))
 			}
 		case broadcast := <-h.broadcastOutPut:
 			for _, id := range broadcast.GetTargets() {

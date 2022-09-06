@@ -45,12 +45,13 @@ type Client struct {
 }
 
 // 初始化用户连接
-func NewClient(w http.ResponseWriter, r *http.Request) (*Client, error) {
+func NewClient(user models.UserInfo, w http.ResponseWriter, r *http.Request) (*Client, error) {
 	wsConn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return nil, err
 	}
 	client := &Client{
+		user: user,
 		hub:  ChatHub,
 		conn: wsConn,
 		send: make(chan []byte, 5),

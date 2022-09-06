@@ -17,6 +17,9 @@ func AuthMiddleware() gin.HandlerFunc {
 			token, _ = c.Cookie("Authorization")
 		}
 		if token == "" {
+			token = c.Query("token")
+		}
+		if token == "" {
 			res.Unauthrized(c, "Unauthrized.")
 			c.Abort()
 			return
@@ -31,6 +34,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 		c.Set("USER_ID", user.Uid)
 		c.Set("USER_NAME", user.Name)
+		c.Set("USER_AVATER", user.Avater)
 		c.Next()
 	}
 }
