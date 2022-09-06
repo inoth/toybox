@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -12,8 +11,8 @@ import (
 )
 
 var (
-	Cfg  *ViperComponent
-	once sync.Once
+	Cfg *ViperComponent
+	// once sync.Once
 )
 
 var lastChangeTime time.Time
@@ -48,6 +47,9 @@ type ViperComponent struct {
 // }
 
 func (m *ViperComponent) SetDefaultValue(defaultValue map[string]interface{}) *ViperComponent {
+	if m.defaultValue == nil {
+		m.defaultValue = make(map[string]interface{})
+	}
 	for k, v := range defaultValue {
 		m.defaultValue[k] = v
 	}
@@ -64,6 +66,7 @@ func (m *ViperComponent) Init() error {
 	if len(m.Path) <= 0 {
 		m.Path = "config"
 	}
+	m.viper = viper.New()
 	m.viper.AddConfigPath(m.Path)
 	m.viper.SetConfigName(selectConfigName())
 	m.viper.SetConfigType("yaml")
