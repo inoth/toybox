@@ -39,7 +39,7 @@ var upgrader = websocket.Upgrader{
 
 type Client struct {
 	user models.UserInfo
-	room *HubServer
+	hub  *HubServer
 	conn *websocket.Conn
 	send chan []byte
 }
@@ -51,7 +51,7 @@ func NewClient(w http.ResponseWriter, r *http.Request) (*Client, error) {
 		return nil, err
 	}
 	client := &Client{
-		room: ChatHub,
+		hub:  ChatHub,
 		conn: wsConn,
 		send: make(chan []byte, 5),
 	}
@@ -64,11 +64,11 @@ func (c *Client) Run(ctx context.Context) {
 	go c.writePump(ctx)
 }
 
-func (c *Client) JoinHub() error {
+func (c *Client) JoinChatHub() error {
 	if len(c.user.Id) <= 0 {
 		return errors.New("invalid user information.")
 	}
-	c.room.register <- c
+	c.hub.register <- c
 	return nil
 }
 
@@ -84,7 +84,7 @@ func (c *Client) Close() {
 // reads from this goroutine.
 func (c *Client) readPump(ctx context.Context) {
 	defer func() {
-		c.room.unregister <- c
+		c.hub.unregister <- c
 		c.conn.Close()
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
@@ -104,7 +104,7 @@ func (c *Client) readPump(ctx context.Context) {
 				return
 			}
 			message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-			c.room.broadcastInput <- message
+			c.hub.broadcastInput <- message
 		}
 	}
 }
@@ -118,7 +118,7 @@ func (c *Client) writePump(ctx context.Context) {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.room.unregister <- c
+		c.hub.unregister <- c
 		c.conn.Close()
 	}()
 	for {
