@@ -28,24 +28,24 @@ func init() {
 type ViperComponent struct {
 	defaultValue  map[string]interface{}
 	viper         *viper.Viper
-	path          string
-	confKeyPrefix string
+	Path          string
+	ConfKeyPrefix string
 }
 
-func Instance(path ...string) *ViperComponent {
-	once.Do(func() {
-		Cfg = &ViperComponent{
-			defaultValue: make(map[string]interface{}),
-			viper:        viper.New(),
-		}
-		if len(path) > 0 {
-			Cfg.path = path[0]
-		} else {
-			Cfg.path = "config"
-		}
-	})
-	return Cfg
-}
+// func Instance(path ...string) *ViperComponent {
+// 	once.Do(func() {
+// 		Cfg = &ViperComponent{
+// 			defaultValue: make(map[string]interface{}),
+// 			viper:        viper.New(),
+// 		}
+// 		if len(path) > 0 {
+// 			Cfg.path = path[0]
+// 		} else {
+// 			Cfg.path = "config"
+// 		}
+// 	})
+// 	return Cfg
+// }
 
 func (m *ViperComponent) SetDefaultValue(defaultValue map[string]interface{}) *ViperComponent {
 	for k, v := range defaultValue {
@@ -61,7 +61,10 @@ func (m *ViperComponent) loadDefaultValue() {
 }
 
 func (m *ViperComponent) Init() error {
-	m.viper.AddConfigPath(m.path)
+	if len(m.Path) <= 0 {
+		m.Path = "config"
+	}
+	m.viper.AddConfigPath(m.Path)
 	m.viper.SetConfigName(selectConfigName())
 	m.viper.SetConfigType("yaml")
 	if err := m.viper.ReadInConfig(); err != nil {
@@ -69,7 +72,8 @@ func (m *ViperComponent) Init() error {
 	}
 	m.loadDefaultValue()
 
-	m.confKeyPrefix = m.GetString("ServerName")
+	// m.ConfKeyPrefix = m.GetString("ServerName")
+	Cfg = m
 	return nil
 }
 
@@ -83,7 +87,7 @@ func selectConfigName() string {
 
 // isCached 判断相关键是否已经缓存
 func (y *ViperComponent) isCached(key string) bool {
-	if _, ok := cache.Cache.IsExist(y.confKeyPrefix + key); ok {
+	if _, ok := cache.Cache.IsExist(y.ConfKeyPrefix + key); ok {
 		return true
 	}
 	return false
@@ -91,17 +95,17 @@ func (y *ViperComponent) isCached(key string) bool {
 
 // cache 对键值进行缓存
 func (y *ViperComponent) cache(key string, value interface{}) bool {
-	return cache.Cache.Set(y.confKeyPrefix+key, value)
+	return cache.Cache.Set(y.ConfKeyPrefix+key, value)
 }
 
 // getFromCache 通过键获取缓存的值
 func (y *ViperComponent) getFromCache(key string) interface{} {
-	return cache.Cache.Get(y.confKeyPrefix + key)
+	return cache.Cache.Get(y.ConfKeyPrefix + key)
 }
 
 // clearCache 清空配置项
 func (y *ViperComponent) clearCache() {
-	cache.Cache.FuzzyDelete(y.confKeyPrefix)
+	cache.Cache.FuzzyDelete(y.ConfKeyPrefix)
 }
 
 // ConfigFileChangeListen 监听文件变化

@@ -1,4 +1,4 @@
-package callmsg
+package deafult
 
 import (
 	"github.com/inoth/ino-toybox/servers/wssvc/accumulator"

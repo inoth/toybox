@@ -3,6 +3,7 @@ package wssvc
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -38,19 +39,19 @@ var upgrader = websocket.Upgrader{
 
 type Client struct {
 	user models.UserInfo
-	room *Hub
+	room *HubServer
 	conn *websocket.Conn
 	send chan []byte
 }
 
 // 初始化用户连接
-func NewClient(hub *Hub, w http.ResponseWriter, r *http.Request) (*Client, error) {
+func NewClient(w http.ResponseWriter, r *http.Request) (*Client, error) {
 	wsConn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return nil, err
 	}
 	client := &Client{
-		room: hub,
+		room: ChatHub,
 		conn: wsConn,
 		send: make(chan []byte, 5),
 	}
@@ -58,14 +59,22 @@ func NewClient(hub *Hub, w http.ResponseWriter, r *http.Request) (*Client, error
 }
 
 func (c *Client) Run(ctx context.Context) {
-	logger.Log.Info("运行用户监听块.")
+	logger.Log.Info("Run user monitoring.")
 	go c.readPump(ctx)
 	go c.writePump(ctx)
 }
 
+func (c *Client) JoinHub() error {
+	if len(c.user.Id) <= 0 {
+		return errors.New("invalid user information.")
+	}
+	c.room.register <- c
+	return nil
+}
+
 func (c *Client) Close() {
 	close(c.send)
-	logger.Log.Info("释放用户监听块.")
+	logger.Log.Info("Release user monitoring.")
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -77,7 +86,6 @@ func (c *Client) readPump(ctx context.Context) {
 	defer func() {
 		c.room.unregister <- c
 		c.conn.Close()
-		c.Close()
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))

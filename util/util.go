@@ -4,6 +4,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const SIGNKEY = "BA5ktbKaV47uOcQpnuUT76GvBRYpMdHX"
+
 func Max[T int | int32 | int64 | float32 | float64 | uint | uint32 | uint64](a, b T) T {
 	if a > b {
 		return a

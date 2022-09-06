@@ -1,10 +1,15 @@
 package accumulator
 
-import "github.com/inoth/ino-toybox/servers/wssvc/models"
+import (
+	"errors"
+
+	"github.com/inoth/ino-toybox/servers/wssvc/models"
+)
 
 type Accumulator interface {
 	Next(body models.MessageBody)
 	Err(err error)
+	ErrStr(msg string)
 	Error() error
 }
 
@@ -19,6 +24,10 @@ func (acc *accumulator) Next(body models.MessageBody) {
 
 func (acc *accumulator) Err(err error) {
 	acc.err = err
+}
+
+func (acc *accumulator) ErrStr(msg string) {
+	acc.err = errors.New(msg)
 }
 
 func (acc *accumulator) Error() error {
