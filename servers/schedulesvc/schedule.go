@@ -3,6 +3,7 @@ package schedule
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/robfig/cron/v3"
 )
@@ -17,7 +18,7 @@ type ScheduleServer struct {
 
 func (s *ScheduleServer) Init() error {
 	s.m = sync.RWMutex{}
-	s.cron = cron.New()
+	s.cron = cron.New(cron.WithLocation(&time.Location{}))
 	s.missionMap = make(map[string]ScheduleMission)
 	return nil
 }
