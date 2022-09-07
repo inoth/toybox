@@ -5,6 +5,7 @@ go 1.19
 require github.com/swaggo/gin-swagger v1.5.2
 
 require (
+	github.com/robfig/cron/v3 v3.0.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
