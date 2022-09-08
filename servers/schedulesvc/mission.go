@@ -1,4 +1,4 @@
-package schedule
+package schedulesvc
 
 import (
 	"github.com/robfig/cron/v3"
@@ -11,24 +11,36 @@ type ScheduleMission struct {
 	MissionId string
 	// 执行id
 	entryID cron.EntryID
-	// 定时
+	// 仅执行一次
+	once bool
+	// 定时 cron 语句
 	Spec string
-
+	// 执行前函数
 	ExecuteBefore ExecuteFunc
 	// 执行函数
 	Execute ExecuteFunc
-
+	// 执行后函数
 	ExecuteAfter ExecuteFunc
 }
 
-func NewMission(missionId, spec string, execute, executeBefore, executeAfter ExecuteFunc) *ScheduleMission {
-	return &ScheduleMission{
+func NewMission(missionId, spec string, once bool, execute, executeBefore, executeAfter ExecuteFunc) *ScheduleMission {
+	s := &ScheduleMission{
 		MissionId:     missionId,
-		Spec:          spec,
 		Execute:       execute,
+		Spec:          spec,
+		once:          once,
 		ExecuteBefore: executeBefore,
 		ExecuteAfter:  executeAfter,
 	}
+	if once {
+		s.ExecuteAfter = func(missionId string) {
+			if executeAfter != nil {
+				executeAfter(missionId)
+			}
+			Schedule.RemoveMission(missionId)
+		}
+	}
+	return s
 }
 
 func (sm *ScheduleMission) getEntryID() cron.EntryID {
