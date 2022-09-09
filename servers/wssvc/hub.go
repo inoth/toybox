@@ -2,8 +2,10 @@ package wssvc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/inoth/ino-toybox/components/config"
 	"github.com/inoth/ino-toybox/components/logger"
@@ -95,12 +97,16 @@ func (h *HubServer) Start() (err error) {
 		case reg := <-h.register:
 			if _, ok := h.clients[reg.user.Id]; !ok {
 				h.clients[reg.user.Id] = reg
-				logger.Log.Info(fmt.Sprintf("[%v:%v] Connect.", reg.user.Id, reg.user.Name))
+				msg := fmt.Sprintf("[%v:%v] Connect.", reg.user.Id, reg.user.Name)
+				logger.Log.Info(msg)
+				h.broadcastInput <- h.sysMessage(msg)
 			}
 		case unreg := <-h.unregister:
 			if _, ok := h.clients[unreg.user.Id]; ok {
-				logger.Log.Info(fmt.Sprintf("[%v:%v] Disconnect.", unreg.user.Id, unreg.user.Name))
+				msg := fmt.Sprintf("[%v:%v] Disconnect.", unreg.user.Id, unreg.user.Name)
+				logger.Log.Info(msg)
 				delete(h.clients, unreg.user.Id)
+				h.broadcastInput <- h.sysMessage(msg)
 				unreg.Close()
 			}
 		case broadcast := <-h.broadcastOutPut:
@@ -275,4 +281,31 @@ func (h *HubServer) runOutput(out *outputUnit) {
 	for val := range out.src {
 		out.output <- val
 	}
+}
+
+type SourceMessage struct {
+	Token string `json:"token"`
+	// msg | auth | call
+	Event     string    `json:"event"`
+	EventBody EventBody `json:"eventBody"`
+}
+type EventBody struct {
+	Targets   []string `json:"targets"`
+	Msg       string   `json:"msg"`
+	Timestamp int64    `json:"timestamp"`
+}
+
+func (sm SourceMessage) GetJsonBody() []byte {
+	buf, _ := json.Marshal(sm)
+	return buf
+}
+
+func (h *HubServer) sysMessage(msg string) []byte {
+	return (&SourceMessage{
+		Event: "system",
+		EventBody: EventBody{
+			Msg:       msg,
+			Timestamp: time.Now().Unix(),
+		},
+	}).GetJsonBody()
 }

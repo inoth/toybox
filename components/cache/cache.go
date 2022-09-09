@@ -57,3 +57,14 @@ func (c *CacheComponent) FuzzyDelete(prefix string) {
 		return true
 	})
 }
+
+func (c *CacheComponent) GetCacheList() map[string]interface{} {
+	res := make(map[string]interface{}, 0)
+	m.Range(func(key, value interface{}) bool {
+		if k, ok := key.(string); ok {
+			res[k] = value
+		}
+		return true
+	})
+	return res
+}

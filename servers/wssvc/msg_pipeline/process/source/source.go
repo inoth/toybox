@@ -26,9 +26,18 @@ func (GetSourceMsgProcess) Process(msgbody models.MessageBody, acc accumulator.A
 			}
 			acc.Next(body)
 			return
+		} else if body.Body.Event == "system" {
+			body.Body.Source = models.UserInfo{
+				Id:   "system",
+				Name: "system",
+				Icon: "system.png",
+			}
+		} else {
+			acc.ErrStr("invalid message sources")
+			return
 		}
 	default:
-		acc.ErrStr("Assertion message structure failed.")
+		acc.ErrStr("assertion message structure failed.")
 		return
 	}
 }
