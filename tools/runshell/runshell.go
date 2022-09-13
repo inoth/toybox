@@ -80,9 +80,15 @@ func RemoteRunShell(user, host, passwd, sshKey, command string, args ...string) 
 	}
 	defer session.Close()
 	command = fmt.Sprintf("%v %v", command, strings.Join(args, " "))
-	combo, err := session.CombinedOutput(command)
+	// combo, err := session.CombinedOutput(command)
+	var buf []byte
+	res := bytes.NewBuffer(buf)
+	session.Stdout = io.MultiWriter(os.Stdout, res)
+	session.Stderr = io.MultiWriter(os.Stderr, res)
+
+	err = session.Run(command)
 	if err != nil {
 		return "", err
 	}
-	return string(combo), nil
+	return string(res.String()), nil
 }
