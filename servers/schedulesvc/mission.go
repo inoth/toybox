@@ -4,12 +4,6 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-type MissionRunner interface {
-	MissionRunBefore(string)
-	MissionRun(string)
-	MissionRunAfter(string)
-}
-
 type ExecuteFunc func(string)
 
 type ScheduleMission struct {
@@ -23,16 +17,29 @@ type ScheduleMission struct {
 	Spec string
 
 	// 执行函数
-	Execute MissionRunner
+	Execute       ExecuteFunc
+	ExecuteBefore ExecuteFunc
+	ExecuteAfter  ExecuteFunc
 }
 
-func NewMission(missionId, spec string, once bool, runner MissionRunner) *ScheduleMission {
+func NewMission(missionId, spec string, once bool, runner, before, after ExecuteFunc) *ScheduleMission {
 	s := &ScheduleMission{
-		MissionId: missionId,
-		Execute:   runner,
-		Spec:      spec,
-		once:      once,
+		MissionId:     missionId,
+		Spec:          spec,
+		once:          once,
+		Execute:       runner,
+		ExecuteBefore: before,
+		ExecuteAfter:  after,
 	}
+	if once {
+		s.ExecuteAfter = func(missionId string) {
+			if after != nil {
+				after(missionId)
+			}
+			Schedule.RemoveMission(missionId)
+		}
+	}
+
 	return s
 }
 
@@ -42,11 +49,12 @@ func (sm *ScheduleMission) getEntryID() cron.EntryID {
 
 func (sm *ScheduleMission) exec() {
 	go func(missionId string) {
-		sm.Execute.MissionRunBefore(missionId)
-		sm.Execute.MissionRun(missionId)
-		sm.Execute.MissionRunAfter(missionId)
-		if sm.once {
-			Schedule.RemoveMission(missionId)
+		if sm.ExecuteBefore != nil {
+			sm.ExecuteBefore(missionId)
+		}
+		sm.Execute(missionId)
+		if sm.ExecuteAfter != nil {
+			sm.ExecuteAfter(missionId)
 		}
 	}(sm.MissionId)
 }
