@@ -32,6 +32,8 @@ func (GetSourceMsgProcess) Process(msgbody models.MessageBody, acc accumulator.A
 				Name: "system",
 				Icon: "system.png",
 			}
+			acc.Next(body)
+			return
 		} else {
 			acc.ErrStr("invalid message sources")
 			return
