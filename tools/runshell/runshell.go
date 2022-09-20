@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -49,7 +49,7 @@ func RemoteRunShell(user, host, passwd, sshKey, command string, args ...string) 
 	if n > 0 {
 		var signer ssh.Signer
 		if n < 1000 {
-			key, err := ioutil.ReadFile(sshKey)
+			key, err := os.ReadFile(sshKey)
 			if err != nil {
 				return "", err
 			}
@@ -94,7 +94,8 @@ func RemoteRunShell(user, host, passwd, sshKey, command string, args ...string) 
 	return string(res.String()), nil
 }
 
-func CopyToRemoteMachine(user, host, passwd, sshKey, remotePath string, content []byte) error {
+// 发送内存内容写入到远程机器目录
+func CopyStreamToRemoteMachine(user, host, passwd, sshKey, remotePath string, content []byte) error {
 	cfg := &ssh.ClientConfig{
 		Timeout:         10 * time.Second,
 		User:            user,
@@ -104,7 +105,7 @@ func CopyToRemoteMachine(user, host, passwd, sshKey, remotePath string, content 
 	if n > 0 {
 		var signer ssh.Signer
 		if n < 1000 {
-			key, err := ioutil.ReadFile(sshKey)
+			key, err := os.ReadFile(sshKey)
 			if err != nil {
 				return err
 			}
@@ -130,15 +131,103 @@ func CopyToRemoteMachine(user, host, passwd, sshKey, remotePath string, content 
 	}
 	defer sshClient.Close()
 
-	dstFile, err := sftp.Create(remotePath)
+	client, err := sftp.NewClient(sshClient)
 	if err != nil {
 		return err
 	}
-	defer dstFile.Close()
+	defer client.Close()
 
-	origin := bytes.NewReader(content)
-	if _, err := dstFile.ReadFrom(origin); err != nil {
+	// // walk a directory
+	// w := client.Walk("/home/user")
+	// for w.Step() {
+	// 	if w.Err() != nil {
+	// 		continue
+	// 	}
+	// 	log.Println(w.Path())
+	// }
+
+	// leave your mark
+	f, err := client.Create(remotePath)
+	if err != nil {
 		return err
 	}
+	if _, err := f.Write([]byte(content)); err != nil {
+		return err
+	}
+	f.Close()
+
+	// check it's there
+	fi, err := client.Lstat(remotePath)
+	if err != nil {
+		return err
+	}
+	log.Fatalf("目标【%v】写入完成，【%v】文件大小:%v", host, remotePath, fi.Size())
+	return nil
+}
+
+// 发送文件内容写入到远程机器目录
+func CopyFileToRemoteMachine(user, host, passwd, sshKey, originPath, remotePath string) error {
+	cfg := &ssh.ClientConfig{
+		Timeout:         10 * time.Second,
+		User:            user,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+	n := len(sshKey)
+	if n > 0 {
+		var signer ssh.Signer
+		if n < 1000 {
+			key, err := os.ReadFile(sshKey)
+			if err != nil {
+				return err
+			}
+			signer, err = ssh.ParsePrivateKey(key)
+			if err != nil {
+				return err
+			}
+		} else {
+			key := []byte(sshKey)
+			var err error
+			signer, err = ssh.ParsePrivateKey(key)
+			if err != nil {
+				return err
+			}
+		}
+		cfg.Auth = []ssh.AuthMethod{ssh.PublicKeys(signer)}
+	} else {
+		cfg.Auth = []ssh.AuthMethod{ssh.Password(passwd)}
+	}
+	sshClient, err := ssh.Dial("tcp", host, cfg)
+	if err != nil {
+		return err
+	}
+	defer sshClient.Close()
+
+	client, err := sftp.NewClient(sshClient)
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+
+	content, err := os.ReadFile(originPath)
+	if err != nil {
+		return err
+	}
+
+	// leave your mark
+	f, err := client.Create(remotePath)
+	if err != nil {
+		return err
+	}
+	if _, err := f.Write([]byte(content)); err != nil {
+		return err
+	}
+	f.Close()
+
+	// check it's there
+	fi, err := client.Lstat(remotePath)
+	if err != nil {
+		return err
+	}
+	log.Fatalf("目标【%v】写入完成，【%v】文件大小:%v", host, remotePath, fi.Size())
 	return nil
 }
