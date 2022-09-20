@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -91,4 +92,53 @@ func RemoteRunShell(user, host, passwd, sshKey, command string, args ...string) 
 		return "", err
 	}
 	return string(res.String()), nil
+}
+
+func CopyToRemoteMachine(user, host, passwd, sshKey, remotePath string, content []byte) error {
+	cfg := &ssh.ClientConfig{
+		Timeout:         10 * time.Second,
+		User:            user,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+	n := len(sshKey)
+	if n > 0 {
+		var signer ssh.Signer
+		if n < 1000 {
+			key, err := ioutil.ReadFile(sshKey)
+			if err != nil {
+				return err
+			}
+			signer, err = ssh.ParsePrivateKey(key)
+			if err != nil {
+				return err
+			}
+		} else {
+			key := []byte(sshKey)
+			var err error
+			signer, err = ssh.ParsePrivateKey(key)
+			if err != nil {
+				return err
+			}
+		}
+		cfg.Auth = []ssh.AuthMethod{ssh.PublicKeys(signer)}
+	} else {
+		cfg.Auth = []ssh.AuthMethod{ssh.Password(passwd)}
+	}
+	sshClient, err := ssh.Dial("tcp", host, cfg)
+	if err != nil {
+		return err
+	}
+	defer sshClient.Close()
+
+	dstFile, err := sftp.Create(remotePath)
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+
+	origin := bytes.NewReader(content)
+	if _, err := dstFile.ReadFrom(origin); err != nil {
+		return err
+	}
+	return nil
 }
