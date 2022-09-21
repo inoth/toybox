@@ -161,7 +161,7 @@ func CopyStreamToRemoteMachine(user, host, passwd, sshKey, remotePath string, co
 	if err != nil {
 		return err
 	}
-	log.Fatalf("目标【%v】写入完成，【%v】文件大小:%v", host, remotePath, fi.Size())
+	log.Fatalf("目标【%v】写入完成,【%v】文件大小:%v", host, remotePath, fi.Size())
 	return nil
 }
 
@@ -228,6 +228,6 @@ func CopyFileToRemoteMachine(user, host, passwd, sshKey, originPath, remotePath 
 	if err != nil {
 		return err
 	}
-	log.Fatalf("目标【%v】写入完成，【%v】文件大小:%v", host, remotePath, fi.Size())
+	log.Fatalf("目标【%v】写入完成,【%v】文件大小:%v", host, remotePath, fi.Size())
 	return nil
 }
