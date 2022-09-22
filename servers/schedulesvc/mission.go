@@ -48,13 +48,11 @@ func (sm *ScheduleMission) getEntryID() cron.EntryID {
 }
 
 func (sm *ScheduleMission) exec() {
-	go func(missionId string) {
-		if sm.ExecuteBefore != nil {
-			sm.ExecuteBefore(missionId)
-		}
-		sm.Execute(missionId)
-		if sm.ExecuteAfter != nil {
-			sm.ExecuteAfter(missionId)
-		}
-	}(sm.MissionId)
+	if sm.ExecuteBefore != nil {
+		sm.ExecuteBefore(sm.MissionId)
+	}
+	sm.Execute(sm.MissionId)
+	if sm.ExecuteAfter != nil {
+		sm.ExecuteAfter(sm.MissionId)
+	}
 }
