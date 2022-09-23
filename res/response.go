@@ -18,6 +18,7 @@ func Ok(c *gin.Context, msg string, data ...interface{}) {
 func Err(c *gin.Context, msg string) {
 	c.JSON(FAILED, err(msg))
 }
+
 func Errf(c *gin.Context, msg string, args ...interface{}) {
 	c.JSON(FAILED, err(fmt.Sprintf(msg, args...)))
 }
@@ -25,6 +26,7 @@ func Errf(c *gin.Context, msg string, args ...interface{}) {
 func NotFound(c *gin.Context, msg string) {
 	c.JSON(NOTFOUND, notFound(msg))
 }
+
 func NotFoundf(c *gin.Context, msg string, args ...interface{}) {
 	c.JSON(NOTFOUND, notFound(fmt.Sprintf(msg, args...)))
 }
