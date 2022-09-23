@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -155,7 +154,7 @@ func CopyStreamToRemoteMachine(user, host, passwd, sshKey, remotePath, fileName 
 	if err != nil {
 		return err
 	}
-	log.Fatalf("目标【%v】写入完成;【%v】文件大小:%v", host, remoteFilePath, fi.Size())
+	fmt.Printf("目标【%v】写入完成;【%v】文件大小:%v\n", host, remoteFilePath, fi.Size())
 	return nil
 }
 
@@ -225,6 +224,6 @@ func CopyFileToRemoteMachine(user, host, passwd, sshKey, originPath, remotePath,
 	if err != nil {
 		return err
 	}
-	log.Fatalf("目标【%v】写入完成;【%v】文件大小:%v", host, remoteFilePath, fi.Size())
+	fmt.Printf("目标【%v】写入完成;【%v】文件大小:%v\n", host, remoteFilePath, fi.Size())
 	return nil
 }
