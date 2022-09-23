@@ -147,7 +147,7 @@ func CopyStreamToRemoteMachine(user, host, passwd, sshKey, remotePath string, co
 	// }
 
 	// leave your mark
-	f, err := client.Create(remotePath)
+	f, err := client.OpenFile(remotePath, 0655)
 	if err != nil {
 		return err
 	}
@@ -214,7 +214,7 @@ func CopyFileToRemoteMachine(user, host, passwd, sshKey, originPath, remotePath 
 	}
 
 	// leave your mark
-	f, err := client.Create(remotePath)
+	f, err := client.OpenFile(remotePath, 0655)
 	if err != nil {
 		return err
 	}
