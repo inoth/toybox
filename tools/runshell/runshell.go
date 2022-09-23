@@ -95,7 +95,7 @@ func RemoteRunShell(user, host, passwd, sshKey, command string, args ...string) 
 }
 
 // 发送内存内容写入到远程机器目录
-func CopyStreamToRemoteMachine(user, host, passwd, sshKey, remotePath string, content []byte) error {
+func CopyStreamToRemoteMachine(user, host, passwd, sshKey, remotePath, fileName string, content []byte) error {
 	cfg := &ssh.ClientConfig{
 		Timeout:         10 * time.Second,
 		User:            user,
@@ -137,37 +137,30 @@ func CopyStreamToRemoteMachine(user, host, passwd, sshKey, remotePath string, co
 	}
 	defer client.Close()
 
-	// // walk a directory
-	// w := client.Walk("/home/user")
-	// for w.Step() {
-	// 	if w.Err() != nil {
-	// 		continue
-	// 	}
-	// 	log.Println(w.Path())
-	// }
-
+	client.MkdirAll(remotePath)
 	// leave your mark
-	f, err := client.Create(remotePath)
+	remoteFilePath := fmt.Sprintf("%v/%v", remotePath, fileName)
+	f, err := client.Create(remoteFilePath)
 	if err != nil {
 		return err
 	}
-	_ = client.Chmod(remotePath, 0655)
+	_ = client.Chmod(remoteFilePath, 0655)
 	if _, err := f.Write([]byte(content)); err != nil {
 		return err
 	}
 	f.Close()
 
 	// check it's there
-	fi, err := client.Lstat(remotePath)
+	fi, err := client.Lstat(remoteFilePath)
 	if err != nil {
 		return err
 	}
-	log.Fatalf("目标【%v】写入完成,【%v】文件大小:%v", host, remotePath, fi.Size())
+	log.Fatalf("目标【%v】写入完成;【%v】文件大小:%v", host, remoteFilePath, fi.Size())
 	return nil
 }
 
 // 发送文件内容写入到远程机器目录
-func CopyFileToRemoteMachine(user, host, passwd, sshKey, originPath, remotePath string) error {
+func CopyFileToRemoteMachine(user, host, passwd, sshKey, originPath, remotePath, fileName string) error {
 	cfg := &ssh.ClientConfig{
 		Timeout:         10 * time.Second,
 		User:            user,
@@ -214,22 +207,24 @@ func CopyFileToRemoteMachine(user, host, passwd, sshKey, originPath, remotePath 
 		return err
 	}
 
+	client.MkdirAll(remotePath)
 	// leave your mark
-	f, err := client.Create(remotePath)
+	remoteFilePath := fmt.Sprintf("%v/%v", remotePath, fileName)
+	f, err := client.Create(remoteFilePath)
 	if err != nil {
 		return err
 	}
-	_ = client.Chmod(remotePath, 0655)
+	_ = client.Chmod(remoteFilePath, 0655)
 	if _, err := f.Write([]byte(content)); err != nil {
 		return err
 	}
 	f.Close()
 
 	// check it's there
-	fi, err := client.Lstat(remotePath)
+	fi, err := client.Lstat(remoteFilePath)
 	if err != nil {
 		return err
 	}
-	log.Fatalf("目标【%v】写入完成,【%v】文件大小:%v", host, remotePath, fi.Size())
+	log.Fatalf("目标【%v】写入完成;【%v】文件大小:%v", host, remoteFilePath, fi.Size())
 	return nil
 }
