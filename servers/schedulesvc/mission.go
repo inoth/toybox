@@ -1,15 +1,13 @@
 package schedulesvc
 
 import (
-	"sync"
-
 	"github.com/robfig/cron/v3"
 )
 
 type ExecuteFunc func(string)
 
 type ScheduleMission struct {
-	m sync.Mutex
+	// m sync.Mutex
 	// 任务id
 	MissionId string
 	// 执行id
@@ -52,8 +50,8 @@ func (sm *ScheduleMission) getEntryID() cron.EntryID {
 
 func (sm *ScheduleMission) exec() {
 	go func(missionId string) {
-		sm.m.Lock()
-		defer sm.m.Unlock()
+		// sm.m.Lock()
+		// defer sm.m.Unlock()
 		if sm.ExecuteBefore != nil {
 			sm.ExecuteBefore(missionId)
 		}

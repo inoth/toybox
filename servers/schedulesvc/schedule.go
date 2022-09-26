@@ -50,10 +50,10 @@ func (s *ScheduleServer) AppendMission(mission *ScheduleMission) (err error) {
 	s.m.Lock()
 	defer s.m.Unlock()
 	if _, ok := s.missionMap[mission.MissionId]; !ok {
+		s.missionMap[mission.MissionId] = mission
 		mission.entryID, err = s.cron.AddFunc(mission.Spec, func() {
 			mission.exec()
 		})
-		s.missionMap[mission.MissionId] = mission
 		return
 	}
 	return fmt.Errorf("repeat registration tasks [%v]", mission.MissionId)
