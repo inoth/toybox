@@ -7,7 +7,6 @@ import (
 type ExecuteFunc func(string)
 
 type ScheduleMission struct {
-	// m sync.Mutex
 	// 任务id
 	MissionId string
 	// 执行id
@@ -16,7 +15,6 @@ type ScheduleMission struct {
 	once bool
 	// 定时 cron 语句
 	Spec string
-
 	// 执行函数
 	Execute       ExecuteFunc
 	ExecuteBefore ExecuteFunc
@@ -50,8 +48,6 @@ func (sm *ScheduleMission) getEntryID() cron.EntryID {
 
 func (sm *ScheduleMission) exec() {
 	go func(missionId string) {
-		// sm.m.Lock()
-		// defer sm.m.Unlock()
 		if sm.ExecuteBefore != nil {
 			sm.ExecuteBefore(missionId)
 		}
