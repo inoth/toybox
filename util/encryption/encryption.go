@@ -1,6 +1,7 @@
 package encryption
 
 import (
+	"crypto/md5"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -124,4 +125,10 @@ func EncryptWithSha256(data string) string {
 	h.Write([]byte(tmp))
 	bs := h.Sum(nil)
 	return hex.EncodeToString(bs)
+}
+
+func Md5(str string) (string, error) {
+	h := md5.New()
+	h.Write([]byte(str))
+	return hex.EncodeToString(h.Sum(nil)), nil
 }
