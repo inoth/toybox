@@ -5,41 +5,36 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/inoth/ino-toybox/util"
-	"github.com/pkg/errors"
+)
+
+const (
+	SIGNKEY = "BA5ktbKaV47uOcQpnuUT76GvBRYpMdHX"
 )
 
 type CustomerInfo struct {
-	Uid    string
-	Name   string
-	Avater string
-}
-type CustomClaims struct {
-	*jwt.StandardClaims
-	*CustomerInfo
+	UserInfo map[string]interface{}
 }
 
-func CreateToken(uid, name, avater string, expire ...int64) (string, error) {
-	key := []byte(util.SIGNKEY)
-	expiresAt := time.Now().Add(time.Hour * 24).Unix()
-	if len(expire) > 0 {
-		expiresAt = expire[0]
-	}
+type CustomClaims struct {
+	jwt.RegisteredClaims
+	CustomerInfo
+}
+
+func CreateToken(userInfo map[string]interface{}, expire ...int64) (string, error) {
+	key := []byte(SIGNKEY)
 	c := CustomClaims{
-		&jwt.StandardClaims{
-			ExpiresAt: expiresAt,
-			Issuer:    name,
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 12)),
+			Issuer:    userInfo["name"].(string),
 		},
-		&CustomerInfo{
-			Uid:    uid,
-			Name:   name,
-			Avater: avater,
+		CustomerInfo{
+			UserInfo: userInfo,
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, c)
 	sign, err := token.SignedString(key)
 	if err != nil {
-		return "", errors.Wrap(err, "")
+		return "", err
 	}
 	return sign, nil
 }
@@ -47,13 +42,13 @@ func CreateToken(uid, name, avater string, expire ...int64) (string, error) {
 func ParseToken(tokenStr string) (*CustomerInfo, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v\n", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(util.SIGNKEY), nil
+		return []byte(SIGNKEY), nil
 	})
 	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
-		return claims.CustomerInfo, nil
+		return &claims.CustomerInfo, nil
 	} else {
-		return nil, errors.Wrap(err, "")
+		return nil, err
 	}
 }

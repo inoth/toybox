@@ -174,12 +174,12 @@ func SignWithRSA(data, privateKey []byte, sHash crypto.Hash) (string, error) {
 		return "", err
 	}
 	hash := sHash.New()
-	hash.Write([]byte(base64.RawStdEncoding.EncodeToString(data)))
+	hash.Write(data)
 	sign, err := rsa.SignPKCS1v15(rand.Reader, priKey, sHash, hash.Sum(nil))
 	if err != nil {
 		return "", err
 	}
-	return string(sign), nil
+	return base64.RawStdEncoding.EncodeToString(sign), nil
 }
 
 // 公钥验签
@@ -190,8 +190,8 @@ func VerifyWithRSA(data, publicKey []byte, sign string, sHash crypto.Hash) bool 
 		return false
 	}
 	h := sHash.New()
-	h.Write([]byte(base64.RawStdEncoding.EncodeToString(data)))
-
-	err = rsa.VerifyPKCS1v15(pubKey, sHash, h.Sum(nil), []byte(sign))
+	h.Write(data)
+	orignSign, _ := base64.RawStdEncoding.DecodeString(sign)
+	err = rsa.VerifyPKCS1v15(pubKey, sHash, h.Sum(nil), orignSign)
 	return err == nil
 }

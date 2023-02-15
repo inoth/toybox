@@ -32,9 +32,9 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		c.Set("USER_ID", user.Uid)
-		c.Set("USER_NAME", user.Name)
-		c.Set("USER_AVATER", user.Avater)
+		c.Set("USER_ID", user.UserInfo["uid"])
+		c.Set("USER_NAME", user.UserInfo["name"])
+		c.Set("USER_AVATER", user.UserInfo["avatar"])
 		c.Next()
 	}
 }

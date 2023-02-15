@@ -103,7 +103,7 @@ func TestAes(t *testing.T) {
 		fmt.Println(err.Error())
 		return
 	}
-	fmt.Printf("sign: %v\n", string(sign))
+	fmt.Printf("sign: %v\n", sign)
 
 	// verify
 	check := encryption.VerifyWithRSA([]byte(encrypt), []byte(public), sign, crypto.SHA256)

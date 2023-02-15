@@ -20,9 +20,9 @@ func (GetSourceMsgProcess) Process(msgbody models.MessageBody, acc accumulator.A
 				return
 			}
 			body.Body.Source = models.UserInfo{
-				Id:   user.Uid,
-				Name: user.Name,
-				Icon: user.Avater,
+				Id:   user.UserInfo["uid"].(string),
+				Name: user.UserInfo["name"].(string),
+				Icon: user.UserInfo["avatar"].(string),
 			}
 			acc.Next(body)
 			return
