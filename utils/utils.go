@@ -2,6 +2,27 @@ package utils
 
 import "encoding/json"
 
+func Max[T int | int32 | int64 | float32 | float64 | uint | uint32 | uint64](a, b T) T {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func Min[T int | int32 | int64 | float32 | float64 | uint | uint32 | uint64](a, b T) T {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func FirstParam[T interface{}](defaultArg T, args []T) T {
+	if len(args) > 0 {
+		defaultArg = args[0]
+	}
+	return defaultArg
+}
+
 // 解析json
 func JsonMarshal[T interface{}](str string) (T, error) {
 	var res T
@@ -48,4 +69,19 @@ func Difference[T string | int | float32 | float64](slice1, slice2 []T) []T {
 		}
 	}
 	return nn
+}
+
+//Substr 字符串的截取
+func Substr(str string, start int64, end int64) string {
+	length := int64(len(str))
+	if start < 0 || start > length {
+		return ""
+	}
+	if end < 0 {
+		return ""
+	}
+	if end > length {
+		end = length
+	}
+	return string(str[start:end])
 }
