@@ -1,230 +1,180 @@
 package config
 
 import (
-	"fmt"
 	"os"
+	"strings"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
-	"github.com/inoth/ino-toybox/components/cache"
 	"github.com/spf13/viper"
 )
 
 var (
 	Cfg *ViperComponent
-	// once sync.Once
 )
 
-var lastChangeTime time.Time
-
-func init() {
-	lastChangeTime = time.Now()
-}
-
-// path: config/config.yaml
-// ServerPort: :8080
-// ServerName: default_project
 type ViperComponent struct {
-	defaultValue  map[string]interface{}
-	viper         *viper.Viper
-	Path          string
+	viperMap      map[string]*viper.Viper
 	ConfKeyPrefix string
 }
 
-// func Instance(path ...string) *ViperComponent {
-// 	once.Do(func() {
-// 		Cfg = &ViperComponent{
-// 			defaultValue: make(map[string]interface{}),
-// 			viper:        viper.New(),
-// 		}
-// 		if len(path) > 0 {
-// 			Cfg.path = path[0]
-// 		} else {
-// 			Cfg.path = "config"
-// 		}
-// 	})
-// 	return Cfg
-// }
-
-func (m *ViperComponent) SetDefaultValue(defaultValue map[string]interface{}) *ViperComponent {
-	if m.defaultValue == nil {
-		m.defaultValue = make(map[string]interface{})
-	}
-	for k, v := range defaultValue {
-		m.defaultValue[k] = v
-	}
-	return m
-}
-
-func (m *ViperComponent) loadDefaultValue() {
-	for k, v := range m.defaultValue {
-		m.viper.SetDefault(k, v)
-	}
-}
-
 func (m *ViperComponent) Init() error {
-	if len(m.Path) <= 0 {
-		m.Path = "config"
+	if len(m.ConfKeyPrefix) <= 0 {
+		m.ConfKeyPrefix = os.Getenv("GORUNEVN")
+		if len(m.ConfKeyPrefix) <= 0 {
+			m.ConfKeyPrefix = "config/prod"
+		} else {
+			m.ConfKeyPrefix = "config/" + m.ConfKeyPrefix
+		}
 	}
-	m.viper = viper.New()
-	m.viper.AddConfigPath(m.Path)
-	m.viper.SetConfigName(selectConfigName())
-	m.viper.SetConfigType("yaml")
-	if err := m.viper.ReadInConfig(); err != nil {
+	f, err := os.Open(m.ConfKeyPrefix + "/")
+	if err != nil {
 		return err
 	}
-	m.loadDefaultValue()
-
-	// m.ConfKeyPrefix = m.GetString("ServerName")
+	fileList, err := f.Readdir(1024)
+	if err != nil {
+		return err
+	}
+	for _, f0 := range fileList {
+		if f0.IsDir() {
+			continue
+		}
+		v := viper.New()
+		v.SetConfigType("yaml")
+		v.AddConfigPath(m.ConfKeyPrefix)
+		pathArr := strings.Split(f0.Name(), ".")
+		v.SetConfigName(pathArr[0])
+		if err := v.ReadInConfig(); err != nil {
+			return err
+		}
+		if m.viperMap == nil {
+			m.viperMap = make(map[string]*viper.Viper)
+		}
+		m.viperMap[pathArr[0]] = v
+	}
 	Cfg = m
 	return nil
 }
 
-func selectConfigName() string {
-	e := os.Getenv("GORUNEVN")
-	if len(e) > 0 {
-		return "config." + e
+//获取get配置信息
+func (m *ViperComponent) GetString(key string) string {
+	keys := strings.Split(key, ".")
+	if len(keys) < 2 {
+		return ""
 	}
-	return "config"
-}
-
-// isCached 判断相关键是否已经缓存
-func (y *ViperComponent) isCached(key string) bool {
-	if _, ok := cache.Cache.IsExist(y.ConfKeyPrefix + key); ok {
-		return true
+	v, ok := m.viperMap[keys[0]]
+	if !ok {
+		return ""
 	}
-	return false
+	confString := v.GetString(strings.Join(keys[1:], "."))
+	return confString
 }
 
-// cache 对键值进行缓存
-func (y *ViperComponent) cache(key string, value interface{}) bool {
-	return cache.Cache.Set(y.ConfKeyPrefix+key, value)
-}
-
-// getFromCache 通过键获取缓存的值
-func (y *ViperComponent) getFromCache(key string) interface{} {
-	return cache.Cache.Get(y.ConfKeyPrefix + key)
-}
-
-// clearCache 清空配置项
-func (y *ViperComponent) clearCache() {
-	cache.Cache.FuzzyDelete(y.ConfKeyPrefix)
-}
-
-// ConfigFileChangeListen 监听文件变化
-func (y *ViperComponent) ConfigFileChangeListen() {
-	y.viper.OnConfigChange(func(changeEvent fsnotify.Event) {
-		if time.Now().Sub(lastChangeTime).Seconds() >= 1 {
-			if changeEvent.Op.String() == "WRITE" {
-				y.clearCache()
-				lastChangeTime = time.Now()
-				fmt.Println("配置文件已更新")
-			}
-		}
-	})
-	y.viper.WatchConfig()
-}
-
-// Get 获取原始值。先尝试从cache读取，若读取不到，从配置文件读取
-func (y *ViperComponent) Get(key string) interface{} {
-	if y.isCached(key) {
-		return y.getFromCache(key)
-	} else {
-		value := y.viper.Get(key)
-		y.cache(key, value)
-		return value
+//获取get配置信息
+func (m *ViperComponent) GetStringMap(key string) map[string]interface{} {
+	keys := strings.Split(key, ".")
+	if len(keys) < 2 {
+		return nil
 	}
+	v := m.viperMap[keys[0]]
+	conf := v.GetStringMap(strings.Join(keys[1:], "."))
+	return conf
 }
 
-// GetString 获取字符串类型的值
-func (y *ViperComponent) GetString(key string) string {
-	if y.isCached(key) {
-		return y.getFromCache(key).(string)
-	} else {
-		value := y.viper.GetString(key)
-		y.cache(key, value)
-		return value
+//获取get配置信息
+func (m *ViperComponent) Get(key string) interface{} {
+	keys := strings.Split(key, ".")
+	if len(keys) < 2 {
+		return nil
 	}
-
+	v := m.viperMap[keys[0]]
+	conf := v.Get(strings.Join(keys[1:], "."))
+	return conf
 }
 
-// GetBool 获取布尔类型的值
-func (y *ViperComponent) GetBool(key string) bool {
-	if y.isCached(key) {
-		return y.getFromCache(key).(bool)
-	} else {
-		value := y.viper.GetBool(key)
-		y.cache(key, value)
-		return value
+//获取get配置信息
+func (m *ViperComponent) GetBool(key string) bool {
+	keys := strings.Split(key, ".")
+	if len(keys) < 2 {
+		return false
 	}
+	v := m.viperMap[keys[0]]
+	conf := v.GetBool(strings.Join(keys[1:], "."))
+	return conf
 }
 
-// GetInt 获取int类型的值
-func (y *ViperComponent) GetInt(key string) int {
-	if y.isCached(key) {
-		return y.getFromCache(key).(int)
-	} else {
-		value := y.viper.GetInt(key)
-		y.cache(key, value)
-		return value
+//获取get配置信息
+func (m *ViperComponent) GetFloat64(key string) float64 {
+	keys := strings.Split(key, ".")
+	if len(keys) < 2 {
+		return 0
 	}
+	v := m.viperMap[keys[0]]
+	conf := v.GetFloat64(strings.Join(keys[1:], "."))
+	return conf
 }
 
-// GetInt32 获取int32类型的值
-func (y *ViperComponent) GetInt32(key string) int32 {
-	if y.isCached(key) {
-		return y.getFromCache(key).(int32)
-	} else {
-		value := y.viper.GetInt32(key)
-		y.cache(key, value)
-		return value
+//获取get配置信息
+func (m *ViperComponent) GetInt(key string) int {
+	keys := strings.Split(key, ".")
+	if len(keys) < 2 {
+		return 0
 	}
+	v := m.viperMap[keys[0]]
+	conf := v.GetInt(strings.Join(keys[1:], "."))
+	return conf
 }
 
-// GetInt64 获取int64类型的值
-func (y *ViperComponent) GetInt64(key string) int64 {
-	if y.isCached(key) {
-		return y.getFromCache(key).(int64)
-	} else {
-		value := y.viper.GetInt64(key)
-		y.cache(key, value)
-		return value
+//获取get配置信息
+func (m *ViperComponent) GetStringMapString(key string) map[string]string {
+	keys := strings.Split(key, ".")
+	if len(keys) < 2 {
+		return nil
 	}
+	v := m.viperMap[keys[0]]
+	conf := v.GetStringMapString(strings.Join(keys[1:], "."))
+	return conf
 }
 
-// GetFloat64 获取浮点数类型的值
-func (y *ViperComponent) GetFloat64(key string) float64 {
-	if y.isCached(key) {
-		return y.getFromCache(key).(float64)
-	} else {
-		value := y.viper.GetFloat64(key)
-		y.cache(key, value)
-		return value
+//获取get配置信息
+func (m *ViperComponent) GetStringSlice(key string) []string {
+	keys := strings.Split(key, ".")
+	if len(keys) < 2 {
+		return nil
 	}
+	v := m.viperMap[keys[0]]
+	conf := v.GetStringSlice(strings.Join(keys[1:], "."))
+	return conf
 }
 
-// GetDuration 获取time.Duration类型的值
-func (y *ViperComponent) GetDuration(key string) time.Duration {
-	if y.isCached(key) {
-		return y.getFromCache(key).(time.Duration)
-	} else {
-		value := y.viper.GetDuration(key)
-		y.cache(key, value)
-		return value
+//获取get配置信息
+func (m *ViperComponent) GetTime(key string) time.Time {
+	keys := strings.Split(key, ".")
+	if len(keys) < 2 {
+		return time.Now()
 	}
+	v := m.viperMap[keys[0]]
+	conf := v.GetTime(strings.Join(keys[1:], "."))
+	return conf
 }
 
-// GetStringSlice 获取字符串切片的值
-func (y *ViperComponent) GetStringSlice(key string) []string {
-	if y.isCached(key) {
-		return y.getFromCache(key).([]string)
-	} else {
-		value := y.viper.GetStringSlice(key)
-		y.cache(key, value)
-		return value
+//获取时间阶段长度
+func (m *ViperComponent) GetDuration(key string) time.Duration {
+	keys := strings.Split(key, ".")
+	if len(keys) < 2 {
+		return 0
 	}
+	v := m.viperMap[keys[0]]
+	conf := v.GetDuration(strings.Join(keys[1:], "."))
+	return conf
 }
 
-func (y *ViperComponent) UnmarshalKey(key string, rawVal interface{}) error {
-	return y.viper.UnmarshalKey(key, rawVal)
+//是否设置了key
+func (m *ViperComponent) IsSet(key string) bool {
+	keys := strings.Split(key, ".")
+	if len(keys) < 2 {
+		return false
+	}
+	v := m.viperMap[keys[0]]
+	conf := v.IsSet(strings.Join(keys[1:], "."))
+	return conf
 }

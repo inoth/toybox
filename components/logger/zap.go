@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/inoth/ino-toybox/components/config"
+	"github/inoth/ino-toybox/components/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
@@ -13,15 +13,14 @@ import (
 
 var Zap *zap.Logger
 
-// ZapLog:
-//   ErrLog: log/err.log
-//   WarnLog: log/warn.log
-//   InfoLog: log/info.log
-//   Maxsize: 100
-//   MaxAge: 15
-//   MaxBackup: 30
-//   Compress: true
-//   Json: true
+// err_log: log/err.log
+// warn_log: log/warn.log
+// info_log: log/info.log
+// maxsize: 100
+// maxage: 15
+// max_backup: 30
+// compress: true
+// json: true
 type ZapComponent struct {
 	hooks []func(zapcore.Entry) error
 }
@@ -49,14 +48,14 @@ func newLogger(hooks ...func(zapcore.Entry) error) *zap.Logger {
 	}
 
 	// 解析配置文件，获取日志相关配置
-	errLog := config.Cfg.GetString("ZapLog.ErrLog")
-	warnLog := config.Cfg.GetString("ZapLog.WarnLog")
-	infoLog := config.Cfg.GetString("ZapLog.InfoLog")
-	logSize := config.Cfg.GetInt("ZapLog.Maxsize")
-	logAge := config.Cfg.GetInt("ZapLog.MaxAge")
-	logBackup := config.Cfg.GetInt("ZapLog.MaxBackup")
-	logCompress := config.Cfg.GetBool("ZapLog.Compress")
-	jsonFormat := config.Cfg.GetBool("ZapLog.Json")
+	errLog := config.Cfg.GetString("zap.err_log")
+	warnLog := config.Cfg.GetString("zap.warn_log")
+	infoLog := config.Cfg.GetString("zap.info_log")
+	logSize := config.Cfg.GetInt("zap.maxsize")
+	logAge := config.Cfg.GetInt("zap.maxage")
+	logBackup := config.Cfg.GetInt("zap.max_backup")
+	logCompress := config.Cfg.GetBool("zap.compress")
+	jsonFormat := config.Cfg.GetBool("zap.json")
 
 	// 设置日志内容格式，以及日志输出格式。默认为人类可读格式；若配置了json，则输出为json格式
 	encoderConf := genEncoderConf()

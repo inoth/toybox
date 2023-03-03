@@ -1,7 +1,4 @@
 # ino-toybox
-**常用库使用初始化过程简化, 避免定义过多死板规则, 尽量还原原有操作**
-
-~~稍微试试范型吧~~
 
 ```go
 package main
@@ -10,7 +7,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	inotoybox "github.com/inoth/ino-toybox"
+	"github.com/inoth/ino-toybox/register"
 	"github.com/inoth/ino-toybox/components/cache"
 	"github.com/inoth/ino-toybox/components/config"
 	"github.com/inoth/ino-toybox/components/logger"
@@ -18,7 +15,7 @@ import (
 )
 
 func main() {
-	err := inotoybox.NewToyBox(
+	err := register.NewToyBox(
 		&cache.CacheComponent{},
 	).Init().Start(
 		httpsvc.Instance(":8080").
