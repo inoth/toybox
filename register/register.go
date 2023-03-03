@@ -7,8 +7,8 @@ import (
 	"os"
 	"sync"
 
-	"github/inoth/ino-toybox/components"
-	"github/inoth/ino-toybox/services"
+	"github.com/inoth/ino-toybox/components"
+	"github.com/inoth/ino-toybox/services"
 )
 
 var initOnce sync.Once

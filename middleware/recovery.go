@@ -6,8 +6,8 @@ import (
 	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
-	"github/inoth/ino-toybox/res"
-	"github/inoth/ino-toybox/utils"
+	"github.com/inoth/ino-toybox/res"
+	"github.com/inoth/ino-toybox/utils"
 )
 
 func Recovery() gin.HandlerFunc {

@@ -2,9 +2,10 @@ package httptool
 
 import (
 	"fmt"
-	"github/inoth/ino-toybox/components/logger"
-	"github/inoth/ino-toybox/utils"
 	"io"
+
+	"github.com/inoth/ino-toybox/components/logger"
+	"github.com/inoth/ino-toybox/utils"
 
 	"net/http"
 	"net/url"

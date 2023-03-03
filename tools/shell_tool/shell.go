@@ -3,12 +3,13 @@ package shelltool
 import (
 	"bytes"
 	"fmt"
-	"github/inoth/ino-toybox/utils"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/inoth/ino-toybox/utils"
 
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"

@@ -2,8 +2,9 @@ package test
 
 import (
 	"fmt"
-	shell "github/inoth/ino-toybox/tools/shell_tool"
 	"testing"
+
+	shell "github.com/inoth/ino-toybox/tools/shell_tool"
 )
 
 func TestRemoteCmd(t *testing.T) {

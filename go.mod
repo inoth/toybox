@@ -1,8 +1,11 @@
-module github/inoth/ino-toybox
+module github.com/inoth/ino-toybox
 
 go 1.18
 
-require github.com/spf13/viper v1.15.0
+require (
+	github.com/spf13/viper v1.15.0
+	golang.org/x/crypto v0.5.0
+)
 
 require (
 	github.com/bytedance/sonic v1.8.0 // indirect
@@ -29,7 +32,6 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
-	golang.org/x/crypto v0.5.0 // indirect
 	golang.org/x/net v0.7.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 )

@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github/inoth/ino-toybox/components/config"
+	"github.com/inoth/ino-toybox/components/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
