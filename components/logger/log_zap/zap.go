@@ -1,4 +1,4 @@
-package logger
+package logzap
 
 import (
 	"fmt"
@@ -6,12 +6,13 @@ import (
 	"time"
 
 	"github.com/inoth/ino-toybox/components/config"
+	"github.com/inoth/ino-toybox/components/logger"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
 
-var Zap *zap.Logger
+// var Zap *zap.Logger
 
 // err_log: log/err.log
 // warn_log: log/warn.log
@@ -23,6 +24,7 @@ var Zap *zap.Logger
 // json: true
 type ZapComponent struct {
 	hooks []func(zapcore.Entry) error
+	zap   *zap.Logger
 }
 
 func (zpl *ZapComponent) SetHooks(hooks ...func(zapcore.Entry) error) *ZapComponent {
@@ -31,7 +33,8 @@ func (zpl *ZapComponent) SetHooks(hooks ...func(zapcore.Entry) error) *ZapCompon
 }
 
 func (zpl *ZapComponent) Init() error {
-	Zap = newLogger(zpl.hooks...)
+	zpl.zap = newLogger(zpl.hooks...)
+	logger.Log = zpl
 	return nil
 }
 
@@ -126,4 +129,27 @@ func genEncoderConf() zapcore.EncoderConfig {
 // zapTimeEncoder 用于日志时间格式化，到毫秒级
 func zapTimeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 	enc.AppendString(t.Format("2006-01-02 15:04:05:000"))
+}
+
+func (zc *ZapComponent) Info(msg string) {
+	zc.zap.Info(msg)
+}
+
+func (zc *ZapComponent) Infof(msg string, args ...interface{}) {
+	zc.zap.Sugar().Infof(msg, args...)
+}
+
+func (zc *ZapComponent) Warn(msg string) {
+	zc.zap.Warn(msg)
+}
+func (zc *ZapComponent) Warnf(msg string, args ...interface{}) {
+	zc.zap.Sugar().Warnf(msg, args...)
+}
+
+func (zc *ZapComponent) Err(msg string) {
+	zc.zap.Error(msg)
+}
+
+func (zc *ZapComponent) Errf(msg string, args ...interface{}) {
+	zc.zap.Sugar().Errorf(msg, args...)
 }

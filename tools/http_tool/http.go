@@ -21,7 +21,7 @@ func HttpGET(traceId, urlString string, urlParams url.Values, msTimeout int, hea
 	urlString = AddGetDataToUrl(urlString, urlParams)
 	req, err := http.NewRequest("GET", urlString, nil)
 	if err != nil {
-		logger.Zap.Warn(fmt.Sprintf("%+v", map[string]interface{}{
+		logger.Log.Warn(fmt.Sprintf("%+v", map[string]interface{}{
 			"trace_id":  traceId,
 			"url":       urlString,
 			"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
@@ -37,7 +37,7 @@ func HttpGET(traceId, urlString string, urlParams url.Values, msTimeout int, hea
 	req = addTrace2Header(req, traceId)
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Zap.Warn(fmt.Sprintf("%+v", map[string]interface{}{
+		logger.Log.Warn(fmt.Sprintf("%+v", map[string]interface{}{
 			"trace_id":  traceId,
 			"url":       urlString,
 			"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
@@ -50,7 +50,7 @@ func HttpGET(traceId, urlString string, urlParams url.Values, msTimeout int, hea
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logger.Zap.Warn(fmt.Sprintf("%+v", map[string]interface{}{
+		logger.Log.Warn(fmt.Sprintf("%+v", map[string]interface{}{
 			"trace_id":  traceId,
 			"url":       urlString,
 			"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
@@ -61,7 +61,7 @@ func HttpGET(traceId, urlString string, urlParams url.Values, msTimeout int, hea
 		}))
 		return nil, nil, err
 	}
-	logger.Zap.Info(fmt.Sprintf("%+v", map[string]interface{}{
+	logger.Log.Info(fmt.Sprintf("%+v", map[string]interface{}{
 		"trace_id":  traceId,
 		"url":       urlString,
 		"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
@@ -89,7 +89,7 @@ func HttpPOST(traceId, urlString string, urlParams url.Values, msTimeout int, he
 	req.Header.Set("Content-Type", contextType)
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Zap.Warn(fmt.Sprintf("%+v", map[string]interface{}{
+		logger.Log.Warn(fmt.Sprintf("%+v", map[string]interface{}{
 			"trace_id":  traceId,
 			"url":       urlString,
 			"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
@@ -102,7 +102,7 @@ func HttpPOST(traceId, urlString string, urlParams url.Values, msTimeout int, he
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logger.Zap.Warn(fmt.Sprintf("%+v", map[string]interface{}{
+		logger.Log.Warn(fmt.Sprintf("%+v", map[string]interface{}{
 			"trace_id":  traceId,
 			"url":       urlString,
 			"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
@@ -113,7 +113,7 @@ func HttpPOST(traceId, urlString string, urlParams url.Values, msTimeout int, he
 		}))
 		return nil, nil, err
 	}
-	logger.Zap.Info(fmt.Sprintf("%+v", map[string]interface{}{
+	logger.Log.Info(fmt.Sprintf("%+v", map[string]interface{}{
 		"trace_id":  traceId,
 		"url":       urlString,
 		"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
@@ -137,7 +137,7 @@ func HttpJSON(traceId, urlString string, jsonContent string, msTimeout int, head
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Zap.Warn(fmt.Sprintf("%+v", map[string]interface{}{
+		logger.Log.Warn(fmt.Sprintf("%+v", map[string]interface{}{
 			"trace_id":  traceId,
 			"url":       urlString,
 			"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
@@ -150,7 +150,7 @@ func HttpJSON(traceId, urlString string, jsonContent string, msTimeout int, head
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logger.Zap.Warn(fmt.Sprintf("%+v", map[string]interface{}{
+		logger.Log.Warn(fmt.Sprintf("%+v", map[string]interface{}{
 			"trace_id":  traceId,
 			"url":       urlString,
 			"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
@@ -161,7 +161,7 @@ func HttpJSON(traceId, urlString string, jsonContent string, msTimeout int, head
 		}))
 		return nil, nil, err
 	}
-	logger.Zap.Info(fmt.Sprintf("%+v", map[string]interface{}{
+	logger.Log.Info(fmt.Sprintf("%+v", map[string]interface{}{
 		"trace_id":  traceId,
 		"url":       urlString,
 		"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,

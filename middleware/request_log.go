@@ -29,7 +29,7 @@ func RequestInLog(c *gin.Context) {
 		"body":     string(bodyBytes),
 		"from":     c.ClientIP(),
 	}
-	logger.Zap.Info(fmt.Sprintf("%+v", req))
+	logger.Log.Info(fmt.Sprintf("%+v", req))
 }
 
 func RequestOutLog(c *gin.Context) {
@@ -47,7 +47,7 @@ func RequestOutLog(c *gin.Context) {
 		"response":     response,
 		"proc_time_ms": endExecTime.Sub(startExecTime).Milliseconds(),
 	}
-	logger.Zap.Info(fmt.Sprintf("%+v", resp))
+	logger.Log.Info(fmt.Sprintf("%+v", resp))
 }
 
 func RequestLog() gin.HandlerFunc {
