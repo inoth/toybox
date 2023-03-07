@@ -1,6 +1,7 @@
 package logzap
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -34,8 +35,10 @@ func (zpl *ZapComponent) SetHooks(hooks ...func(zapcore.Entry) error) *ZapCompon
 
 func (zpl *ZapComponent) Init() error {
 	zpl.zap = newLogger(zpl.hooks...)
-	logger.Log = zpl
-	return nil
+	if logger.Log == nil {
+		logger.Log = zpl
+	}
+	return errors.New("重复添加日志服务")
 }
 
 // NewLogger 创建自定义zap logger对象
