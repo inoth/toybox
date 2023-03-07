@@ -35,10 +35,11 @@ func (zpl *ZapComponent) SetHooks(hooks ...func(zapcore.Entry) error) *ZapCompon
 
 func (zpl *ZapComponent) Init() error {
 	zpl.zap = newLogger(zpl.hooks...)
-	if logger.Log == nil {
-		logger.Log = zpl
+	if logger.Log != nil {
+		return errors.New("重复添加日志服务")
 	}
-	return errors.New("重复添加日志服务")
+	logger.Log = zpl
+	return nil
 }
 
 // NewLogger 创建自定义zap logger对象
