@@ -13,9 +13,9 @@ type GinRouters interface {
 
 var RoutersMap = map[string]GinRouters{}
 
-func LoadRouter(serverName string, router GinRouters) {
-	if _, ok := RoutersMap[serverName]; !ok {
-		RoutersMap[serverName] = router
+func LoadRouter(router GinRouters) {
+	if _, ok := RoutersMap[router.Prefix()]; !ok {
+		RoutersMap[router.Prefix()] = router
 	}
-	fmt.Println("重复添加服务路由: ", serverName)
+	fmt.Println("重复添加服务路由: ", router.Prefix())
 }

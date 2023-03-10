@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-var Mysql *gorm.DB
+var DB *gorm.DB
 
 // host: ""
 // port: ""
@@ -57,6 +57,6 @@ func (m *MysqlComponent) Init() error {
 	sqldb.SetMaxOpenConns(config.Cfg.GetInt("mysql.max_open_conns"))
 	sqldb.SetConnMaxLifetime(time.Second * time.Duration(config.Cfg.GetInt("mysql.max_life_time")))
 
-	Mysql = db
+	DB = db
 	return nil
 }

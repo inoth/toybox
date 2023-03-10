@@ -178,3 +178,13 @@ func (m *ViperComponent) IsSet(key string) bool {
 	conf := v.IsSet(strings.Join(keys[1:], "."))
 	return conf
 }
+
+// 获取切片
+func (m *ViperComponent) UnmarshalKey(key string, data interface{}) error {
+	keys := strings.Split(key, ".")
+	if len(keys) < 2 {
+		return nil
+	}
+	v := m.viperMap[keys[0]]
+	return v.UnmarshalKey(strings.Join(keys[1:], "."), &data)
+}

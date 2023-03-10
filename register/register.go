@@ -11,11 +11,10 @@ import (
 	"github.com/inoth/ino-toybox/services"
 )
 
-var initOnce sync.Once
-
 type Register struct {
 	cmps []components.Components
 	svcs []services.Service
+	once sync.Once
 }
 
 func NewRegister(cmps ...components.Components) *Register {
@@ -28,7 +27,7 @@ func NewRegister(cmps ...components.Components) *Register {
 }
 
 func (reg *Register) Init() *Register {
-	initOnce.Do(func() {
+	reg.once.Do(func() {
 		for _, cmp := range reg.cmps {
 			must(cmp.Init())
 		}

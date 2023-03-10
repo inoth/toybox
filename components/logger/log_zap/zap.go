@@ -55,14 +55,14 @@ func newLogger(hooks ...func(zapcore.Entry) error) *zap.Logger {
 	}
 
 	// 解析配置文件，获取日志相关配置
-	errLog := config.Cfg.GetString("zap.err_log")
-	warnLog := config.Cfg.GetString("zap.warn_log")
-	infoLog := config.Cfg.GetString("zap.info_log")
-	logSize := config.Cfg.GetInt("zap.maxsize")
-	logAge := config.Cfg.GetInt("zap.maxage")
-	logBackup := config.Cfg.GetInt("zap.max_backup")
-	logCompress := config.Cfg.GetBool("zap.compress")
-	jsonFormat := config.Cfg.GetBool("zap.json")
+	errLog := config.Cfg.GetString("logger.err_log")
+	warnLog := config.Cfg.GetString("logger.warn_log")
+	infoLog := config.Cfg.GetString("logger.info_log")
+	logSize := config.Cfg.GetInt("logger.maxsize")
+	logAge := config.Cfg.GetInt("logger.maxage")
+	logBackup := config.Cfg.GetInt("logger.max_backup")
+	logCompress := config.Cfg.GetBool("logger.compress")
+	jsonFormat := config.Cfg.GetBool("logger.json")
 
 	// 设置日志内容格式，以及日志输出格式。默认为人类可读格式；若配置了json，则输出为json格式
 	encoderConf := genEncoderConf()
