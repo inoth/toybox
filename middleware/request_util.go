@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/inoth/ino-toybox/res"
+	"github.com/inoth/toybox/res"
 )
 
 func RequestJsonParamHandler[T interface{}](c *gin.Context) (T, bool) {

@@ -1,4 +1,4 @@
-module github.com/inoth/ino-toybox
+module github.com/inoth/toybox
 
 go 1.18
 

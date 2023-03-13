@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/inoth/ino-toybox/components/logger"
-	"github.com/inoth/ino-toybox/utils"
+	"github.com/inoth/toybox/components/logger"
+	"github.com/inoth/toybox/utils"
 
 	"net/http"
 	"net/url"

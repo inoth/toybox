@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/inoth/ino-toybox/components/logger"
+	"github.com/inoth/toybox/components/logger"
 
-	"github.com/inoth/ino-toybox/utils"
+	"github.com/inoth/toybox/utils"
 )
 
 func RequestInLog(c *gin.Context) {

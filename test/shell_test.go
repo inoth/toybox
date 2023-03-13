@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	shell "github.com/inoth/ino-toybox/tools/shell_tool"
+	shell "github.com/inoth/toybox/tools/shell_tool"
 )
 
 func TestRemoteCmd(t *testing.T) {

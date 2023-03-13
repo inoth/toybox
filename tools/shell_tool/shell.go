@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inoth/ino-toybox/utils"
+	"github.com/inoth/toybox/utils"
 
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"

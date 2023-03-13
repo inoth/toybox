@@ -7,11 +7,11 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/inoth/ino-toybox/register"
-	"github.com/inoth/ino-toybox/components/cache"
-	"github.com/inoth/ino-toybox/components/config"
-	"github.com/inoth/ino-toybox/components/logger"
-	"github.com/inoth/ino-toybox/servers/httpsvc"
+	"github.com/inoth/toybox/register"
+	"github.com/inoth/toybox/components/cache"
+	"github.com/inoth/toybox/components/config"
+	"github.com/inoth/toybox/components/logger"
+	"github.com/inoth/toybox/servers/httpsvc"
 )
 
 func main() {

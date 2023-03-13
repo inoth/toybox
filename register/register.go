@@ -7,8 +7,8 @@ import (
 	"os"
 	"sync"
 
-	"github.com/inoth/ino-toybox/components"
-	"github.com/inoth/ino-toybox/services"
+	"github.com/inoth/toybox/components"
+	"github.com/inoth/toybox/services"
 )
 
 type Register struct {

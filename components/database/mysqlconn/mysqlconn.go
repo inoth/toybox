@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/inoth/ino-toybox/components/config"
+	"github.com/inoth/toybox/components/config"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

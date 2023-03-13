@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/inoth/ino-toybox/components/config"
-	"github.com/inoth/ino-toybox/components/logger"
+	"github.com/inoth/toybox/components/config"
+	"github.com/inoth/toybox/components/logger"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"

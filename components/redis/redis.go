@@ -5,7 +5,7 @@ import (
 	"time"
 
 	gredis "github.com/go-redis/redis/v8"
-	"github.com/inoth/ino-toybox/components/config"
+	"github.com/inoth/toybox/components/config"
 )
 
 var Rdc *gredis.ClusterClient
