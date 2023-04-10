@@ -9,7 +9,7 @@ type GinServer struct {
 	engine *gin.Engine
 }
 
-func Instance(port ...string) *GinServer {
+func New(port ...string) *GinServer {
 	gsvc := &GinServer{
 		engine: gin.New(),
 	}
