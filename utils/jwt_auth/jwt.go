@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/inoth/toybox/utils"
 )
 
 const (
@@ -20,12 +21,14 @@ type CustomClaims struct {
 	CustomerInfo
 }
 
-func CreateToken(signKey string, userInfo map[string]interface{}, expire ...int64) (string, error) {
+func CreateToken(signKey string, userInfo map[string]interface{}, expire ...time.Duration) (string, error) {
 	key := []byte(signKey)
+	exp := utils.FirstParam(24, expire)
+	issuser, _ := utils.GetStringValue(userInfo, "name")
 	c := CustomClaims{
 		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 12)),
-			Issuer:    userInfo["name"].(string),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * exp)),
+			Issuer:    issuser,
 		},
 		CustomerInfo{
 			UserInfo: userInfo,
