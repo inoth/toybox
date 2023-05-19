@@ -23,8 +23,6 @@ import (
 )
 
 func main() {
-	os.Setenv("GORUNEVN", "dev")
-
 	tb := toybox.New(
 		toybox.WithCfgPath("config"),
 		toybox.EnableComponents(
