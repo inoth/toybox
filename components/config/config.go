@@ -1,190 +1,179 @@
 package config
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"os"
-	"strings"
+	"sync"
 	"time"
 
-	"github.com/spf13/viper"
+	"github.com/inoth/toybox/common"
+	"github.com/inoth/toybox/component"
+
+	"github.com/BurntSushi/toml"
 )
 
 var (
-	Cfg *ViperComponent
+	componentName = "config"
+	configOnce    sync.Once
+	Cfg           *ConfigComponent
 )
 
-type ViperComponent struct {
-	viperMap      map[string]*viper.Viper
-	ConfKeyPrefix string
+type Option func(ctx context.Context, cfg *ConfigComponent)
+
+type globalConfig struct {
+	Global toml.Primitive `json:"global" toml:"global"`
 }
 
-func (m *ViperComponent) Init() error {
-	if len(m.ConfKeyPrefix) <= 0 {
-		m.ConfKeyPrefix = os.Getenv("GORUNEVN")
-		if len(m.ConfKeyPrefix) <= 0 {
-			m.ConfKeyPrefix = "config/prod"
-		} else {
-			m.ConfKeyPrefix = "config/" + m.ConfKeyPrefix
-		}
+type ConfigComponent struct {
+	// 热更重新拉起次数
+	count      int
+	context    context.Context
+	cancelFunc context.CancelFunc
+	m          *sync.RWMutex
+
+	Interval int    `toml:"interval" json:"interval" yaml:"interval"`
+	CfgPath  string `toml:"cfgPath" json:"cfgPath" yaml:"cfgPath"`
+
+	// 存放从 global 解析出来的数据
+	appConfig map[string]interface{}
+
+	currentConfigContentHash string
+}
+
+func New(opts ...Option) component.Component {
+	cfg := &ConfigComponent{
+		count:     1,
+		m:         new(sync.RWMutex),
+		appConfig: make(map[string]interface{}),
 	}
-	f, err := os.Open(m.ConfKeyPrefix + "/")
-	if err != nil {
-		return err
+
+	cfg.context, cfg.cancelFunc = context.WithCancel(context.Background())
+
+	for _, opt := range opts {
+		opt(cfg.context, cfg)
 	}
-	fileList, err := f.Readdir(1024)
-	if err != nil {
-		return err
-	}
-	for _, f0 := range fileList {
-		if f0.IsDir() {
-			continue
-		}
-		v := viper.New()
-		v.SetConfigType("yaml")
-		v.AddConfigPath(m.ConfKeyPrefix)
-		pathArr := strings.Split(f0.Name(), ".")
-		v.SetConfigName(pathArr[0])
-		if err := v.ReadInConfig(); err != nil {
-			return err
-		}
-		if m.viperMap == nil {
-			m.viperMap = make(map[string]*viper.Viper)
-		}
-		m.viperMap[pathArr[0]] = v
-	}
-	Cfg = m
+
+	return cfg
+}
+
+func (cc *ConfigComponent) Name() string {
+	return componentName
+}
+func (cc *ConfigComponent) String() string {
+	// buf, _ := json.Marshal(cc)
+	buf, _ := json.Marshal(cc.appConfig)
+	return string(buf)
+}
+
+func (cc *ConfigComponent) Close() error {
+	cc.cancelFunc()
 	return nil
 }
 
-//获取get配置信息
-func (m *ViperComponent) GetString(key string) string {
-	keys := strings.Split(key, ".")
-	if len(keys) < 2 {
-		return ""
-	}
-	v, ok := m.viperMap[keys[0]]
-	if !ok {
-		return ""
-	}
-	confString := v.GetString(strings.Join(keys[1:], "."))
-	return confString
+// TODO: 后续添加配置热更功能
+func (cc *ConfigComponent) Init() (err error) {
+	// 加载配置
+	configOnce.Do(func() {
+		var cfgByte []byte
+		cfgByte, err = os.ReadFile(cc.CfgPath)
+		if err != nil {
+			err = fmt.Errorf("读取配置文件失败,Err:%s", err.Error())
+			return
+		}
+		if err = cc.resolveTomlConfig(cfgByte); err != nil {
+			return
+		}
+		cc.watchToml()
+		Cfg = cc
+	})
+	return
 }
 
-//获取get配置信息
-func (m *ViperComponent) GetStringMap(key string) map[string]interface{} {
-	keys := strings.Split(key, ".")
-	if len(keys) < 2 {
-		return nil
+func (cc *ConfigComponent) resolveTomlConfig(cfgByte []byte) error {
+	var globalCfg globalConfig
+	mata, err := toml.Decode(string(cfgByte), &globalCfg)
+	if err != nil {
+		return err
 	}
-	v := m.viperMap[keys[0]]
-	conf := v.GetStringMap(strings.Join(keys[1:], "."))
-	return conf
+
+	cc.m.RLock()
+	defer cc.m.RUnlock()
+
+	var appConfig map[string]interface{}
+	if err := mata.PrimitiveDecode(globalCfg.Global, &appConfig); err != nil {
+		return err
+	}
+	for key := range cc.appConfig {
+		delete(cc.appConfig, key)
+	}
+	for key, value := range appConfig {
+		cc.appConfig[key] = value
+	}
+
+	cc.currentConfigContentHash = common.Md5(cfgByte)
+	return nil
 }
 
-//获取get配置信息
-func (m *ViperComponent) Get(key string) interface{} {
-	keys := strings.Split(key, ".")
-	if len(keys) < 2 {
-		return nil
+func (cc *ConfigComponent) GetString(key string) string {
+	if res, ok := common.GetStringValue(cc.appConfig, key); ok {
+		return res
 	}
-	v := m.viperMap[keys[0]]
-	conf := v.Get(strings.Join(keys[1:], "."))
-	return conf
+	return ""
 }
 
-//获取get配置信息
-func (m *ViperComponent) GetBool(key string) bool {
-	keys := strings.Split(key, ".")
-	if len(keys) < 2 {
-		return false
+func (cc *ConfigComponent) GetInt(key string) int {
+	if res, ok := common.GetIntValue(cc.appConfig, key); ok {
+		return res
 	}
-	v := m.viperMap[keys[0]]
-	conf := v.GetBool(strings.Join(keys[1:], "."))
-	return conf
+	return 0
 }
 
-//获取get配置信息
-func (m *ViperComponent) GetFloat64(key string) float64 {
-	keys := strings.Split(key, ".")
-	if len(keys) < 2 {
-		return 0
+func (cc *ConfigComponent) GetFloat(key string) float64 {
+	if res, ok := common.GetFloatValue(cc.appConfig, key); ok {
+		return res
 	}
-	v := m.viperMap[keys[0]]
-	conf := v.GetFloat64(strings.Join(keys[1:], "."))
-	return conf
+	return 0
 }
 
-//获取get配置信息
-func (m *ViperComponent) GetInt(key string) int {
-	keys := strings.Split(key, ".")
-	if len(keys) < 2 {
-		return 0
+func (cc *ConfigComponent) GetBool(key string) bool {
+	if res, ok := common.GetBoolValue(cc.appConfig, key); ok {
+		return res
 	}
-	v := m.viperMap[keys[0]]
-	conf := v.GetInt(strings.Join(keys[1:], "."))
-	return conf
+	return false
 }
 
-//获取get配置信息
-func (m *ViperComponent) GetStringMapString(key string) map[string]string {
-	keys := strings.Split(key, ".")
-	if len(keys) < 2 {
-		return nil
+func (cc *ConfigComponent) GetStringSlice(key string) []string {
+	if res, ok := common.GetStringSlice(cc.appConfig, key); ok {
+		return res
 	}
-	v := m.viperMap[keys[0]]
-	conf := v.GetStringMapString(strings.Join(keys[1:], "."))
-	return conf
+	return nil
 }
 
-//获取get配置信息
-func (m *ViperComponent) GetStringSlice(key string) []string {
-	keys := strings.Split(key, ".")
-	if len(keys) < 2 {
-		return nil
-	}
-	v := m.viperMap[keys[0]]
-	conf := v.GetStringSlice(strings.Join(keys[1:], "."))
-	return conf
-}
-
-//获取get配置信息
-func (m *ViperComponent) GetTime(key string) time.Time {
-	keys := strings.Split(key, ".")
-	if len(keys) < 2 {
-		return time.Now()
-	}
-	v := m.viperMap[keys[0]]
-	conf := v.GetTime(strings.Join(keys[1:], "."))
-	return conf
-}
-
-//获取时间阶段长度
-func (m *ViperComponent) GetDuration(key string) time.Duration {
-	keys := strings.Split(key, ".")
-	if len(keys) < 2 {
-		return 0
-	}
-	v := m.viperMap[keys[0]]
-	conf := v.GetDuration(strings.Join(keys[1:], "."))
-	return conf
-}
-
-//是否设置了key
-func (m *ViperComponent) IsSet(key string) bool {
-	keys := strings.Split(key, ".")
-	if len(keys) < 2 {
-		return false
-	}
-	v := m.viperMap[keys[0]]
-	conf := v.IsSet(strings.Join(keys[1:], "."))
-	return conf
-}
-
-// 获取切片
-func (m *ViperComponent) UnmarshalKey(key string, data interface{}) error {
-	keys := strings.Split(key, ".")
-	if len(keys) < 2 {
-		return nil
-	}
-	v := m.viperMap[keys[0]]
-	return v.UnmarshalKey(strings.Join(keys[1:], "."), &data)
+// 监听配置文件进行热更操作
+func (cc *ConfigComponent) watchToml() {
+	go func() {
+		ticker := time.NewTicker(time.Duration(cc.Interval) * time.Second)
+		for {
+			select {
+			case <-cc.context.Done():
+				return
+			case <-ticker.C:
+				cfgByte, err := os.ReadFile(cc.CfgPath)
+				if err != nil {
+					fmt.Printf("读取配置文件失败,Err:%s\n", err.Error())
+					continue
+				}
+				// 检查hash是否一致
+				if cc.currentConfigContentHash == common.Md5(cfgByte) {
+					continue
+				}
+				if err = cc.resolveTomlConfig(cfgByte); err != nil {
+					fmt.Printf("更新配置文件失败, Err:%s\n", err.Error())
+				}
+				fmt.Println("更新配置文件更新成功")
+			}
+		}
+	}()
 }

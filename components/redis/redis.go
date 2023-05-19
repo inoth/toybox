@@ -2,44 +2,92 @@ package redis
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"sync"
 	"time"
 
+	"github.com/inoth/toybox/component"
+
 	gredis "github.com/go-redis/redis/v8"
-	"github.com/inoth/toybox/components/config"
 )
 
-var Rdc *gredis.ClusterClient
+var (
+	componentName = "redis"
+	redisOnce     sync.Once
+	Redis         *RedisComponents
+)
 
-// host:
-//   - localhost:7000
-//   - localhost:7001
-//   - localhost:7002
-//   - localhost:7003
-//   - localhost:7004
-//   - localhost:7005
-// passwd: "1234567890"
-// pool_size: 10
-// pool_timeout: 3
-type RedisComponent struct{}
+// func init() {
+// 	components.Add(componentName, func() toybox.Component {
+// 		return &RedisComponents{}
+// 	})
+// }
 
-func (RedisComponent) Init() error {
+func New() component.Component {
+	return &RedisComponents{}
+}
 
-	hosts := config.Cfg.GetStringSlice("redis.host")
-	password := config.Cfg.GetString("redis.passwd")
-	poolSize := config.Cfg.GetInt("redis.pool_size")
+type RedisComponents struct {
+	client *gredis.ClusterClient
 
-	client := gredis.NewClusterClient(&gredis.ClusterOptions{
-		Addrs:    hosts,
-		Password: password,
-		PoolSize: poolSize,
+	URLs        []string `toml:"urls" json:"urls" yaml:"urls"`
+	Username    string   `toml:"username" json:"username" yaml:"username"`
+	Password    string   `toml:"password" json:"password" yaml:"password"`
+	PoolSize    int      `toml:"pool_size" json:"pool_size" yaml:"pool_size"`
+	PoolTimeout int      `toml:"pool_time_out" json:"pool_time_out" yaml:"pool_time_out"`
+}
+
+func (rc *RedisComponents) Name() string {
+	return componentName
+}
+
+func (rc *RedisComponents) String() string {
+	buf, _ := json.Marshal(rc)
+	return string(buf)
+}
+
+func (rc *RedisComponents) Close() error { return rc.client.Close() }
+
+func (rc *RedisComponents) Init() (err error) {
+	redisOnce.Do(func() {
+		client := gredis.NewClusterClient(&gredis.ClusterOptions{
+			Addrs:       rc.URLs,
+			Password:    rc.Password,
+			Username:    rc.Username,
+			PoolSize:    rc.PoolSize,
+			PoolTimeout: time.Duration(rc.PoolTimeout),
+		})
+		_, err = client.Ping(context.Background()).Result()
+		if err != nil {
+			err = fmt.Errorf("failed to connect to redis: %v", err)
+			return
+		}
+		rc.client = client
+		Redis = rc
+		fmt.Println("redis component initialization successful")
 	})
+	return
+}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*config.Cfg.GetDuration("redis.pool_timeout"))
-	defer cancel()
-
-	if _, err := client.Ping(ctx).Result(); err != nil {
-		return err
+func (rc *RedisComponents) Get(key string) (string, error) {
+	res, err := rc.client.Get(context.Background(), key).Result()
+	if err == gredis.Nil {
+		return "", nil
+	} else if err != nil {
+		return "", err
 	}
-	Rdc = client
-	return nil
+	return res, nil
+}
+
+func (rc *RedisComponents) Set(key string, val interface{}, expiration ...time.Duration) error {
+	expir := time.Duration(0)
+	if len(expiration) > 0 {
+		expir = expiration[0]
+	}
+	return rc.client.Set(context.Background(), key, val, expir).Err()
+}
+
+func (rc *RedisComponents) Redis() *gredis.ClusterClient {
+	return rc.client
 }
