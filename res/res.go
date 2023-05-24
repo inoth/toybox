@@ -10,12 +10,13 @@ import (
 // 自定义错误码
 const (
 	SuccessCode       int = 100 * iota // 成功返回
-	UndefErrorCode                     // 未定义错误
-	ValidErrorCode                     // 自定义错误
-	InternalErrorCode                  // 内部错误
-	ParamErrorCode                     // 参数错误
+	UndefErrorCode                     // 100 未定义错误
+	ValidErrorCode                     // 200 自定义错误
+	InternalErrorCode                  // 300 内部错误
+	ParamErrorCode                     // 400 参数错误
 
-	InvalidRequestErrorCode = 401 // 无效请求
+	Unauthorized            = 401 //  权限错误
+	InvalidRequestErrorCode = 403 // 无效请求
 
 	StatusInternalServerError = 500
 )

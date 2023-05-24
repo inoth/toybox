@@ -6,4 +6,5 @@ type Server interface {
 	Name() string
 	RequiredComponent() []string
 	Start() error
+	Close() error
 }

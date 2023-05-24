@@ -62,3 +62,14 @@ func GetStringSlice(m map[string]interface{}, key string) ([]string, bool) {
 	}
 	return nil, false
 }
+
+func GetInterfaceSlice(m map[string]interface{}, key string) ([]interface{}, bool) {
+	val, ok := getValueWithType(m, key)
+	if !ok {
+		return nil, false
+	}
+	if ssVal, ok := val.([]interface{}); ok {
+		return ssVal, true
+	}
+	return nil, false
+}

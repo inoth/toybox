@@ -121,8 +121,10 @@ func (tb *ToyBox) loadServers() error {
 
 func (tb *ToyBox) readFile(fileType string) ([]byte, error) {
 	dev := os.Getenv("GORUNEVN")
-	if len(dev) > 0 {
+	if dev == "dev" || dev == "debug" {
 		tb.cfgPath = tb.cfgPath + "/" + dev
+	} else {
+		tb.cfgPath = tb.cfgPath + "/prod"
 	}
 	files, err := internal.WalkPath(tb.cfgPath)
 	if err != nil {

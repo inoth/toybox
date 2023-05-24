@@ -47,11 +47,11 @@ func (mc *MysqlComponents) String() string {
 
 func (mc *MysqlComponents) Close() error { return nil }
 
-func (mc *MysqlComponents) Init() (resErr error) {
+func (mc *MysqlComponents) Init() (err error) {
 	mysqlOnce.Do(func() {
 		constr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", mc.User, mc.Passwd, mc.Host, mc.Port, mc.DBName)
 
-		db, err := gorm.Open(gmysql.New(gmysql.Config{
+		mc.db, err = gorm.Open(gmysql.New(gmysql.Config{
 			DSN:                       constr,
 			DefaultStringSize:         1024, // string 类型字段的默认长度
 			DisableDatetimePrecision:  true,
@@ -60,13 +60,12 @@ func (mc *MysqlComponents) Init() (resErr error) {
 			SkipInitializeWithVersion: false, // 根据当前 MySQL 版本自动配置
 		}), &gorm.Config{})
 		if err != nil {
-			resErr = fmt.Errorf("failed to connect to mysql: %v", err)
+			err = fmt.Errorf("failed to connect to mysql: %v", err)
 			return
 		}
 
-		sqlDB, err := db.DB()
+		sqlDB, err := mc.db.DB()
 		if err != nil {
-			resErr = err
 			return
 		}
 
@@ -76,12 +75,12 @@ func (mc *MysqlComponents) Init() (resErr error) {
 		sqlDB.SetMaxOpenConns(mc.MaxOpenConns)                                    // 最大打开连接数
 		sqlDB.SetConnMaxLifetime(time.Second * time.Duration(mc.ConnMaxLifetime)) // 连接最大生命周期
 
-		mc.db = db
+		Mysql = mc
 		fmt.Println("mysql component initialization successful")
 	})
 	return
 }
 
 func (mc *MysqlComponents) DB() *gorm.DB {
-	return mc.db
+	return Mysql.db
 }

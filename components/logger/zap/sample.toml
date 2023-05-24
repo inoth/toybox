@@ -1,0 +1,12 @@
+[[components.logger]]
+
+err_log = ""
+warn_log = ""
+info_log = ""
+debug_log = ""
+
+max_size = 0
+max_age = 0
+max_backup = 0
+compress = false
+json = false

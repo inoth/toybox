@@ -14,7 +14,7 @@ func TestNewToyBox(t *testing.T) {
 	os.Setenv("GORUNEVN", "dev")
 
 	tb := toybox.New(
-		toybox.WithCfgPath("../config"),
+		toybox.WithComponentCfgPath("../config"),
 		toybox.EnableComponents(config.New(), redis.New(), mysql.New()),
 	)
 
