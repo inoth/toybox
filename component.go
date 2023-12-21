@@ -2,12 +2,7 @@ package toybox
 
 import "context"
 
-const (
-	ComponentStatusOK      = "ready"
-	ComponentStatusInvalid = "invalid"
-)
-
 type Component interface {
-	Status() string
+	Ready() bool
 	Init(ctx context.Context) error
 }

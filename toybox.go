@@ -9,48 +9,36 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type ToyBoxOpt func(cfg *ToyBoxConfig)
-
-type ToyBoxConfig struct {
-}
-
 type ToyBox struct {
-	ctx  context.Context
-	eg   *errgroup.Group
-	conf ToyBoxConfig
+	ctx context.Context
+	eg  *errgroup.Group
 
-	// 组件
-	cpts []Component
-	// 服务
-	svcs []Server
+	ToyBoxOption
 }
 
-func New(opts ...ToyBoxOpt) *ToyBox {
+func (tb *ToyBox) AppendComponent(cpts ...Component) {
+	tb.cpts = append(tb.cpts, cpts...)
+}
+
+func (tb *ToyBox) AppendServer(svcs ...Server) {
+	tb.svcs = append(tb.svcs, svcs...)
+}
+
+func New(opts ...ToyBoxOptFunc) *ToyBox {
+	o := defaultOption()
+	for _, opt := range opts {
+		opt(&o)
+	}
 	tb := &ToyBox{
-		conf: ToyBoxConfig{},
-		cpts: make([]Component, 0),
-		svcs: make([]Server, 0),
+		ToyBoxOption: o,
 	}
 	tb.eg, tb.ctx = errgroup.WithContext(context.Background())
-
-	for _, opt := range opts {
-		opt(&tb.conf)
-	}
-
 	return tb
-}
-
-func (tb *ToyBox) AppendComponent(cpt Component) {
-	tb.cpts = append(tb.cpts, cpt)
-}
-
-func (tb *ToyBox) AppendServer(svc Server) {
-	tb.svcs = append(tb.svcs, svc)
 }
 
 func (tb *ToyBox) initComponents() error {
 	for _, cpt := range tb.cpts {
-		if cpt.Status() != ComponentStatusOK {
+		if !cpt.Ready() {
 			return errors.New("components that are not yet ready")
 		}
 		if err := cpt.Init(tb.ctx); err != nil {
