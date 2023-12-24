@@ -6,7 +6,7 @@ type ToyBoxOption struct {
 	env          string
 	confDir      string
 	confFileType string
-	conf         interface{}
+	conf         Conf
 
 	// 组件
 	cpts []Component
