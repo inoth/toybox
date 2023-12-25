@@ -1,6 +1,7 @@
 package logger
 
 type LoggerComponent interface {
+	GetLogger(name string) LoggerComponent
 	Debug(msg string, args ...interface{})
 	Debugf(msg string, args ...interface{})
 	Info(msg string, args ...interface{})

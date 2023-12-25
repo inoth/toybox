@@ -13,7 +13,7 @@ type ToyBox struct {
 	ctx context.Context
 	eg  *errgroup.Group
 
-	ToyBoxOption
+	Option
 }
 
 func (tb *ToyBox) AppendComponent(cpts ...Component) {
@@ -24,13 +24,13 @@ func (tb *ToyBox) AppendServer(svcs ...Server) {
 	tb.svcs = append(tb.svcs, svcs...)
 }
 
-func New(opts ...ToyBoxOptFunc) *ToyBox {
+func New(opts ...OptionFunc) *ToyBox {
 	o := defaultOption()
 	for _, opt := range opts {
 		opt(&o)
 	}
 	tb := &ToyBox{
-		ToyBoxOption: o,
+		Option: o,
 	}
 	tb.eg, tb.ctx = errgroup.WithContext(context.Background())
 	return tb
