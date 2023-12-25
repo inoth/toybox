@@ -15,10 +15,10 @@ type HttpGinServer struct {
 	ready  bool
 	sfg    singleflight.Group
 	engine *gin.Engine
-	Option
+	option
 }
 
-func NewHttp(opts ...OptionFunc) *HttpGinServer {
+func NewHttp(opts ...Option) *HttpGinServer {
 	o := defaultOption()
 	for _, opt := range opts {
 		opt(&o)
@@ -26,7 +26,8 @@ func NewHttp(opts ...OptionFunc) *HttpGinServer {
 	hgs := HttpGinServer{
 		ready:  false,
 		sfg:    singleflight.Group{},
-		Option: o,
+		engine: gin.New(),
+		option: o,
 	}
 	return &hgs
 }

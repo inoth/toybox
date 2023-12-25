@@ -1,10 +1,8 @@
 package mysql
 
-import "github/inoth/toybox"
-
 type MysqlComponent struct {
 }
 
-func New(tb *toybox.ToyBox) *MysqlComponent {
-	return &MysqlComponent{}
+func New() *MysqlComponent {
+	return nil
 }

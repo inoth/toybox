@@ -1,8 +1,8 @@
 package toybox
 
-type OptionFunc func(*Option)
+type Option func(*option)
 
-type Option struct {
+type option struct {
 	env          string
 	confDir      string
 	confFileType string
@@ -14,8 +14,8 @@ type Option struct {
 	svcs []Server
 }
 
-func defaultOption() Option {
-	return Option{
+func defaultOption() option {
+	return option{
 		confDir:      "config",
 		env:          "",
 		confFileType: "dev",
@@ -24,32 +24,32 @@ func defaultOption() Option {
 	}
 }
 
-func (o *Option) WithEnv(env string) OptionFunc {
-	return func(cfg *Option) {
+func (o *option) WithEnv(env string) Option {
+	return func(cfg *option) {
 		cfg.env = env
 	}
 }
 
-func (o *Option) WithConfDir(confDir string) OptionFunc {
-	return func(cfg *Option) {
+func (o *option) WithConfDir(confDir string) Option {
+	return func(cfg *option) {
 		cfg.confDir = confDir
 	}
 }
 
-func (o *Option) WithConfFileType(confFileType string) OptionFunc {
-	return func(cfg *Option) {
+func (o *option) WithConfFileType(confFileType string) Option {
+	return func(cfg *option) {
 		cfg.confFileType = confFileType
 	}
 }
 
-func (o *Option) WithAppendComponent(cpts ...Component) OptionFunc {
-	return func(cfg *Option) {
+func (o *option) WithAppendComponent(cpts ...Component) Option {
+	return func(cfg *option) {
 		cfg.cpts = append(cfg.cpts, cpts...)
 	}
 }
 
-func (o *Option) WithAppendServer(svcs ...Server) OptionFunc {
-	return func(cfg *Option) {
+func (o *option) WithAppendServer(svcs ...Server) Option {
+	return func(cfg *option) {
 		cfg.svcs = append(cfg.svcs, svcs...)
 	}
 }

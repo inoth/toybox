@@ -4,9 +4,9 @@ var (
 	default_name = "gin"
 )
 
-type OptionFunc func(*Option)
+type Option func(*option)
 
-type Option struct {
+type option struct {
 	name string
 
 	Port           string `toml:"port" json:"port"`
@@ -19,8 +19,8 @@ type Option struct {
 	Key  string `toml:"key" json:"key"`
 }
 
-func defaultOption() Option {
-	return Option{
+func defaultOption() option {
+	return option{
 		name:           default_name,
 		Port:           ":8080",
 		ReadTimeout:    10,
@@ -30,14 +30,40 @@ func defaultOption() Option {
 	}
 }
 
-func (o *Option) WithName(name string) OptionFunc {
-	return func(o *Option) {
+func (o *option) WithName(name string) Option {
+	return func(o *option) {
 		o.name = name
 	}
 }
 
-func (o *Option) WithPort(port string) OptionFunc {
-	return func(o *Option) {
+func (o *option) WithPort(port string) Option {
+	return func(o *option) {
 		o.Port = port
+	}
+}
+
+func (o *option) WithReadTimeout(readTimeout int) Option {
+	return func(o *option) {
+		o.ReadTimeout = readTimeout
+	}
+}
+
+func (o *option) WithWriteTimeout(writeTimeout int) Option {
+	return func(o *option) {
+		o.WriteTimeout = writeTimeout
+	}
+}
+
+func (o *option) WithMaxHeaderBytes(maxHeaderBytes int) Option {
+	return func(o *option) {
+		o.MaxHeaderBytes = maxHeaderBytes
+	}
+}
+
+func (o *option) WithTLS(tls bool, cert, key string) Option {
+	return func(o *option) {
+		o.TLS = tls
+		o.Cert = cert
+		o.Key = key
 	}
 }
