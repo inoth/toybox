@@ -1,0 +1,65 @@
+package http2gin
+
+import (
+	"github.com/gin-gonic/gin"
+	"golang.org/x/sync/singleflight"
+)
+
+var (
+	default_name = "gin"
+)
+
+type Option func(*Http2GinServer)
+
+func defaultOption() Http2GinServer {
+	return Http2GinServer{
+		name:   default_name,
+		ready:  true,
+		sfg:    singleflight.Group{},
+		engine: gin.New(),
+
+		Port:           ":8080",
+		ReadTimeout:    10,
+		WriteTimeout:   10,
+		MaxHeaderBytes: 10,
+		TLS:            false,
+	}
+}
+
+func WithName(name string) Option {
+	return func(o *Http2GinServer) {
+		o.name = name
+	}
+}
+
+func WithPort(port string) Option {
+	return func(o *Http2GinServer) {
+		o.Port = port
+	}
+}
+
+func WithReadTimeout(readTimeout int) Option {
+	return func(o *Http2GinServer) {
+		o.ReadTimeout = readTimeout
+	}
+}
+
+func WithWriteTimeout(writeTimeout int) Option {
+	return func(o *Http2GinServer) {
+		o.WriteTimeout = writeTimeout
+	}
+}
+
+func WithMaxHeaderBytes(maxHeaderBytes int) Option {
+	return func(o *Http2GinServer) {
+		o.MaxHeaderBytes = maxHeaderBytes
+	}
+}
+
+func WithTLS(cert, key string) Option {
+	return func(o *Http2GinServer) {
+		o.TLS = true
+		o.Cert = cert
+		o.Key = key
+	}
+}

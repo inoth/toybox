@@ -1,21 +1,9 @@
 package toybox
 
-type Option func(*option)
+type Option func(*ToyBox)
 
-type option struct {
-	env          string
-	confDir      string
-	confFileType string
-	conf         Conf
-
-	// 组件
-	cpts []Component
-	// 服务
-	svcs []Server
-}
-
-func defaultOption() option {
-	return option{
+func defaultOption() ToyBox {
+	return ToyBox{
 		confDir:      "config",
 		env:          "",
 		confFileType: "dev",
@@ -25,31 +13,19 @@ func defaultOption() option {
 }
 
 func WithEnv(env string) Option {
-	return func(cfg *option) {
+	return func(cfg *ToyBox) {
 		cfg.env = env
 	}
 }
 
 func WithConfDir(confDir string) Option {
-	return func(cfg *option) {
+	return func(cfg *ToyBox) {
 		cfg.confDir = confDir
 	}
 }
 
 func WithConfFileType(confFileType string) Option {
-	return func(cfg *option) {
+	return func(cfg *ToyBox) {
 		cfg.confFileType = confFileType
-	}
-}
-
-func WithAppendComponent(cpts ...Component) Option {
-	return func(cfg *option) {
-		cfg.cpts = append(cfg.cpts, cpts...)
-	}
-}
-
-func WithAppendServer(svcs ...Server) Option {
-	return func(cfg *option) {
-		cfg.svcs = append(cfg.svcs, svcs...)
 	}
 }

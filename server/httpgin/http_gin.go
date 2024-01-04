@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github/inoth/toybox"
 	"net/http"
 	"time"
 
@@ -12,24 +13,29 @@ import (
 )
 
 type HttpGinServer struct {
+	name   string
 	ready  bool
 	sfg    singleflight.Group
 	engine *gin.Engine
-	option
+
+	Port           string `toml:"port" json:"port"`
+	ReadTimeout    int    `toml:"read_timeout" json:"read_timeout"`
+	WriteTimeout   int    `toml:"write_timeout" json:"write_timeout"`
+	MaxHeaderBytes int    `toml:"max_header_bytes" json:"max_header_bytes"`
+
+	TLS  bool   `toml:"tls" json:"tls"`
+	Cert string `toml:"cert" json:"cert"`
+	Key  string `toml:"key" json:"key"`
 }
 
-func NewHttp(opts ...Option) *HttpGinServer {
-	o := defaultOption()
+func NewHttpGin(opts ...Option) toybox.Option {
+	hgs := defaultOption()
 	for _, opt := range opts {
-		opt(&o)
+		opt(&hgs)
 	}
-	hgs := HttpGinServer{
-		ready:  false,
-		sfg:    singleflight.Group{},
-		engine: gin.New(),
-		option: o,
+	return func(tb *toybox.ToyBox) {
+		tb.AppendServer(&hgs)
 	}
-	return &hgs
 }
 
 func (hgs *HttpGinServer) Ready() bool {

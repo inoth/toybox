@@ -10,30 +10,34 @@ import (
 )
 
 type ToyBox struct {
-	ctx context.Context
-	eg  *errgroup.Group
+	ctx          context.Context
+	eg           *errgroup.Group
+	env          string
+	confDir      string
+	confFileType string
 
-	option
+	cpts []Component
+
+	svcs []Server
 }
 
-func (tb *ToyBox) AppendComponent(cpts ...Component) {
+func (tb *ToyBox) AppendComponent(cpts ...Component) *ToyBox {
 	tb.cpts = append(tb.cpts, cpts...)
+	return tb
 }
 
-func (tb *ToyBox) AppendServer(svcs ...Server) {
+func (tb *ToyBox) AppendServer(svcs ...Server) *ToyBox {
 	tb.svcs = append(tb.svcs, svcs...)
+	return tb
 }
 
 func New(opts ...Option) *ToyBox {
-	o := defaultOption()
+	tb := defaultOption()
 	for _, opt := range opts {
-		opt(&o)
-	}
-	tb := &ToyBox{
-		option: o,
+		opt(&tb)
 	}
 	tb.eg, tb.ctx = errgroup.WithContext(context.Background())
-	return tb
+	return &tb
 }
 
 func (tb *ToyBox) initComponents() error {
@@ -59,12 +63,26 @@ func (tb *ToyBox) checkServers() error {
 
 func (tb *ToyBox) Run() error {
 	if err := tb.initComponents(); err != nil {
+		fmt.Printf("init component err: %v\n", err)
 		return err
 	}
 	if err := tb.checkServers(); err != nil {
+		fmt.Printf("check servers err: %v\n", err)
 		return err
 	}
 
+	for _, svc := range tb.svcs {
+		eg_svc := svc
+		tb.eg.Go(func() error {
+			return eg_svc.Run(tb.ctx)
+		})
+	}
+
+	err := tb.eg.Wait()
+	if err != nil {
+		fmt.Printf("RunServers Error: %v\n", err)
+		return err
+	}
 	internal.ListenSignal()
 	return nil
 }
