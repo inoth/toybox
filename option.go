@@ -24,31 +24,31 @@ func defaultOption() option {
 	}
 }
 
-func (o *option) WithEnv(env string) Option {
+func WithEnv(env string) Option {
 	return func(cfg *option) {
 		cfg.env = env
 	}
 }
 
-func (o *option) WithConfDir(confDir string) Option {
+func WithConfDir(confDir string) Option {
 	return func(cfg *option) {
 		cfg.confDir = confDir
 	}
 }
 
-func (o *option) WithConfFileType(confFileType string) Option {
+func WithConfFileType(confFileType string) Option {
 	return func(cfg *option) {
 		cfg.confFileType = confFileType
 	}
 }
 
-func (o *option) WithAppendComponent(cpts ...Component) Option {
+func WithAppendComponent(cpts ...Component) Option {
 	return func(cfg *option) {
 		cfg.cpts = append(cfg.cpts, cpts...)
 	}
 }
 
-func (o *option) WithAppendServer(svcs ...Server) Option {
+func WithAppendServer(svcs ...Server) Option {
 	return func(cfg *option) {
 		cfg.svcs = append(cfg.svcs, svcs...)
 	}
