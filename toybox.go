@@ -2,7 +2,6 @@ package toybox
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github/inoth/toybox/internal"
 
@@ -11,7 +10,7 @@ import (
 
 type ToyBox struct {
 	ctx          context.Context
-	eg           *errgroup.Group
+	cancel       func()
 	env          string
 	confDir      string
 	confFileType string
@@ -21,29 +20,25 @@ type ToyBox struct {
 	svcs []Server
 }
 
-func (tb *ToyBox) AppendComponent(cpts ...Component) *ToyBox {
-	tb.cpts = append(tb.cpts, cpts...)
-	return tb
-}
-
-func (tb *ToyBox) AppendServer(svcs ...Server) *ToyBox {
-	tb.svcs = append(tb.svcs, svcs...)
-	return tb
-}
-
 func New(opts ...Option) *ToyBox {
-	tb := defaultOption()
+	tb := ToyBox{
+		confDir:      "config",
+		env:          "",
+		confFileType: "",
+		cpts:         make([]Component, 0),
+		svcs:         make([]Server, 0),
+	}
 	for _, opt := range opts {
 		opt(&tb)
 	}
-	tb.eg, tb.ctx = errgroup.WithContext(context.Background())
+	tb.ctx, tb.cancel = context.WithCancel(context.Background())
 	return &tb
 }
 
 func (tb *ToyBox) initComponents() error {
 	for _, cpt := range tb.cpts {
 		if !cpt.Ready() {
-			return errors.New("components that are not yet ready")
+			return fmt.Errorf("components that are not yet ready")
 		}
 		if err := cpt.Init(tb.ctx); err != nil {
 			return fmt.Errorf("component init error: %w", err)
@@ -52,10 +47,14 @@ func (tb *ToyBox) initComponents() error {
 	return nil
 }
 
+func (tb *ToyBox) AppendComponent(cpts ...Component) { tb.cpts = append(tb.cpts, cpts...) }
+
+func (tb *ToyBox) AppendServer(svcs ...Server) { tb.svcs = append(tb.svcs, svcs...) }
+
 func (tb *ToyBox) checkServers() error {
 	for _, svc := range tb.svcs {
 		if !svc.Ready() {
-			return errors.New("servers that are not yet ready")
+			return fmt.Errorf("servers that are not yet ready")
 		}
 	}
 	return nil
@@ -71,16 +70,18 @@ func (tb *ToyBox) Run() error {
 		return err
 	}
 
+	eg, _ := errgroup.WithContext(tb.ctx)
+
 	for _, svc := range tb.svcs {
-		eg_svc := svc
-		tb.eg.Go(func() error {
-			return eg_svc.Run(tb.ctx)
+		svc := svc
+		eg.Go(func() error {
+			return svc.Run(tb.ctx)
 		})
 	}
 
-	err := tb.eg.Wait()
-	if err != nil {
-		fmt.Printf("RunServers Error: %v\n", err)
+	if err := eg.Wait(); err != nil {
+		tb.cancel()
+		fmt.Printf("run servers err: %v\n", err)
 		return err
 	}
 	internal.ListenSignal()

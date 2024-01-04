@@ -2,16 +2,6 @@ package toybox
 
 type Option func(*ToyBox)
 
-func defaultOption() ToyBox {
-	return ToyBox{
-		confDir:      "config",
-		env:          "",
-		confFileType: "dev",
-		cpts:         make([]Component, 0),
-		svcs:         make([]Server, 0),
-	}
-}
-
 func WithEnv(env string) Option {
 	return func(cfg *ToyBox) {
 		cfg.env = env
