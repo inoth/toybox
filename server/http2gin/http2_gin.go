@@ -35,8 +35,16 @@ func NewHttp2(opts ...Option) toybox.Option {
 	}
 }
 
-func (h2gs *Http2GinServer) Ready() bool {
+func (hgs *Http2GinServer) IsReady() {
+	hgs.ready = true
+}
+
+func (h2gs Http2GinServer) Ready() bool {
 	return h2gs.ready
+}
+
+func (h2gs Http2GinServer) Name() string {
+	return h2gs.name
 }
 
 func (h2gs *Http2GinServer) Run(ctx context.Context) error {

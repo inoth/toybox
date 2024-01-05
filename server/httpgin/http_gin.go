@@ -38,8 +38,16 @@ func NewHttpGin(opts ...Option) toybox.Option {
 	}
 }
 
-func (hgs *HttpGinServer) Ready() bool {
+func (hgs *HttpGinServer) IsReady() {
+	hgs.ready = true
+}
+
+func (hgs HttpGinServer) Ready() bool {
 	return hgs.ready
+}
+
+func (hgs HttpGinServer) Name() string {
+	return hgs.name
 }
 
 func (hgs *HttpGinServer) Run(ctx context.Context) error {

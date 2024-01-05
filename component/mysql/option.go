@@ -1,7 +1,5 @@
 package mysql
 
-import "github/inoth/toybox/conf"
-
 type Option func(*MysqlComponent)
 
 func defaultOption(name string) MysqlComponent {
@@ -22,12 +20,12 @@ func defaultOption(name string) MysqlComponent {
 	}
 }
 
-func SetConfig(cfg conf.Conf) Option {
-	return func(mc *MysqlComponent) {
-		err := cfg.Configuration(mc.name, mc)
-		if err != nil {
-			panic("failed to load configuration")
-		}
-		mc.ready = true
-	}
-}
+// func SetConfig(cfg toybox.Conf) Option {
+// 	return func(mc *MysqlComponent) {
+// 		// err := cfg.Configuration(mc.name, mc)
+// 		// if err != nil {
+// 		// 	panic("failed to load configuration")
+// 		// }
+// 		mc.ready = true
+// 	}
+// }
