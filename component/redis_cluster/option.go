@@ -1,4 +1,4 @@
-package redis
+package rediscluster
 
 import "github/inoth/toybox"
 
@@ -6,12 +6,12 @@ var (
 	default_name = "redis"
 )
 
-type Option func(*RedisComponent)
+type Option func(*RedisClusterComponent)
 
-func defaultOption() RedisComponent {
-	return RedisComponent{
+func defaultOption() RedisClusterComponent {
+	return RedisClusterComponent{
 		name:        default_name,
-		Addr:        "localhost:6379",
+		URLs:        make([]string, 0),
 		Password:    "",
 		PoolSize:    10,
 		PoolTimeout: 60,
@@ -19,15 +19,15 @@ func defaultOption() RedisComponent {
 }
 
 func SetName(name string) Option {
-	return func(mc *RedisComponent) {
+	return func(mc *RedisClusterComponent) {
 		mc.name = name
 	}
 }
 
 func SetConfig(cfg toybox.ConfigMate) Option {
-	return func(rc *RedisComponent) {
+	return func(rc *RedisClusterComponent) {
 		if err := cfg.PrimitiveDecodeComponent(rc); err != nil {
-			panic("failed to load redis configuration " + err.Error())
+			panic("failed to load redis cluster configuration " + err.Error())
 		}
 	}
 }

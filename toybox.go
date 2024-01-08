@@ -81,6 +81,14 @@ func (tb *ToyBox) Run() error {
 	for _, svc := range tb.svcs {
 		svc := svc
 		eg.Go(func() error {
+			// defer func() {
+			// 	if err := recover(); err != nil {
+			// 		tb.cancel()
+			// 		err := err.(error)
+			// 		fmt.Printf("server stop with err: %v\n", err.Error())
+			// 		os.Exit(1)
+			// 	}
+			// }()
 			return svc.Run(tb.ctx)
 		})
 	}

@@ -78,7 +78,7 @@ func GetDB(opts ...Option) (*gorm.DB, error) {
 	}
 
 	if !mc.Ready() {
-		return nil, fmt.Errorf("components not yet ready")
+		return nil, fmt.Errorf("components %s not yet ready", mc.name)
 	}
 
 	if conn, ok := mcMap.Load(mc.DbName); ok {

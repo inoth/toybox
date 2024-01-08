@@ -2,6 +2,7 @@ package main
 
 import (
 	"github/inoth/toybox"
+	"github/inoth/toybox/component/mysql"
 	"github/inoth/toybox/server/httpgin"
 
 	"github.com/gin-gonic/gin"
@@ -24,9 +25,9 @@ func main() {
 	// 	fmt.Println(v)
 	// }
 
-	// mysql.GetDB(mysql.SetConfig(toybox.GetConfMate()))
+	mysql.GetDB(mysql.SetConfig(toybox.GetConfMate()))
 
-	// mysql.GetDB(mysql.SetName("mysql2"), mysql.SetConfig(toybox.GetConfMate()))
+	mysql.GetDB(mysql.SetName("mysql2"), mysql.SetConfig(toybox.GetConfMate()))
 
 	tb.Run()
 }
