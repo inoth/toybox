@@ -12,11 +12,7 @@ type ConfWithToml struct {
 
 	mate      toml.MetaData
 	appConfig string
-	conf      struct {
-		Base      map[string]toml.Primitive `toml:"base"`
-		Component map[string]toml.Primitive `toml:"component"`
-		Server    map[string]toml.Primitive `toml:"server"`
-	}
+	conf      conf
 }
 
 func (conf ConfWithToml) Path() string {
@@ -43,7 +39,19 @@ func (conf *ConfWithToml) Decode() error {
 	return nil
 }
 
+func (conf *ConfWithToml) GetBaseConf() map[string]interface{} {
+	return conf.conf.Base
+}
+
 func (conf *ConfWithToml) PrimitiveDecodeComponent(cpts ...Component) error {
+	for i := 0; i < len(cpts); i++ {
+		if val, ok := conf.conf.Component[cpts[i].Name()]; ok {
+			if err := conf.mate.PrimitiveDecode(val, cpts[i]); err != nil {
+				return fmt.Errorf("%s -> PrimitiveDecode error: %v", cpts[i].Name(), err)
+			}
+			cpts[i].IsReady()
+		}
+	}
 	return nil
 }
 

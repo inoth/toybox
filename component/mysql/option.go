@@ -1,18 +1,21 @@
 package mysql
 
+import "github/inoth/toybox"
+
+const (
+	default_name = "mysql"
+)
+
 type Option func(*MysqlComponent)
 
-func defaultOption(name string) MysqlComponent {
-	if name == "" {
-		name = default_name
-	}
+func defaultOption() MysqlComponent {
 	return MysqlComponent{
-		name:            name,
+		name:            default_name,
 		Host:            "localhost",
 		Port:            3306,
 		User:            "root",
 		Passwd:          "",
-		DbName:          name,
+		DbName:          "mysql",
 		MaxIdleConns:    100,
 		MaxOpenConns:    100,
 		ConnMaxIdletime: 60,
@@ -20,12 +23,16 @@ func defaultOption(name string) MysqlComponent {
 	}
 }
 
-// func SetConfig(cfg toybox.Conf) Option {
-// 	return func(mc *MysqlComponent) {
-// 		// err := cfg.Configuration(mc.name, mc)
-// 		// if err != nil {
-// 		// 	panic("failed to load configuration")
-// 		// }
-// 		mc.ready = true
-// 	}
-// }
+func SetName(name string) Option {
+	return func(mc *MysqlComponent) {
+		mc.name = name
+	}
+}
+
+func SetConfig(cfg toybox.ConfigMate) Option {
+	return func(mc *MysqlComponent) {
+		if err := cfg.PrimitiveDecodeComponent(mc); err != nil {
+			panic("failed to load mysql configuration " + err.Error())
+		}
+	}
+}

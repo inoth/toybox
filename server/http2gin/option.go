@@ -1,6 +1,8 @@
 package http2gin
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"golang.org/x/sync/singleflight"
 )
@@ -57,6 +59,9 @@ func WithMaxHeaderBytes(maxHeaderBytes int) Option {
 }
 
 func WithTLS(cert, key string) Option {
+	if cert == "" || key == "" {
+		fmt.Println("WARN: the cert or key is not allowed to be empty.")
+	}
 	return func(o *Http2GinServer) {
 		o.TLS = true
 		o.Cert = cert

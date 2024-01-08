@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"github/inoth/toybox/util"
 	"strings"
-	"sync"
+
+	"github.com/BurntSushi/toml"
 )
 
 const (
@@ -14,7 +15,7 @@ const (
 )
 
 var (
-	conf = sync.Map{}
+	appconfig Conf
 )
 
 var (
@@ -30,6 +31,13 @@ type Conf interface {
 	Pattern() string
 	SetConfig(cfg string)
 	Decode() error
+	GetBaseConf() map[string]interface{}
+}
+
+type conf struct {
+	Base      map[string]interface{}    `toml:"base"`
+	Component map[string]toml.Primitive `toml:"component"`
+	Server    map[string]toml.Primitive `toml:"server"`
 }
 
 type ConfigMate interface {
@@ -43,38 +51,6 @@ type SetConfig struct {
 	FileType string
 }
 
-// type ConfWithYaml struct {
-// 	ConfDir string
-// 	Env     string
-// }
-
-// func (conf ConfWithYaml) Path() string {
-// 	if conf.Env != "" {
-// 		return conf.ConfDir + "/" + conf.Env + "/"
-// 	}
-// 	return conf.ConfDir + "/"
-// }
-
-// func (conf ConfWithYaml) Pattern() string {
-// 	return "*.yaml"
-// }
-
-// type ConfWithJson struct {
-// 	ConfDir string
-// 	Env     string
-// }
-
-// func (conf ConfWithJson) Path() string {
-// 	if conf.Env != "" {
-// 		return conf.ConfDir + "/" + conf.Env + "/"
-// 	}
-// 	return conf.ConfDir + "/"
-// }
-
-// func (conf ConfWithJson) Pattern() string {
-// 	return "*.json"
-// }
-
 func newConfig(cfgs ...SetConfig) Conf {
 	cfg := util.First(default_config, cfgs)
 	switch cfg.FileType {
@@ -83,16 +59,6 @@ func newConfig(cfgs ...SetConfig) Conf {
 			ConfDir: cfg.ConfDir,
 			Env:     cfg.Env,
 		}
-	// case Yaml:
-	// 	return &ConfWithYaml{
-	// 		ConfDir: cfg.ConfDir,
-	// 		Env:     cfg.Env,
-	// 	}
-	// case Json:
-	// 	return &ConfWithJson{
-	// 		ConfDir: cfg.ConfDir,
-	// 		Env:     cfg.Env,
-	// 	}
 	default:
 		panic("unknown file type")
 	}
@@ -122,8 +88,57 @@ func WithLoadConf(cfgs ...SetConfig) Option {
 	if err := cfg.Decode(); err != nil {
 		panic("parsing configuration err: " + err.Error())
 	}
+	appconfig = cfg
 
 	return func(tb *ToyBox) {
 		tb.mate = cfg.(ConfigMate)
 	}
+}
+
+func GetConfMate() ConfigMate {
+	if appconfig == nil {
+		return nil
+	}
+	return appconfig.(ConfigMate)
+}
+
+func GetString(key string) string {
+	if res, ok := util.GetStringValue(appconfig.GetBaseConf(), key); ok {
+		return res
+	}
+	return ""
+}
+
+func GetInt(key string) int {
+	if res, ok := util.GetIntValue(appconfig.GetBaseConf(), key); ok {
+		return res
+	}
+	return 0
+}
+
+func GetFloat(key string) float64 {
+	if res, ok := util.GetFloatValue(appconfig.GetBaseConf(), key); ok {
+		return res
+	}
+	return 0
+}
+
+func GetBool(key string) bool {
+	if res, ok := util.GetBoolValue(appconfig.GetBaseConf(), key); ok {
+		return res
+	}
+	return false
+}
+
+func GetStringSlice(key string) []string {
+	if res, ok := util.GetInterfaceSlice(appconfig.GetBaseConf(), key); ok {
+		r := make([]string, 0, len(res))
+		for _, rs := range res {
+			if val, ok := rs.(string); ok {
+				r = append(r, val)
+			}
+		}
+		return r
+	}
+	return nil
 }

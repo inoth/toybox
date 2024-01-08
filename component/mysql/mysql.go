@@ -10,17 +10,13 @@ import (
 	"gorm.io/gorm"
 )
 
-const (
-	default_name = "mysql"
-)
-
 var (
 	mcMap = sync.Map{}
 )
 
 type MysqlComponent struct {
-	ready bool
 	name  string
+	ready bool
 	db    *gorm.DB
 
 	Host            string `toml:"host" json:"host"`
@@ -34,8 +30,16 @@ type MysqlComponent struct {
 	ConnMaxLifetime int    `toml:"conn_max_lifetime" json:"conn_max_lifetime"`
 }
 
+func (mc MysqlComponent) Name() string {
+	return mc.name
+}
+
 func (mc MysqlComponent) Ready() bool {
 	return mc.ready
+}
+
+func (mc *MysqlComponent) IsReady() {
+	mc.ready = true
 }
 
 func (mc *MysqlComponent) Init(ctx context.Context) error {
@@ -67,14 +71,8 @@ func (mc *MysqlComponent) newDB() {
 	mc.db = client
 }
 
-func GetDB(dbName string, opts ...Option) (*gorm.DB, error) {
-	if conn, ok := mcMap.Load(dbName); ok {
-		if mc, ok := conn.(*MysqlComponent); ok {
-			return mc.db, nil
-		}
-	}
-
-	mc := defaultOption(dbName)
+func GetDB(opts ...Option) (*gorm.DB, error) {
+	mc := defaultOption()
 	for _, opt := range opts {
 		opt(&mc)
 	}
@@ -83,7 +81,13 @@ func GetDB(dbName string, opts ...Option) (*gorm.DB, error) {
 		return nil, fmt.Errorf("components not yet ready")
 	}
 
+	if conn, ok := mcMap.Load(mc.DbName); ok {
+		if mc, ok := conn.(*MysqlComponent); ok {
+			return mc.db, nil
+		}
+	}
+
 	mc.newDB()
-	mcMap.Store(dbName, &mc)
+	mcMap.Store(mc.DbName, &mc)
 	return mc.db, nil
 }
