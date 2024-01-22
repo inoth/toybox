@@ -1,0 +1,7 @@
+[server.gin]
+
+port = ":9978"
+
+read_timeout = 10
+write_timeout = 10
+max_header_bytes = 20

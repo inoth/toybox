@@ -1,0 +1,5 @@
+package toybox
+
+var (
+	Version = ""
+)

@@ -1,151 +1,100 @@
 package toybox
 
 import (
+	"context"
 	"fmt"
-	"os"
-	"strings"
-	"sync"
 
-	"github.com/inoth/toybox/common/signal"
-	"github.com/inoth/toybox/component"
 	"github.com/inoth/toybox/internal"
-	"github.com/inoth/toybox/server"
-)
+	"github.com/inoth/toybox/util"
 
-var (
-	Toml = "toml"
-	Yaml = "yaml"
-	Json = "json"
+	"golang.org/x/sync/errgroup"
 )
 
 type ToyBox struct {
-	cfgPath   string
-	cfgType   string
-	cfgSource string //local || http
+	id     string
+	ctx    context.Context
+	cancel func()
+	mate   ConfigMate
 
-	componentMap map[string]struct{}
-	components   []component.Component
-	servers      []server.Server
+	cpts []Component
+	svcs []Server
 }
-
-type Option func(tb *ToyBox)
 
 func New(opts ...Option) *ToyBox {
-	tb := &ToyBox{
-		cfgPath:      "config/",
-		cfgType:      Toml,
-		componentMap: make(map[string]struct{}),
+	tb := ToyBox{
+		id:   util.UUID(),
+		cpts: make([]Component, 0),
+		svcs: make([]Server, 0),
 	}
 	for _, opt := range opts {
-		opt(tb)
+		opt(&tb)
 	}
-	return tb
+	tb.ctx, tb.cancel = context.WithCancel(context.Background())
+	return &tb
 }
 
-func (tb *ToyBox) init() error {
-	cfgByte, err := tb.readFile(Toml)
-	if err != nil {
-		return fmt.Errorf("failed to load configuration: %v", err)
-	}
-	err = tb.resolveConfig(cfgByte)
-	if err != nil {
-		return fmt.Errorf("failed to resolve configuration: %v", err)
+func (tb ToyBox) ID() string {
+	return tb.id
+}
+
+func (tb *ToyBox) initComponents() error {
+	for _, cpt := range tb.cpts {
+		if !cpt.Ready() {
+			return fmt.Errorf("components that are not yet ready")
+		}
+		if err := cpt.Init(tb.ctx); err != nil {
+			return fmt.Errorf("component init error: %w", err)
+		}
 	}
 	return nil
 }
 
-func (tb *ToyBox) Run() {
-	err := tb.init()
-	if err != nil {
-		panic(err)
-	}
+func (tb *ToyBox) AppendComponent(cpts ...Component) { tb.cpts = append(tb.cpts, cpts...) }
 
-	tb.initComponents()
+func (tb *ToyBox) AppendServer(svcs ...Server) { tb.svcs = append(tb.svcs, svcs...) }
 
-	// 加载服务信息
-	err = tb.loadServers()
-	if err != nil {
-		panic(err)
-	}
-
-	for _, svc := range tb.servers {
-		go func(svc server.Server) {
-			fmt.Printf("server %v is up and running\n", svc.Name())
-			err := svc.Start()
-			if err != nil {
-				panic(fmt.Sprintf("%v service has an exception: %v\n", svc.Name(), err))
-			}
-		}(svc)
-	}
-
-	// 之后再使用监听信号阻塞主进程
-	signal.ListenSignal()
-}
-
-func (tb *ToyBox) initComponents() {
-	var wg sync.WaitGroup
-	for _, comp := range tb.components {
-		wg.Add(1)
-		go func(comp component.Component) {
-			defer wg.Done()
-
-			err := comp.Init()
-			if err != nil {
-				panic(fmt.Sprintf("component initialization failed: %v", err))
-			}
-			tb.componentMap[comp.Name()] = struct{}{}
-		}(comp)
-	}
-	wg.Wait()
-}
-
-func (tb *ToyBox) loadServers() error {
-	if len(server.Servers) <= 0 {
-		return fmt.Errorf("no available services found")
-	}
-	for _, svc := range server.Servers {
-		server := svc()
-		b := true
-		for _, requir := range server.RequiredComponent() {
-			if _, ok := tb.componentMap[requir]; !ok {
-				b = false
-			}
+func (tb *ToyBox) checkServers() error {
+	for _, svc := range tb.svcs {
+		if !svc.Ready() {
+			return fmt.Errorf("servers that are not yet ready")
 		}
-		if !b {
-			return fmt.Errorf("service %v missing essential components: %v", server.Name(), server.RequiredComponent())
-		}
-		tb.servers = append(tb.servers, server)
 	}
 	return nil
 }
 
-func (tb *ToyBox) readFile(fileType string) ([]byte, error) {
-	dev := os.Getenv("GORUNEVN")
-	if dev == "dev" || dev == "debug" {
-		tb.cfgPath = tb.cfgPath + "/" + dev
-	} else {
-		tb.cfgPath = tb.cfgPath + "/prod"
+func (tb *ToyBox) Run() error {
+	if err := tb.mate.PrimitiveDecodeComponent(tb.cpts...); err != nil {
+		fmt.Printf("load component config err: %v\n", err)
+		return err
 	}
-	files, err := internal.WalkPath(tb.cfgPath)
-	if err != nil {
-		return nil, err
+	if err := tb.mate.PrimitiveDecodeServer(tb.svcs...); err != nil {
+		fmt.Printf("load server config err: %v\n", err)
+		return err
 	}
-	var (
-		cfgTmp  []byte
-		cfgByte []byte
-	)
-	for _, file := range files {
-		fileSlice := strings.Split(file, ".")
-		cfgType := fileSlice[len(fileSlice)-1]
-		if cfgType != Toml {
-			continue
-		}
-		cfgTmp, err = os.ReadFile(file)
-		if err != nil {
-			return nil, fmt.Errorf("读取配置文件失败,Err:%s", err.Error())
-		}
-		cfgByte = append(cfgByte, []byte("\n")...)
-		cfgByte = append(cfgByte, cfgTmp...)
+
+	if err := tb.initComponents(); err != nil {
+		fmt.Printf("init component err: %v\n", err)
+		return err
 	}
-	return cfgByte, nil
+	if err := tb.checkServers(); err != nil {
+		fmt.Printf("check servers err: %v\n", err)
+		return err
+	}
+
+	eg, _ := errgroup.WithContext(tb.ctx)
+
+	for _, svc := range tb.svcs {
+		svc := svc
+		eg.Go(func() error {
+			return svc.Run(tb.ctx)
+		})
+	}
+
+	if err := eg.Wait(); err != nil {
+		tb.cancel()
+		fmt.Printf("run servers err: %v\n", err)
+		return err
+	}
+	internal.ListenSignal()
+	return nil
 }

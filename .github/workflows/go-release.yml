@@ -1,0 +1,64 @@
+name: Toybox Release
+
+on:
+  push:
+    # branches:
+    #   - release
+    tags:
+      - 'v*'
+  workflow_dispatch:    
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        go: [1.21.x]
+    name: Go Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v4.0.1
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Setup Environment
+        run: |
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: Module Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go
+
+      - name: Build Toybox
+        run: go build -v -ldflags="-X 'toybox.Version=${{ github.ref }}'" ./...
+      
+      - name: Create Github Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name:     ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft:        false
+          prerelease:   true
+      
+      - name: Upload Release Asset
+        id:   upload-release-asset
+        uses: alexellis/upload-assets@0.2.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          asset_paths: '["./bin/toybox*"]'
