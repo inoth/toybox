@@ -44,6 +44,12 @@ func UUID() string {
 	return uuid.New().String()
 }
 
+func UUID16() string {
+	uuidStr := uuid.New().String()
+	uuidStr = strings.ReplaceAll(uuidStr, "-", "")
+	return uuidStr[0:16]
+}
+
 func RandStr(ns ...int) string {
 	n := First(16, ns)
 	sb := strings.Builder{}

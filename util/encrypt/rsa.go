@@ -1,19 +1,14 @@
-package util
+package encrypt
 
 import (
-	"crypto/md5"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
-	"encoding/hex"
 	"encoding/pem"
 	"fmt"
-)
 
-func EncryptMd5(str string) string {
-	hash := md5.Sum([]byte(str))
-	return hex.EncodeToString(hash[:])
-}
+	"github.com/inoth/toybox/util"
+)
 
 func parsePrivateKey(privateKeyStr string) (*rsa.PrivateKey, error) {
 	block, _ := pem.Decode([]byte(privateKeyStr))
@@ -72,7 +67,7 @@ func DecryptRSA(privateKey string, encryptedData []byte) ([]byte, error) {
 }
 
 func EncryptRSAFile(pubKeyPath string, data []byte) ([]byte, error) {
-	publicKey, err := ReadFile(pubKeyPath)
+	publicKey, err := util.ReadFile(pubKeyPath)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +79,7 @@ func EncryptRSAFile(pubKeyPath string, data []byte) ([]byte, error) {
 }
 
 func DecryptRSAFile(privKeyPath string, encryptedData []byte) ([]byte, error) {
-	privateKey, err := ReadFile(privKeyPath)
+	privateKey, err := util.ReadFile(privKeyPath)
 	if err != nil {
 		return nil, err
 	}

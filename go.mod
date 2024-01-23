@@ -19,6 +19,7 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/go-resty/resty/v2 v2.11.0 // indirect
 	github.com/go-sql-driver/mysql v1.7.0 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
@@ -55,6 +56,6 @@ require (
 )
 
 retract (
-    [v0.0.1, v0.9.9]
-    [v1.0.0, v1.9.9]
+	[v1.0.0, v1.9.9]
+	[v0.0.1, v0.9.9]
 )
