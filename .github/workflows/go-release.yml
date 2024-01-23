@@ -42,7 +42,8 @@ jobs:
             ${{ runner.os }}-go
 
       - name: Build Toybox
-        run: go build -v -ldflags="-X 'toybox.Version=${{ github.ref }}'" ./...
+        # run: go build -v -ldflags="-X 'toybox.Version=${{ github.ref }}'" ./...
+        run: go build -v ./...
       
       - name: Create Github Release
         id: create_release
