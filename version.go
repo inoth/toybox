@@ -1,5 +1,3 @@
 package toybox
 
-var (
-	Version = ""
-)
+const Version = "v1.2.0"

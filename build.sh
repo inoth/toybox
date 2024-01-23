@@ -104,6 +104,10 @@ tag() {
         echo "tag $tag_name already exists, please choose a new tag"
         exit 1
     fi
+
+    sed -E -i "s/v[0-9]\.[0-9]\.[0-9]/$tag_name/g" ./version.go
+    sync
+
     echo "create $tag_name..."
     git tag -a $tag_name -m "release $tag_name"
     git push origin $tag_name
