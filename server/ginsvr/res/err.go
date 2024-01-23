@@ -24,6 +24,16 @@ func ErrParams(c *gin.Context, msg ...string) {
 	rb.result(c)
 }
 
+func ErrParamsWithErr(c *gin.Context, data ...interface{}) {
+	rb := ResultBody{
+		TraceId: c.GetHeader("TraceId"),
+		Ret:     InvalidParameter,
+		Msg:     "InvalidParameter",
+		Data:    util.First(nil, data),
+	}
+	rb.result(c)
+}
+
 func ErrParamsMissing(c *gin.Context, msg ...string) {
 	rb := ResultBody{
 		TraceId: c.GetHeader("TraceId"),

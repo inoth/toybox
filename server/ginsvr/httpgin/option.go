@@ -2,6 +2,7 @@ package httpgin
 
 import (
 	"github.com/inoth/toybox/server/ginsvr"
+	"github.com/inoth/toybox/server/ginsvr/validators"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/sync/singleflight"
@@ -76,5 +77,11 @@ func WithMiddleware(mids ...gin.HandlerFunc) Option {
 func WithHandlers(cols ...ginsvr.Handler) Option {
 	return func(hgs *HttpGinServer) {
 		hgs.handlers = append(hgs.handlers, cols...)
+	}
+}
+
+func WithValidator(valid ...validators.Validator) Option {
+	return func(hgs *HttpGinServer) {
+		hgs.validator = append(hgs.validator, valid...)
 	}
 }
