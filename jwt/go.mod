@@ -1,8 +1,8 @@
-module github.com/inoth/toybox/util/jwt
+module github.com/inoth/toybox/jwt
 
 go 1.21.6
 
-replace github.com/inoth/toybox => ../../
+replace github.com/inoth/toybox => ../
 
 require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
