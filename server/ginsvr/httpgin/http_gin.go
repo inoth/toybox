@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	valid "github.com/go-playground/validator/v10"
-	zhs "github.com/go-playground/validator/v10/translations/zh"
+	"github.com/go-playground/validator/v10"
+	"github.com/go-playground/validator/v10/translations/zh"
 	"github.com/inoth/toybox"
 	"github.com/inoth/toybox/server/ginsvr"
-	"github.com/inoth/toybox/server/ginsvr/validators"
+	"github.com/inoth/toybox/server/ginsvr/validaton"
 	"github.com/pkg/errors"
 
 	"github.com/gin-gonic/gin"
@@ -27,7 +27,7 @@ type HttpGinServer struct {
 	sfg       singleflight.Group
 	engine    *gin.Engine
 	handlers  []ginsvr.Handler
-	validator []validators.Validator
+	validator []validaton.Validaton
 
 	Port           string `toml:"port" json:"port"`
 	ReadTimeout    int    `toml:"read_timeout" json:"read_timeout"`
@@ -116,15 +116,12 @@ func (hgs *HttpGinServer) loadRouter() {
 }
 
 func (hgs *HttpGinServer) loadValidation() error {
-	// translator := zh.New()
-	// uni := ut.New(translator)
-	// trans, _ := uni.GetTranslator("zh")
-	trans := validators.GetTranslator()
-	validate, ok := binding.Validator.Engine().(*valid.Validate)
+	trans := validaton.GetTranslator()
+	validate, ok := binding.Validator.Engine().(*validator.Validate)
 	if !ok {
 		return fmt.Errorf("failed to get validator engine")
 	}
-	_ = zhs.RegisterDefaultTranslations(validate, trans)
+	_ = zh.RegisterDefaultTranslations(validate, trans)
 	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
 		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
 		if name == "-" {

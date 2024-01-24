@@ -4,8 +4,9 @@ import (
 	"errors"
 
 	"github.com/inoth/toybox/component/logger"
+	"github.com/inoth/toybox/server/ginsvr"
 	"github.com/inoth/toybox/server/ginsvr/httpgin"
-	"github.com/inoth/toybox/server/ginsvr/validators"
+	"github.com/inoth/toybox/server/ginsvr/validaton"
 
 	"github.com/inoth/toybox/server/ginsvr/res"
 
@@ -31,9 +32,15 @@ func WithUserRouter() httpgin.Option {
 			})
 		}
 		hgs.POST("", func(ctx *gin.Context) {
-			var user RequestUser
-			if err := ctx.BindJSON(&user); err != nil {
-				res.ErrParamsWithErr(ctx, validators.ValidatorTranslate(err))
+			// var user RequestUser
+			// if err := ctx.ShouldBindJSON(&user); err != nil {
+			// 	res.ErrParamsWithErr(ctx, validaton.ValidatorTranslate(err))
+			// 	return
+			// }
+			user, ok := ginsvr.ParseJsonParam[RequestUser](ctx, func(ctx *gin.Context, err error) {
+				res.ErrParamsWithErr(ctx, validaton.ValidatorTranslate(err))
+			})
+			if !ok {
 				return
 			}
 			res.Ok(ctx, "user", &user)

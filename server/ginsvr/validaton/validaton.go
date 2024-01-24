@@ -1,4 +1,4 @@
-package validators
+package validaton
 
 import (
 	"strings"
@@ -12,17 +12,17 @@ var (
 	trans ut.Translator
 )
 
-type Validator interface {
+type Validaton interface {
 	Tag() string
 	Validation() validator.Func
 	RegisterTranslations() validator.RegisterTranslationsFunc
 	Translation() validator.TranslationFunc
 }
 
-type RegisterTranslationsFunc func(string) validator.RegisterTranslationsFunc
-type TranslationFunc func(string) validator.TranslationFunc
+type RegisterTranslationsFunc func(Validaton) validator.RegisterTranslationsFunc
+type TranslationFunc func(Validaton) validator.TranslationFunc
 
-type validators struct {
+type validaton struct {
 	tag string
 
 	validFunc   validator.Func
@@ -30,28 +30,33 @@ type validators struct {
 	tranFunc    validator.TranslationFunc
 }
 
-func NewValidator(tag string, validFunc validator.Func, regTranFunc validator.RegisterTranslationsFunc, tranFunc validator.TranslationFunc) Validator {
-	return &validators{
-		tag:         tag,
-		validFunc:   validFunc,
-		regTranFunc: regTranFunc,
-		tranFunc:    tranFunc,
+func NewValidator(tag string, validFunc validator.Func, regTranFunc RegisterTranslationsFunc, tranFunc TranslationFunc) Validaton {
+	valid := validaton{
+		tag:       tag,
+		validFunc: validFunc,
 	}
+	if regTranFunc != nil {
+		valid.regTranFunc = regTranFunc(&valid)
+	}
+	if tranFunc != nil {
+		valid.tranFunc = tranFunc(&valid)
+	}
+	return &valid
 }
 
-func (v validators) Tag() string {
+func (v validaton) Tag() string {
 	return v.tag
 }
 
-func (v *validators) Validation() validator.Func {
+func (v validaton) Validation() validator.Func {
 	return v.validFunc
 }
 
-func (v *validators) RegisterTranslations() validator.RegisterTranslationsFunc {
+func (v validaton) RegisterTranslations() validator.RegisterTranslationsFunc {
 	return v.regTranFunc
 }
 
-func (v *validators) Translation() validator.TranslationFunc {
+func (v validaton) Translation() validator.TranslationFunc {
 	return v.tranFunc
 }
 
