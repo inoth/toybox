@@ -17,7 +17,7 @@ func main() {
 		httpgin.NewHttpGin(func(hgs *httpgin.HttpGinServer) {
 			hgs.Use(ginsvr.Recovery())
 		}, router.WithUserRouter(),
-			httpgin.WithValidator(validaton.PhoneValidate),
+			httpgin.WithValidator(validaton.PhoneValidate, validaton.EmailValidate),
 		),
 	)
 	if err := tb.Run(); err != nil {

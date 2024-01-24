@@ -14,7 +14,7 @@ import (
 )
 
 type RequestUser struct {
-	Phone string `json:"phone" binding:"phoneValidate"`
+	Phone string `json:"phone" binding:"emailValidate"`
 }
 
 func WithUserRouter() httpgin.Option {
