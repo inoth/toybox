@@ -5,22 +5,30 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"reflect"
+	"strings"
 	"time"
 
+	"github.com/go-playground/validator/v10"
+	"github.com/go-playground/validator/v10/translations/zh"
 	"github.com/inoth/toybox"
 	"github.com/inoth/toybox/server/ginsvr"
+	"github.com/inoth/toybox/server/ginsvr/validaton"
+	"github.com/pkg/errors"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"golang.org/x/net/http2"
 	"golang.org/x/sync/singleflight"
 )
 
 type Http2GinServer struct {
-	name     string
-	ready    bool
-	sfg      singleflight.Group
-	engine   *gin.Engine
-	handlers []ginsvr.Handler
+	name      string
+	ready     bool
+	sfg       singleflight.Group
+	engine    *gin.Engine
+	handlers  []ginsvr.Handler
+	validator []validaton.Validaton
 
 	Port           string `toml:"port" json:"port"`
 	ReadTimeout    int    `toml:"read_timeout" json:"read_timeout"`
@@ -60,6 +68,12 @@ func (h2gs *Http2GinServer) Run(ctx context.Context) error {
 	}
 	if !h2gs.TLS || h2gs.Cert == "" || h2gs.Key == "" {
 		return fmt.Errorf("server %s must be config with tls", h2gs.name)
+	}
+
+	h2gs.loadRouter()
+
+	if err := h2gs.loadValidation(); err != nil {
+		return errors.Wrap(err, "load validation")
 	}
 
 	http2svc := &http2.Server{}
@@ -105,6 +119,31 @@ func (hgs *Http2GinServer) loadRouter() {
 			)
 		}
 	}
+}
+
+func (hgs *Http2GinServer) loadValidation() error {
+	trans := validaton.GetTranslator()
+	validate, ok := binding.Validator.Engine().(*validator.Validate)
+	if !ok {
+		return fmt.Errorf("failed to get validator engine")
+	}
+	_ = zh.RegisterDefaultTranslations(validate, trans)
+	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+		if name == "-" {
+			return ""
+		}
+		return name
+	})
+	for _, valid := range hgs.validator {
+		if valid.Validation() != nil {
+			validate.RegisterValidation(valid.Tag(), valid.Validation())
+		}
+		if valid.RegisterTranslations() != nil && valid.Translation() != nil {
+			validate.RegisterTranslation(valid.Tag(), trans, valid.RegisterTranslations(), valid.Translation())
+		}
+	}
+	return nil
 }
 
 func (hgs *Http2GinServer) Engine() *gin.Engine {

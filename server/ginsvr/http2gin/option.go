@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/inoth/toybox/server/ginsvr"
+	"github.com/inoth/toybox/server/ginsvr/validaton"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/sync/singleflight"
@@ -80,5 +81,11 @@ func WithMiddleware(mids ...gin.HandlerFunc) Option {
 func WithHandlers(cols ...ginsvr.Handler) Option {
 	return func(hgs *Http2GinServer) {
 		hgs.handlers = append(hgs.handlers, cols...)
+	}
+}
+
+func WithValidator(valid ...validaton.Validaton) Option {
+	return func(hgs *Http2GinServer) {
+		hgs.validator = append(hgs.validator, valid...)
 	}
 }
