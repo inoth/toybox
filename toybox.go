@@ -33,7 +33,7 @@ func New(opts ...Option) *ToyBox {
 	return &tb
 }
 
-func (tb ToyBox) ID() string {
+func (tb *ToyBox) ID() string {
 	return tb.id
 }
 

@@ -53,11 +53,11 @@ func (hgs *HttpGinServer) IsReady() {
 	hgs.ready = true
 }
 
-func (hgs HttpGinServer) Ready() bool {
+func (hgs *HttpGinServer) Ready() bool {
 	return hgs.ready
 }
 
-func (hgs HttpGinServer) Name() string {
+func (hgs *HttpGinServer) Name() string {
 	return hgs.name
 }
 

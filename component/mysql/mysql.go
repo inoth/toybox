@@ -30,11 +30,11 @@ type MysqlComponent struct {
 	ConnMaxLifetime int    `toml:"conn_max_lifetime" json:"conn_max_lifetime"`
 }
 
-func (mc MysqlComponent) Name() string {
+func (mc *MysqlComponent) Name() string {
 	return mc.name
 }
 
-func (mc MysqlComponent) Ready() bool {
+func (mc *MysqlComponent) Ready() bool {
 	return mc.ready
 }
 

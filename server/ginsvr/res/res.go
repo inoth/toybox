@@ -26,7 +26,7 @@ type ResultBody struct {
 	Data    interface{} `json:"data,omitempty"`
 }
 
-func (rb ResultBody) result(c *gin.Context) {
+func (rb *ResultBody) result(c *gin.Context) {
 	c.JSON(http.StatusOK, rb)
 }
 

@@ -88,11 +88,11 @@ func (ws *WebsocketServer) IsReady() {
 	ws.ready = true
 }
 
-func (ws WebsocketServer) Ready() bool {
+func (ws *WebsocketServer) Ready() bool {
 	return ws.ready
 }
 
-func (ws WebsocketServer) Name() string {
+func (ws *WebsocketServer) Name() string {
 	return ws.name
 }
 

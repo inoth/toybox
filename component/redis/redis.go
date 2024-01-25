@@ -27,11 +27,11 @@ type RedisComponent struct {
 	PoolTimeout int    `toml:"pool_timeout" json:"pool_timeout"`
 }
 
-func (rds RedisComponent) Name() string {
+func (rds *RedisComponent) Name() string {
 	return rds.name
 }
 
-func (rds RedisComponent) Ready() bool {
+func (rds *RedisComponent) Ready() bool {
 	return rds.ready
 }
 

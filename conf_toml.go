@@ -15,14 +15,14 @@ type ConfWithToml struct {
 	conf      conf
 }
 
-func (conf ConfWithToml) Path() string {
+func (conf *ConfWithToml) Path() string {
 	if conf.Env != "" {
 		return conf.ConfDir + "/" + conf.Env + "/"
 	}
 	return conf.ConfDir + "/"
 }
 
-func (conf ConfWithToml) Pattern() string {
+func (conf *ConfWithToml) Pattern() string {
 	return "*.toml"
 }
 

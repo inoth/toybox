@@ -54,11 +54,11 @@ func (hgs *Http2GinServer) IsReady() {
 	hgs.ready = true
 }
 
-func (h2gs Http2GinServer) Ready() bool {
+func (h2gs *Http2GinServer) Ready() bool {
 	return h2gs.ready
 }
 
-func (h2gs Http2GinServer) Name() string {
+func (h2gs *Http2GinServer) Name() string {
 	return h2gs.name
 }
 

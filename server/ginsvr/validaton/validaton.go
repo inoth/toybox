@@ -44,19 +44,19 @@ func NewValidator(tag string, validFunc validator.Func, regTranFunc RegisterTran
 	return &valid
 }
 
-func (v validaton) Tag() string {
+func (v *validaton) Tag() string {
 	return v.tag
 }
 
-func (v validaton) Validation() validator.Func {
+func (v *validaton) Validation() validator.Func {
 	return v.validFunc
 }
 
-func (v validaton) RegisterTranslations() validator.RegisterTranslationsFunc {
+func (v *validaton) RegisterTranslations() validator.RegisterTranslationsFunc {
 	return v.regTranFunc
 }
 
-func (v validaton) Translation() validator.TranslationFunc {
+func (v *validaton) Translation() validator.TranslationFunc {
 	return v.tranFunc
 }
 

@@ -25,7 +25,7 @@ func GetLogger(cfg ...LoggerConfig) *Logger {
 	return logger
 }
 
-func (l Logger) Debug(msg string) {
+func (l *Logger) Debug(msg string) {
 	if log == nil {
 		return
 	}
@@ -35,7 +35,7 @@ func (l Logger) Debug(msg string) {
 	)
 }
 
-func (l Logger) Info(msg string) {
+func (l *Logger) Info(msg string) {
 	if log == nil {
 		return
 	}
@@ -45,7 +45,7 @@ func (l Logger) Info(msg string) {
 	)
 }
 
-func (l Logger) Warn(msg string) {
+func (l *Logger) Warn(msg string) {
 	if log == nil {
 		return
 	}
@@ -55,7 +55,7 @@ func (l Logger) Warn(msg string) {
 	)
 }
 
-func (l Logger) Error(msg string) {
+func (l *Logger) Error(msg string) {
 	if log == nil {
 		return
 	}

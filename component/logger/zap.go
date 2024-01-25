@@ -32,11 +32,11 @@ type ZapComponent struct {
 	Json      bool   `toml:"json"`
 }
 
-func (zc ZapComponent) Name() string {
+func (zc *ZapComponent) Name() string {
 	return zc.name
 }
 
-func (zc ZapComponent) Ready() bool {
+func (zc *ZapComponent) Ready() bool {
 	return zc.ready
 }
 
