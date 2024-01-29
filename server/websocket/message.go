@@ -1,7 +1,5 @@
 package websocket
 
-// type MessageHandle interface {}
-
 type MessageHandleFunc func(ctx *Context)
 
 func defaultMessageHandle(c *Context) {

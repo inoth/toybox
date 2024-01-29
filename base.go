@@ -1,6 +1,6 @@
 package toybox
 
-type toyboxBase interface {
+type base interface {
 	Name() string
 	Ready() bool
 	IsReady()

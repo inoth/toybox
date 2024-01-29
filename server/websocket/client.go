@@ -69,7 +69,7 @@ func (c *Client) read(ctx context.Context) {
 	c.conn.SetReadLimit(c.hub.MaxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(c.hub.PongWait))
 	c.conn.SetPongHandler(func(string) error {
-		c.conn.SetReadDeadline(time.Now().Add((c.hub.PongWait)))
+		c.conn.SetReadDeadline(time.Now().Add(c.hub.PongWait))
 		return nil
 	})
 	for {

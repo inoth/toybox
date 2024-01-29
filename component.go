@@ -3,6 +3,6 @@ package toybox
 import "context"
 
 type Component interface {
-	toyboxBase
+	base
 	Init(ctx context.Context) error
 }

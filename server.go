@@ -3,6 +3,6 @@ package toybox
 import "context"
 
 type Server interface {
-	toyboxBase
+	base
 	Run(ctx context.Context) error
 }
