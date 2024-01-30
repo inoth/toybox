@@ -69,7 +69,7 @@ func (pm *Prometheus) Name() string {
 
 func (pm *Prometheus) register() error {
 	for _, item := range pm.Metrics {
-		col := item.initMetric(pm.Subsystem, pm.Namespace)
+		col := item.init(pm.Subsystem, pm.Namespace)
 		if _, ok := pm.collectors[item.Name]; !ok {
 			if pm.reg != nil {
 				if err := pm.reg.Register(col); err != nil {

@@ -13,7 +13,7 @@ type Metric struct {
 	Buckets []float64 `toml:"buckets"`
 }
 
-func (m *Metric) initMetric(subsystem, namespace string) prometheus.Collector {
+func (m *Metric) init(subsystem, namespace string) prometheus.Collector {
 	var collector prometheus.Collector
 	switch m.Type {
 	case Counter:
