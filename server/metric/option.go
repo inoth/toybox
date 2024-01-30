@@ -1,6 +1,9 @@
 package metric
 
-import "github.com/prometheus/client_golang/prometheus"
+import (
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
+)
 
 var (
 	default_name = "metric"
@@ -51,5 +54,18 @@ func WithSubsystem(subsystem string) Option {
 func WithPort(port string) Option {
 	return func(pm *Prometheus) {
 		pm.Port = port
+	}
+}
+
+func WithNewRegistry() Option {
+	return func(pm *Prometheus) {
+		if pm.reg != nil {
+			return
+		}
+		pm.reg = prometheus.NewRegistry()
+		pm.reg.MustRegister(
+			collectors.NewGoCollector(),
+			collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
+		)
 	}
 }

@@ -16,6 +16,7 @@ func main() {
 		toybox.WithLoadConf(),
 		logger.WithLogger(),
 		metric.NewPrometheus(
+			metric.WithNewRegistry(),
 		// metric.WithNamespace("test"),
 		// metric.WithSubsystem("test"),
 		// metric.WithMetrics(

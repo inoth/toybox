@@ -33,6 +33,7 @@ var (
 type Prometheus struct {
 	ready      bool
 	name       string
+	reg        *prometheus.Registry
 	collectors map[string]prometheus.Collector
 
 	Port      string   `toml:"port"`
@@ -70,11 +71,16 @@ func (pm *Prometheus) register() error {
 	for _, item := range pm.Metrics {
 		col := item.initMetric(pm.Subsystem, pm.Namespace)
 		if _, ok := pm.collectors[item.Name]; !ok {
-			pm.collectors[item.Name] = col
-
-			if err := prometheus.Register(col); err != nil {
-				return errors.Wrap(err, "register initMetric err")
+			if pm.reg != nil {
+				if err := pm.reg.Register(col); err != nil {
+					return errors.Wrap(err, "register metric err")
+				}
+			} else {
+				if err := prometheus.Register(col); err != nil {
+					return errors.Wrap(err, "register metric err")
+				}
 			}
+			pm.collectors[item.Name] = col
 		}
 	}
 	return nil
@@ -88,10 +94,13 @@ func (pm *Prometheus) Run(ctx context.Context) error {
 	if err := pm.register(); err != nil {
 		return err
 	}
-
-	http.Handle("/metrics", promhttp.Handler())
+	if pm.reg != nil {
+		http.Handle("/metrics", promhttp.HandlerFor(pm.reg, promhttp.HandlerOpts{Registry: pm.reg}))
+	} else {
+		http.Handle("/metrics", promhttp.Handler())
+	}
 	if err := http.ListenAndServe(pm.Port, nil); err != nil {
-		return errors.Wrap(err, "run ListenAndServe err")
+		return errors.Wrap(err, "run metric server err")
 	}
 	return nil
 }
