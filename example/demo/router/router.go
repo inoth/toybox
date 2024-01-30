@@ -8,6 +8,7 @@ import (
 	"github.com/inoth/toybox/server/ginsvr/httpgin"
 	"github.com/inoth/toybox/server/ginsvr/validaton"
 	"github.com/inoth/toybox/server/metric"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/inoth/toybox/server/ginsvr/res"
 
@@ -33,14 +34,17 @@ func WithUserRouter() httpgin.Option {
 			})
 		}
 		hgs.GET("", func(c *gin.Context) {
-			if requests_total := metric.GetCounterVec("requests_total"); requests_total != nil {
-				requests_total.WithLabelValues(
-					"200",
-					c.Request.Method,
-					c.HandlerName(),
-					c.Request.Host,
-					c.Request.RequestURI).Inc()
-			}
+			// if requests_total := metric.GetCounterVec("requests_total"); requests_total != nil {
+			// 	requests_total.WithLabelValues(
+			// 		"200",
+			// 		c.Request.Method,
+			// 		c.HandlerName(),
+			// 		c.Request.Host,
+			// 		c.Request.RequestURI).Inc()
+			// }
+			metric.CallCounterVec("requests_total", func(cv *prometheus.CounterVec) {
+				cv.WithLabelValues("200", c.Request.Method, c.HandlerName(), c.Request.Host, c.Request.RequestURI).Inc()
+			})
 			res.Ok(c, "ok")
 		})
 		hgs.POST("", func(ctx *gin.Context) {

@@ -151,3 +151,67 @@ func GetSummaryVec(name string) *prometheus.SummaryVec {
 	}
 	return nil
 }
+
+func CallCounter(name string, fn func(prometheus.Counter)) {
+	if val, ok := prom.collectors[name]; ok {
+		if col, ok := val.(prometheus.Counter); ok {
+			fn(col)
+		}
+	}
+}
+
+func CallCounterVec(name string, fn func(*prometheus.CounterVec)) {
+	if val, ok := prom.collectors[name]; ok {
+		if col, ok := val.(*prometheus.CounterVec); ok {
+			fn(col)
+		}
+	}
+}
+
+func CallGauge(name string, fn func(prometheus.Gauge)) {
+	if val, ok := prom.collectors[name]; ok {
+		if col, ok := val.(prometheus.Gauge); ok {
+			fn(col)
+		}
+	}
+}
+
+func CallGaugeVec(name string, fn func(*prometheus.GaugeVec)) {
+	if val, ok := prom.collectors[name]; ok {
+		if col, ok := val.(*prometheus.GaugeVec); ok {
+			fn(col)
+		}
+	}
+}
+
+func CallHistogram(name string, fn func(prometheus.Histogram)) {
+	if val, ok := prom.collectors[name]; ok {
+		if col, ok := val.(prometheus.Histogram); ok {
+			fn(col)
+		}
+	}
+}
+
+func CallHistogramVec(name string, fn func(*prometheus.HistogramVec)) {
+	if val, ok := prom.collectors[name]; ok {
+		if col, ok := val.(*prometheus.HistogramVec); ok {
+			fn(col)
+		}
+	}
+}
+
+func CallSummary(name string, fn func(prometheus.Summary)) {
+	if val, ok := prom.collectors[name]; ok {
+		if col, ok := val.(prometheus.Summary); ok {
+			fn(col)
+		}
+	}
+}
+
+func CallSummaryVec(name string, fn func(*prometheus.SummaryVec)) {
+	if val, ok := prom.collectors[name]; ok {
+		if col, ok := val.(*prometheus.SummaryVec); ok {
+			fn(col)
+		}
+	}
+}
