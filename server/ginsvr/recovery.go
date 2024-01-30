@@ -78,17 +78,15 @@ func Recovery() gin.HandlerFunc {
 				switch err := err.(type) {
 				case error:
 					log.Error(fmt.Sprintf("[Recovery:error] panic recovered:\n%s\n%s", err.Error(), string(stack)))
-					c.Abort()
 					res.Failed(c, err.Error())
 				case string:
 					log.Error(fmt.Sprintf("[Recovery:string] panic recovered:\n%s\n%s", err, string(stack)))
-					c.Abort()
 					res.Failed(c, err)
 				default:
 					log.Error(fmt.Sprintf("[Recovery:invalid] panic recovered:\n%s", string(stack)))
-					c.Abort()
 					res.Failed(c, string(stack))
 				}
+				c.Abort()
 			}
 		}()
 		c.Next()
