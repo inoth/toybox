@@ -69,7 +69,7 @@ func (hgs *HttpGinServer) Run(ctx context.Context) error {
 	hgs.loadRouter()
 
 	if err := hgs.loadValidation(); err != nil {
-		return errors.Wrap(err, "load validation")
+		return errors.Wrap(err, "hgs.loadValidation failed")
 	}
 
 	svr := &http.Server{

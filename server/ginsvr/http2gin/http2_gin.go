@@ -73,7 +73,7 @@ func (h2gs *Http2GinServer) Run(ctx context.Context) error {
 	h2gs.loadRouter()
 
 	if err := h2gs.loadValidation(); err != nil {
-		return errors.Wrap(err, "load validation")
+		return errors.Wrap(err, "h2gs.loadValidation failed")
 	}
 
 	http2svc := &http2.Server{}

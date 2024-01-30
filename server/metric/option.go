@@ -61,7 +61,6 @@ func WithNewRegistry(cs ...prometheus.Collector) Option {
 	if len(cs) <= 0 {
 		cs = append(cs,
 			collectors.NewGoCollector(),
-			collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 		)
 	}
 	return func(pm *Prometheus) {

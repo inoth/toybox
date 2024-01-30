@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -49,7 +50,7 @@ func (c *Context) MustGet(key string) any {
 	if value, exists := c.Get(key); exists {
 		return value
 	}
-	panic("Key \"" + key + "\" does not exist")
+	panic(fmt.Errorf("key %s does not exist", key))
 }
 
 func (c *Context) GetString(key string) (s string) {

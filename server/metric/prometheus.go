@@ -73,11 +73,11 @@ func (pm *Prometheus) register() error {
 		if _, ok := pm.collectors[item.Name]; !ok {
 			if pm.reg != nil {
 				if err := pm.reg.Register(col); err != nil {
-					return errors.Wrap(err, "register metric err")
+					return errors.Wrap(err, "pm.reg.Register failed")
 				}
 			} else {
 				if err := prometheus.Register(col); err != nil {
-					return errors.Wrap(err, "register metric err")
+					return errors.Wrap(err, "prometheus.Register failed")
 				}
 			}
 			pm.collectors[item.Name] = col
@@ -94,13 +94,15 @@ func (pm *Prometheus) Run(ctx context.Context) error {
 	if err := pm.register(); err != nil {
 		return err
 	}
+
+	mux := http.NewServeMux()
 	if pm.reg != nil {
-		http.Handle("/metrics", promhttp.HandlerFor(pm.reg, promhttp.HandlerOpts{Registry: pm.reg}))
+		mux.Handle("/metrics", promhttp.HandlerFor(pm.reg, promhttp.HandlerOpts{Registry: pm.reg}))
 	} else {
-		http.Handle("/metrics", promhttp.Handler())
+		mux.Handle("/metrics", promhttp.Handler())
 	}
-	if err := http.ListenAndServe(pm.Port, nil); err != nil {
-		return errors.Wrap(err, "run metric server err")
+	if err := http.ListenAndServe(pm.Port, mux); err != nil {
+		return errors.Wrap(err, "http.ListenAndServe failed")
 	}
 	return nil
 }

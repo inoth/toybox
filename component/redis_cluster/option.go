@@ -1,6 +1,10 @@
 package rediscluster
 
-import "github.com/inoth/toybox"
+import (
+	"fmt"
+
+	"github.com/inoth/toybox"
+)
 
 var (
 	default_name = "redis"
@@ -27,7 +31,7 @@ func SetName(name string) Option {
 func SetConfig(cfg toybox.ConfigMate) Option {
 	return func(rc *RedisClusterComponent) {
 		if err := cfg.PrimitiveDecodeComponent(rc); err != nil {
-			panic("failed to load redis cluster configuration " + err.Error())
+			panic(fmt.Errorf("failed to load redis cluster configuration; %v", err))
 		}
 	}
 }

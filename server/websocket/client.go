@@ -34,7 +34,7 @@ func NewClient(w http.ResponseWriter, r *http.Request) (string, error) {
 	}
 	conn, err := hub.upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		return "", errors.Wrap(err, "upgrade connect fail")
+		return "", errors.Wrap(err, "hub.upgrader.Upgrade failed")
 	}
 	client := &Client{
 		id:   util.RandStr(),

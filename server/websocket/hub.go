@@ -99,7 +99,7 @@ func (ws *WebsocketServer) Name() string {
 func (ws *WebsocketServer) Run(ctx context.Context) error {
 	defer ws.cancel()
 	if err := ws.init(ctx); err != nil {
-		return errors.Wrap(err, "websocket server init fail")
+		return errors.Wrap(err, "ws.init failed")
 	}
 	for {
 		select {
@@ -112,13 +112,13 @@ func (ws *WebsocketServer) Run(ctx context.Context) error {
 		case msg, ok := <-ws.input:
 			if !ok {
 				ws.cancel()
-				return fmt.Errorf("msg input channel close")
+				return fmt.Errorf("msg input channel closed")
 			}
 			ws.inputMessageHandle(msg)
 		case msg, ok := <-ws.output:
 			if !ok {
 				ws.cancel()
-				return fmt.Errorf("msg output channel close")
+				return fmt.Errorf("msg output channel closed")
 			}
 			ws.outputMessageHandle(msg)
 		}

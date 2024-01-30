@@ -1,6 +1,10 @@
 package mysql
 
-import "github.com/inoth/toybox"
+import (
+	"fmt"
+
+	"github.com/inoth/toybox"
+)
 
 const (
 	default_name = "mysql"
@@ -32,7 +36,7 @@ func SetName(name string) Option {
 func SetConfig(cfg toybox.ConfigMate) Option {
 	return func(mc *MysqlComponent) {
 		if err := cfg.PrimitiveDecodeComponent(mc); err != nil {
-			panic("failed to load mysql configuration " + err.Error())
+			panic(fmt.Errorf("failed to load mysql configuration; %v", err))
 		}
 	}
 }

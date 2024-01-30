@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	// "github.com/hpcloud/tail"
 )
 
 func ReadFile(path string) ([]byte, error) {
@@ -59,3 +60,7 @@ func PathGlobPattern(pattern string) ([]string, error) {
 	}
 	return matches, nil
 }
+
+// func TailFile(path string) {
+// 	tail.TailFile(path, tail.Config{Follow: true, ReOpen: true})
+// }
