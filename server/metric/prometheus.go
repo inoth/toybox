@@ -2,8 +2,11 @@ package metric
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"sync"
 
+	"github.com/inoth/toybox"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -24,16 +27,31 @@ var (
 
 var (
 	prom *Prometheus
+	once sync.Once
 )
 
 type Prometheus struct {
-	ready     bool
+	ready      bool
+	name       string
+	collectors map[string]prometheus.Collector
+
 	Port      string `toml:"port"`
 	Subsystem string `toml:"subsystem"`
 	Namespace string `toml:"namespace"`
+	Metrics   []Metric
+}
 
-	Metrics    []Metric
-	collectors map[string]*metrics
+func NewPrometheus(opts ...Option) toybox.Option {
+	once.Do(func() {
+		o := defaultOption()
+		for _, opt := range opts {
+			opt(&o)
+		}
+		prom = &o
+	})
+	return func(tb *toybox.ToyBox) {
+		tb.AppendServer(prom)
+	}
 }
 
 func (pm *Prometheus) IsReady() {
@@ -45,7 +63,7 @@ func (pm *Prometheus) Ready() bool {
 }
 
 func (pm *Prometheus) Name() string {
-	return pm.Namespace
+	return pm.name
 }
 
 func (pm *Prometheus) register() error {
@@ -54,7 +72,7 @@ func (pm *Prometheus) register() error {
 		if _, ok := pm.collectors[item.Name]; !ok {
 			pm.collectors[item.Name] = col
 
-			if err := prometheus.Register(col.collector); err != nil {
+			if err := prometheus.Register(col); err != nil {
 				return errors.Wrap(err, "register initMetric err")
 			}
 		}
@@ -63,13 +81,15 @@ func (pm *Prometheus) register() error {
 }
 
 func (pm *Prometheus) Run(ctx context.Context) error {
+	if !pm.ready {
+		return fmt.Errorf("server %s not ready", pm.name)
+	}
 
 	if err := pm.register(); err != nil {
 		return err
 	}
 
-	mux := http.NewServeMux()
-	mux.Handle("/metrics", promhttp.Handler())
+	http.Handle("/metrics", promhttp.Handler())
 	if err := http.ListenAndServe(pm.Port, nil); err != nil {
 		return errors.Wrap(err, "run ListenAndServe err")
 	}

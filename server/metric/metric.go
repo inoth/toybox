@@ -6,21 +6,13 @@ import (
 )
 
 type Metric struct {
-	id string
-	// collector prometheus.Collector
-
 	Name string   `toml:"name"`
 	Desc string   `toml:"desc"`
 	Type string   `toml:"type"`
 	Args []string `toml:"args"`
 }
 
-type metrics struct {
-	metricType string
-	collector  prometheus.Collector
-}
-
-func (m *Metric) initMetric(subsystem, namespace string) *metrics {
+func (m *Metric) initMetric(subsystem, namespace string) prometheus.Collector {
 	var collector prometheus.Collector
 	switch m.Type {
 	case Counter:
@@ -82,8 +74,77 @@ func (m *Metric) initMetric(subsystem, namespace string) *metrics {
 	default:
 		panic(errors.New("type of invalid indicator"))
 	}
-	return &metrics{
-		metricType: m.Type,
-		collector:  collector,
+	return collector
+}
+
+func GetCounter(name string) prometheus.Counter {
+	if val, ok := prom.collectors[name]; ok {
+		if col, ok := val.(prometheus.Counter); ok {
+			return col
+		}
 	}
+	return nil
+}
+
+func GetCounterVec(name string) *prometheus.CounterVec {
+	if val, ok := prom.collectors[name]; ok {
+		if col, ok := val.(*prometheus.CounterVec); ok {
+			return col
+		}
+	}
+	return nil
+}
+
+func GetGauge(name string) prometheus.Gauge {
+	if val, ok := prom.collectors[name]; ok {
+		if col, ok := val.(prometheus.Gauge); ok {
+			return col
+		}
+	}
+	return nil
+}
+
+func GetGaugeVec(name string) *prometheus.GaugeVec {
+	if val, ok := prom.collectors[name]; ok {
+		if col, ok := val.(*prometheus.GaugeVec); ok {
+			return col
+		}
+	}
+	return nil
+}
+
+func GetHistogram(name string) prometheus.Histogram {
+	if val, ok := prom.collectors[name]; ok {
+		if col, ok := val.(prometheus.Histogram); ok {
+			return col
+		}
+	}
+	return nil
+}
+
+func GetHistogramVec(name string) *prometheus.HistogramVec {
+	if val, ok := prom.collectors[name]; ok {
+		if col, ok := val.(*prometheus.HistogramVec); ok {
+			return col
+		}
+	}
+	return nil
+}
+
+func GetSummary(name string) prometheus.Summary {
+	if val, ok := prom.collectors[name]; ok {
+		if col, ok := val.(prometheus.Summary); ok {
+			return col
+		}
+	}
+	return nil
+}
+
+func GetSummaryVec(name string) *prometheus.SummaryVec {
+	if val, ok := prom.collectors[name]; ok {
+		if col, ok := val.(*prometheus.SummaryVec); ok {
+			return col
+		}
+	}
+	return nil
 }
