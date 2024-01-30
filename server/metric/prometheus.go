@@ -35,10 +35,10 @@ type Prometheus struct {
 	name       string
 	collectors map[string]prometheus.Collector
 
-	Port      string `toml:"port"`
-	Subsystem string `toml:"subsystem"`
-	Namespace string `toml:"namespace"`
-	Metrics   []Metric
+	Port      string   `toml:"port"`
+	Subsystem string   `toml:"subsystem"`
+	Namespace string   `toml:"namespace"`
+	Metrics   []Metric `toml:"metrics"`
 }
 
 func NewPrometheus(opts ...Option) toybox.Option {
