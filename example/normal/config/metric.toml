@@ -14,7 +14,7 @@ args = ["code", "method", "handler", "host", "url"]
 name = "request_duration_seconds"
 desc = "The HTTP request latencies in seconds."
 type = "histogram_vec"
-args = ["code", "method", "handler", "host", "url"]
+args = ["code", "host", "url"]
 
 [[server.metric.metrics]]
 name = "response_size_bytes"
