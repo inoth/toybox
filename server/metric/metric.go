@@ -6,10 +6,11 @@ import (
 )
 
 type Metric struct {
-	Name string   `toml:"name"`
-	Desc string   `toml:"desc"`
-	Type string   `toml:"type"`
-	Args []string `toml:"args"`
+	Name    string    `toml:"name"`
+	Desc    string    `toml:"desc"`
+	Type    string    `toml:"type"`
+	Args    []string  `toml:"args"`
+	Buckets []float64 `toml:"buckets"`
 }
 
 func (m *Metric) initMetric(subsystem, namespace string) prometheus.Collector {
@@ -49,6 +50,7 @@ func (m *Metric) initMetric(subsystem, namespace string) prometheus.Collector {
 			Namespace: namespace,
 			Name:      m.Name,
 			Help:      m.Desc,
+			Buckets:   m.Buckets,
 		})
 	case HistogramVec:
 		collector = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -56,6 +58,7 @@ func (m *Metric) initMetric(subsystem, namespace string) prometheus.Collector {
 			Namespace: namespace,
 			Name:      m.Name,
 			Help:      m.Desc,
+			Buckets:   m.Buckets,
 		}, m.Args)
 	case Summary:
 		collector = prometheus.NewSummary(prometheus.SummaryOpts{
