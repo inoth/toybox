@@ -58,16 +58,20 @@ func WithPort(port string) Option {
 }
 
 func WithNewRegistry(cs ...prometheus.Collector) Option {
-	if len(cs) <= 0 {
-		cs = append(cs,
-			collectors.NewGoCollector(),
-		)
-	}
 	return func(pm *Prometheus) {
 		if pm.reg != nil {
 			return
 		}
 		pm.reg = prometheus.NewRegistry()
 		pm.reg.MustRegister(cs...)
+	}
+}
+
+func WithDefaultCollector() Option {
+	return func(pm *Prometheus) {
+		if pm.reg == nil {
+			pm.reg = prometheus.NewRegistry()
+		}
+		pm.reg.MustRegister(collectors.NewGoCollector())
 	}
 }
