@@ -1,10 +1,14 @@
 package util
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
-	// "github.com/hpcloud/tail"
+	"time"
+
+	"github.com/hpcloud/tail"
+	"github.com/pkg/errors"
 )
 
 func ReadFile(path string) ([]byte, error) {
@@ -61,6 +65,26 @@ func PathGlobPattern(pattern string) ([]string, error) {
 	return matches, nil
 }
 
-// func TailFile(path string) {
-// 	tail.TailFile(path, tail.Config{Follow: true, ReOpen: true})
-// }
+func TailFile(ctx context.Context, path string, lines chan<- string) error {
+	tails, err := tail.TailFile(path, tail.Config{
+		Follow: true,
+		ReOpen: true,
+		Poll:   true,
+	})
+	if err != nil {
+		return errors.Wrap(err, path+" tail.TailFile failed")
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case line, ok := <-tails.Lines:
+			if !ok {
+				fmt.Printf("tail file close reopen, filename:%s\n", tails.Filename)
+				time.Sleep(time.Second)
+				continue
+			}
+			lines <- line.Text
+		}
+	}
+}
