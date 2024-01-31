@@ -74,17 +74,17 @@ func Recovery() gin.HandlerFunc {
 		defer func() {
 			if err := recover(); err != nil {
 				log := logger.New("Recovery", c.GetHeader("TraceId"))
-				stack := stack(3)
+				// stack := stack(3)
 				switch err := err.(type) {
 				case error:
-					log.Error(fmt.Sprintf("[Recovery:error] panic recovered:\n%s\n%s", err.Error(), string(stack)))
+					log.Error(fmt.Sprintf("[Recovery:error] panic recovered:\n%s", err.Error()))
 					res.Failed(c, err.Error())
 				case string:
-					log.Error(fmt.Sprintf("[Recovery:string] panic recovered:\n%s\n%s", err, string(stack)))
+					log.Error(fmt.Sprintf("[Recovery:string] panic recovered:\n%s", err))
 					res.Failed(c, err)
 				default:
-					log.Error(fmt.Sprintf("[Recovery:invalid] panic recovered:\n%s", string(stack)))
-					res.Failed(c, string(stack))
+					log.Error(fmt.Sprintf("[Recovery:invalid] panic recovered:\n%v", err))
+					res.Failed(c, "invalid failed")
 				}
 				c.Abort()
 			}
