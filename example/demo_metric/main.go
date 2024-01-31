@@ -16,6 +16,38 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+/*
+
+[server.metric]
+
+port = ":8081"
+subsystem = "server_name"
+namespace = "default"
+
+[[server.metric.metrics]]
+name = "requests_total"
+desc = "How many HTTP requests processed, partitioned by status code and HTTP method."
+type = "counter_vec"
+args = ["code", "method", "handler", "host", "url"]
+
+[[server.metric.metrics]]
+name = "request_duration_seconds"
+desc = "The HTTP request latencies in seconds."
+type = "histogram_vec"
+args = ["code", "host", "url"]
+
+[[server.metric.metrics]]
+name = "response_size_bytes"
+desc = "The HTTP response sizes in bytes."
+type = "summary"
+
+[[server.metric.metrics]]
+name = "request_size_bytes"
+desc = "The HTTP request sizes in bytes."
+type = "summary"
+
+*/
+
 // http://localhost:8080
 // http://localhost:8081/metrics
 
