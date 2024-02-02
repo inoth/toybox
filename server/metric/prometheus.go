@@ -12,8 +12,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// https://github.com/zsais/go-gin-prometheus/blob/master/middleware.go
-
 var (
 	Counter      string = "counter"
 	CounterVec   string = "counter_vec"
