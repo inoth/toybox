@@ -44,6 +44,9 @@ func (conf *ConfWithToml) GetBaseConf() map[string]interface{} {
 }
 
 func (conf *ConfWithToml) PrimitiveDecodeComponent(cpts ...Component) error {
+	if conf.conf.Component == nil {
+		return nil
+	}
 	for i := 0; i < len(cpts); i++ {
 		if val, ok := conf.conf.Component[cpts[i].Name()]; ok {
 			if err := conf.mate.PrimitiveDecode(val, cpts[i]); err != nil {
@@ -56,6 +59,9 @@ func (conf *ConfWithToml) PrimitiveDecodeComponent(cpts ...Component) error {
 }
 
 func (conf *ConfWithToml) PrimitiveDecodeServer(svrs ...Server) error {
+	if conf.conf.Server == nil {
+		return nil
+	}
 	for i := 0; i < len(svrs); i++ {
 		if val, ok := conf.conf.Server[svrs[i].Name()]; ok {
 			if err := conf.mate.PrimitiveDecode(val, svrs[i]); err != nil {

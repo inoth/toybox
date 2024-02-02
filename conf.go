@@ -61,7 +61,7 @@ func newConfig(cfgs ...SetConfig) Conf {
 			Env:     cfg.Env,
 		}
 	default:
-		panic("unknown file type")
+		panic(fmt.Errorf("unknown file type"))
 	}
 }
 
@@ -69,7 +69,7 @@ func loadConfig(cfgs ...SetConfig) Conf {
 	cfg := newConfig(cfgs...)
 	paths, err := util.PathGlobPattern(cfg.Path() + cfg.Pattern())
 	if err != nil {
-		panic("no configuration available")
+		panic(fmt.Errorf("no configuration available"))
 	}
 	var sb strings.Builder
 	for _, path := range paths {
@@ -86,7 +86,7 @@ func loadConfig(cfgs ...SetConfig) Conf {
 	cfg.SetConfig(tomlStr)
 
 	if err := cfg.Decode(); err != nil {
-		panic("parsing configuration err: " + err.Error())
+		panic(fmt.Errorf("parsing configuration err: %v", err))
 	}
 	return cfg
 }
