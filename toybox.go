@@ -2,99 +2,72 @@ package toybox
 
 import (
 	"context"
-	"fmt"
+	"os"
+	"sync"
+	"syscall"
+	"time"
 
-	"github.com/inoth/toybox/internal"
-	"github.com/inoth/toybox/util"
-
-	"golang.org/x/sync/errgroup"
+	"github.com/google/uuid"
+	"github.com/inoth/toybox/registry"
 )
 
-type ToyBox struct {
-	id     string
-	ctx    context.Context
-	cancel func()
-	mate   ConfigMate
+type ToyBoxInfo interface {
+	ID() string
+	Name() string
+	Version() string
+	Metadata() map[string]string
+	Endpoint() []string
+}
 
-	cpts []Component
-	svcs []Server
+type ToyBox struct {
+	opt    options
+	ctx    context.Context
+	cancel context.CancelFunc
+
+	m        sync.Mutex
+	instance *registry.ServiceInstance
 }
 
 func New(opts ...Option) *ToyBox {
-	tb := ToyBox{
-		id:   util.UUID(),
-		cpts: make([]Component, 0),
-		svcs: make([]Server, 0),
+	o := options{
+		ctx:              context.Background(),
+		sigs:             []os.Signal{syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT},
+		registrarTimeout: 10 * time.Second,
+		stopTimeout:      10 * time.Second,
+	}
+	if id, err := uuid.NewUUID(); err == nil {
+		o.id = id.String()
 	}
 	for _, opt := range opts {
-		opt(&tb)
+		opt(&o)
 	}
-	tb.ctx, tb.cancel = context.WithCancel(context.Background())
-	return &tb
+	ctx, cancel := context.WithCancel(o.ctx)
+	return &ToyBox{
+		ctx:    ctx,
+		cancel: cancel,
+		opt:    o,
+	}
 }
 
-func (tb *ToyBox) ID() string {
-	return tb.id
-}
+func (t *ToyBox) ID() string { return t.opt.id }
 
-func (tb *ToyBox) initComponents() error {
-	for _, cpt := range tb.cpts {
-		if !cpt.Ready() {
-			return fmt.Errorf("components that are not yet ready")
-		}
-		if err := cpt.Init(tb.ctx); err != nil {
-			return fmt.Errorf("component init error: %w", err)
-		}
+func (t *ToyBox) Name() string { return t.opt.name }
+
+func (t *ToyBox) Version() string { return t.opt.version }
+
+func (t *ToyBox) Metadata() map[string]string { return t.opt.metadata }
+
+func (t *ToyBox) Endpoint() []string {
+	if t.instance != nil {
+		return t.instance.Endpoints
 	}
 	return nil
 }
 
-func (tb *ToyBox) AppendComponent(cpts ...Component) { tb.cpts = append(tb.cpts, cpts...) }
-
-func (tb *ToyBox) AppendServer(svcs ...Server) { tb.svcs = append(tb.svcs, svcs...) }
-
-func (tb *ToyBox) checkServers() error {
-	for _, svc := range tb.svcs {
-		if !svc.Ready() {
-			return fmt.Errorf("servers that are not yet ready")
-		}
-	}
+func (t *ToyBox) Run() error {
 	return nil
 }
 
-func (tb *ToyBox) Run() error {
-	if err := tb.mate.PrimitiveDecodeComponent(tb.cpts...); err != nil {
-		fmt.Printf("load component config err: %v\n", err)
-		return err
-	}
-	if err := tb.mate.PrimitiveDecodeServer(tb.svcs...); err != nil {
-		fmt.Printf("load server config err: %v\n", err)
-		return err
-	}
-
-	if err := tb.initComponents(); err != nil {
-		fmt.Printf("init component err: %v\n", err)
-		return err
-	}
-	if err := tb.checkServers(); err != nil {
-		fmt.Printf("check servers err: %v\n", err)
-		return err
-	}
-
-	eg, _ := errgroup.WithContext(tb.ctx)
-
-	for _, svc := range tb.svcs {
-		svc := svc
-		eg.Go(func() error {
-			return svc.Run(tb.ctx)
-		})
-	}
-
-	if err := eg.Wait(); err != nil {
-		tb.cancel()
-		fmt.Printf("run servers err: %v\n", err)
-		return err
-	}
-	internal.ListenSignal()
+func (t *ToyBox) Stop() error {
 	return nil
 }
