@@ -33,7 +33,7 @@ func Min[T int | int32 | int64 | float32 | float64](a, b T) T {
 	return b
 }
 
-func First[T interface{}](defaultArg T, args []T) T {
+func First[T any](defaultArg T, args []T) T {
 	if len(args) > 0 {
 		defaultArg = args[0]
 	}
@@ -68,7 +68,7 @@ func RandStr(ns ...int) string {
 	return sb.String()
 }
 
-func getValueWithType(m map[string]interface{}, key string) (interface{}, bool) {
+func getValueWithType(m map[string]any, key string) (any, bool) {
 	val, ok := m[key]
 	if !ok {
 		return nil, false
@@ -76,7 +76,7 @@ func getValueWithType(m map[string]interface{}, key string) (interface{}, bool) 
 	return val, true
 }
 
-func GetIntValue(m map[string]interface{}, key string) (int, bool) {
+func GetIntValue(m map[string]any, key string) (int, bool) {
 	val, ok := getValueWithType(m, key)
 	if !ok {
 		return 0, false
@@ -87,7 +87,7 @@ func GetIntValue(m map[string]interface{}, key string) (int, bool) {
 	return 0, false
 }
 
-func GetFloatValue(m map[string]interface{}, key string) (float64, bool) {
+func GetFloatValue(m map[string]any, key string) (float64, bool) {
 	val, ok := getValueWithType(m, key)
 	if !ok {
 		return 0, false
@@ -98,7 +98,7 @@ func GetFloatValue(m map[string]interface{}, key string) (float64, bool) {
 	return 0, false
 }
 
-func GetStringValue(m map[string]interface{}, key string) (string, bool) {
+func GetStringValue(m map[string]any, key string) (string, bool) {
 	val, ok := getValueWithType(m, key)
 	if !ok {
 		return "", false
@@ -109,7 +109,7 @@ func GetStringValue(m map[string]interface{}, key string) (string, bool) {
 	return "", false
 }
 
-func GetBoolValue(m map[string]interface{}, key string) (bool, bool) {
+func GetBoolValue(m map[string]any, key string) (bool, bool) {
 	val, ok := getValueWithType(m, key)
 	if !ok {
 		return false, false
@@ -120,7 +120,7 @@ func GetBoolValue(m map[string]interface{}, key string) (bool, bool) {
 	return false, false
 }
 
-func GetStringSlice(m map[string]interface{}, key string) ([]string, bool) {
+func GetStringSlice(m map[string]any, key string) ([]string, bool) {
 	val, ok := getValueWithType(m, key)
 	if !ok {
 		return nil, false
@@ -131,12 +131,12 @@ func GetStringSlice(m map[string]interface{}, key string) ([]string, bool) {
 	return nil, false
 }
 
-func GetInterfaceSlice(m map[string]interface{}, key string) ([]interface{}, bool) {
+func GetInterfaceSlice(m map[string]any, key string) ([]any, bool) {
 	val, ok := getValueWithType(m, key)
 	if !ok {
 		return nil, false
 	}
-	if ssVal, ok := val.([]interface{}); ok {
+	if ssVal, ok := val.([]any); ok {
 		return ssVal, true
 	}
 	return nil, false
