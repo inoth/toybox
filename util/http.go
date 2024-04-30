@@ -41,7 +41,7 @@ func HttpGetWith[T RespData](url string, params map[string]string, token string,
 	return res, nil
 }
 
-func HttpPost(url string, params interface{}, token string, headers map[string]string) ([]byte, error) {
+func HttpPost(url string, params any, token string, headers map[string]string) ([]byte, error) {
 	client := resty.New()
 	resp, err := client.R().
 		EnableTrace().
@@ -56,7 +56,7 @@ func HttpPost(url string, params interface{}, token string, headers map[string]s
 	return resp.Body(), nil
 }
 
-func HttpPostWith[T RespData](url string, params interface{}, token string, headers map[string]string) (T, error) {
+func HttpPostWith[T RespData](url string, params any, token string, headers map[string]string) (T, error) {
 	var res T
 	client := resty.New()
 	resp, err := client.R().
@@ -73,7 +73,7 @@ func HttpPostWith[T RespData](url string, params interface{}, token string, head
 	return res, nil
 }
 
-func HttpPut(url string, params interface{}, token string, headers map[string]string) ([]byte, error) {
+func HttpPut(url string, params any, token string, headers map[string]string) ([]byte, error) {
 	client := resty.New()
 	resp, err := client.R().
 		EnableTrace().
@@ -88,7 +88,7 @@ func HttpPut(url string, params interface{}, token string, headers map[string]st
 	return resp.Body(), nil
 }
 
-func HttpPutWith[T RespData](url string, params interface{}, token string, headers map[string]string) (T, error) {
+func HttpPutWith[T RespData](url string, params any, token string, headers map[string]string) (T, error) {
 	var res T
 	client := resty.New()
 	resp, err := client.R().
@@ -105,7 +105,7 @@ func HttpPutWith[T RespData](url string, params interface{}, token string, heade
 	return res, nil
 }
 
-func HttpDelete(url string, params interface{}, token string, headers map[string]string) ([]byte, error) {
+func HttpDelete(url string, params any, token string, headers map[string]string) ([]byte, error) {
 	client := resty.New()
 	resp, err := client.R().
 		EnableTrace().
@@ -120,7 +120,7 @@ func HttpDelete(url string, params interface{}, token string, headers map[string
 	return resp.Body(), nil
 }
 
-func HttpDeleteWith[T RespData](url string, params interface{}, token string, headers map[string]string) (T, error) {
+func HttpDeleteWith[T RespData](url string, params any, token string, headers map[string]string) (T, error) {
 	var res T
 	client := resty.New()
 	resp, err := client.R().
