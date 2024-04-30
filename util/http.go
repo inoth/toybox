@@ -5,7 +5,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-func httpGet(url string, params map[string]string, token string, headers map[string]string) ([]byte, error) {
+type RespData interface {
+	any | map[string]any
+}
+
+func HttpGet(url string, params map[string]string, token string, headers map[string]string) ([]byte, error) {
 	client := resty.New()
 	resp, err := client.R().
 		EnableTrace().
@@ -20,7 +24,7 @@ func httpGet(url string, params map[string]string, token string, headers map[str
 	return resp.Body(), nil
 }
 
-func httpGetWith[T interface{} | map[string]interface{}](url string, params map[string]string, token string, headers map[string]string) (T, error) {
+func HttpGetWith[T RespData](url string, params map[string]string, token string, headers map[string]string) (T, error) {
 	var res T
 	client := resty.New()
 	resp, err := client.R().
@@ -37,7 +41,7 @@ func httpGetWith[T interface{} | map[string]interface{}](url string, params map[
 	return res, nil
 }
 
-func httpPost(url string, params interface{}, token string, headers map[string]string) ([]byte, error) {
+func HttpPost(url string, params interface{}, token string, headers map[string]string) ([]byte, error) {
 	client := resty.New()
 	resp, err := client.R().
 		EnableTrace().
@@ -52,7 +56,7 @@ func httpPost(url string, params interface{}, token string, headers map[string]s
 	return resp.Body(), nil
 }
 
-func httpPostWith[T interface{} | map[string]interface{}](url string, params interface{}, token string, headers map[string]string) (T, error) {
+func HttpPostWith[T RespData](url string, params interface{}, token string, headers map[string]string) (T, error) {
 	var res T
 	client := resty.New()
 	resp, err := client.R().
@@ -69,7 +73,7 @@ func httpPostWith[T interface{} | map[string]interface{}](url string, params int
 	return res, nil
 }
 
-func httpPut(url string, params interface{}, token string, headers map[string]string) ([]byte, error) {
+func HttpPut(url string, params interface{}, token string, headers map[string]string) ([]byte, error) {
 	client := resty.New()
 	resp, err := client.R().
 		EnableTrace().
@@ -84,7 +88,7 @@ func httpPut(url string, params interface{}, token string, headers map[string]st
 	return resp.Body(), nil
 }
 
-func httpPutWith[T interface{} | map[string]interface{}](url string, params interface{}, token string, headers map[string]string) (T, error) {
+func HttpPutWith[T RespData](url string, params interface{}, token string, headers map[string]string) (T, error) {
 	var res T
 	client := resty.New()
 	resp, err := client.R().
@@ -101,7 +105,7 @@ func httpPutWith[T interface{} | map[string]interface{}](url string, params inte
 	return res, nil
 }
 
-func httpDelete(url string, params interface{}, token string, headers map[string]string) ([]byte, error) {
+func HttpDelete(url string, params interface{}, token string, headers map[string]string) ([]byte, error) {
 	client := resty.New()
 	resp, err := client.R().
 		EnableTrace().
@@ -116,7 +120,7 @@ func httpDelete(url string, params interface{}, token string, headers map[string
 	return resp.Body(), nil
 }
 
-func httpDeleteWith[T interface{} | map[string]interface{}](url string, params interface{}, token string, headers map[string]string) (T, error) {
+func HttpDeleteWith[T RespData](url string, params interface{}, token string, headers map[string]string) (T, error) {
 	var res T
 	client := resty.New()
 	resp, err := client.R().
