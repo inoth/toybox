@@ -2,72 +2,103 @@ package toybox
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"os"
+	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
-	"github.com/google/uuid"
-	"github.com/inoth/toybox/registry"
+	"github.com/inoth/toybox/config"
+	"github.com/inoth/toybox/util"
+	"golang.org/x/sync/errgroup"
 )
 
-type ToyBoxInfo interface {
-	ID() string
-	Name() string
-	Version() string
-	Metadata() map[string]string
-	Endpoint() []string
-}
-
 type ToyBox struct {
-	opt    options
+	option
+
 	ctx    context.Context
 	cancel context.CancelFunc
-
-	m        sync.Mutex
-	instance *registry.ServiceInstance
 }
 
 func New(opts ...Option) *ToyBox {
-	o := options{
-		ctx:              context.Background(),
-		sigs:             []os.Signal{syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT},
-		registrarTimeout: 10 * time.Second,
-		stopTimeout:      10 * time.Second,
-	}
-	if id, err := uuid.NewUUID(); err == nil {
-		o.id = id.String()
+	o := option{
+		id:      util.UUID(),
+		version: util.UUID(),
+		ctx:     context.Background(),
+		sigs:    []os.Signal{syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT},
 	}
 	for _, opt := range opts {
 		opt(&o)
 	}
 	ctx, cancel := context.WithCancel(o.ctx)
 	return &ToyBox{
+		option: o,
 		ctx:    ctx,
 		cancel: cancel,
-		opt:    o,
 	}
 }
 
-func (t *ToyBox) ID() string { return t.opt.id }
+func (ce *ToyBox) ID() string      { return ce.id }
+func (ce *ToyBox) Name() string    { return ce.name }
+func (ce *ToyBox) Version() string { return ce.version }
 
-func (t *ToyBox) Name() string { return t.opt.name }
+func (ce *ToyBox) Run() (err error) {
+	fmt.Printf("server start %s\n", ce.ID())
 
-func (t *ToyBox) Version() string { return t.opt.version }
+	if ce.cfg == nil {
+		return ErrNotConfig
+	}
 
-func (t *ToyBox) Metadata() map[string]string { return t.opt.metadata }
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, ce.sigs...)
 
-func (t *ToyBox) Endpoint() []string {
-	if t.instance != nil {
-		return t.instance.Endpoints
+	wg := sync.WaitGroup{}
+	eg, ctx := errgroup.WithContext(ce.ctx)
+
+	for _, svc := range ce.svcs {
+		svc := svc
+		cm, ok := svc.(config.ConfigureMatcher)
+		if !ok {
+			continue
+		}
+		if err := ce.cfg.PrimitiveDecode(svc.(config.ConfigureMatcher)); err != nil {
+			return err
+		}
+		eg.Go(func() error {
+			<-ctx.Done()
+			fmt.Printf("Done %s ...............\n", cm.Name())
+			return svc.Stop(ctx)
+		})
+		wg.Add(1)
+		eg.Go(func() error {
+			wg.Done()
+			fmt.Printf("Start %s ...............\n", cm.Name())
+			return svc.Start(ctx)
+		})
+	}
+
+	wg.Wait()
+
+	eg.Go(func() error {
+		select {
+		case <-ctx.Done():
+			fmt.Printf("Done server %s ...............\n", ce.ID())
+			return nil
+		case <-c:
+			fmt.Printf("Done server %s ...............\n", ce.ID())
+			return ce.Stop()
+		}
+	})
+	if err = eg.Wait(); err != nil && !errors.Is(err, context.Canceled) {
+		return err
 	}
 	return nil
 }
 
-func (t *ToyBox) Run() error {
-	return nil
-}
-
-func (t *ToyBox) Stop() error {
+func (ce *ToyBox) Stop() error {
+	if ce.cancel != nil {
+		ce.cancel()
+	}
 	return nil
 }
