@@ -33,7 +33,7 @@ func WithTLS(cert, key string) Option {
 
 func WithHandlers(handles ...Handler) Option {
 	return func(opt *option) {
-		opt.handles = handles
+		opt.handles = append(opt.handles, handles...)
 	}
 }
 
