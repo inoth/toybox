@@ -16,7 +16,7 @@ type option struct {
 	version string
 	ctx     context.Context
 	sigs    []os.Signal
-	svcs    []server.Service
+	svcs    []server.Server
 	cfg     config.ConfigMate
 }
 
@@ -38,7 +38,7 @@ func WithContext(ctx context.Context) Option {
 	}
 }
 
-func WithServer(svcs ...server.Service) Option {
+func WithServer(svcs ...server.Server) Option {
 	return func(opt *option) {
 		opt.svcs = append(opt.svcs, svcs...)
 	}

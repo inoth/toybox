@@ -1,4 +1,4 @@
-package httpapi
+package ginsvr
 
 import "github.com/gin-gonic/gin"
 
