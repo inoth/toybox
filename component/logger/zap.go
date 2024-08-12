@@ -4,6 +4,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/inoth/toybox/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
@@ -12,6 +13,10 @@ import (
 const (
 	Name        = "zap"
 	DefaultPath = "/toybox/log/"
+)
+
+var (
+	log *ZapComponent
 )
 
 type Option func(opt *ZapComponent)
@@ -37,7 +42,13 @@ func SetHooks(hooks ...(func(zapcore.Entry) error)) Option {
 	}
 }
 
-func new(opts ...Option) *ZapComponent {
+func WithConfig(conf config.ConfigMate) Option {
+	return func(opt *ZapComponent) {
+		conf.PrimitiveDecode(opt)
+	}
+}
+
+func New(opts ...Option) *ZapComponent {
 	o := ZapComponent{
 		Debug:     DefaultPath + "debug/debug.log",
 		Info:      DefaultPath + "info/info.log",

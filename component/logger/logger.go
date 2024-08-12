@@ -9,7 +9,6 @@ import (
 
 var (
 	once sync.Once
-	log  *ZapComponent
 )
 
 type Logger interface {
@@ -24,10 +23,10 @@ type logger struct {
 	log         *ZapComponent
 }
 
-func New(server_name string) Logger {
+func GetLogger(server_name string) Logger {
 	once.Do(func() {
 		if log == nil {
-			log = new()
+			log = New()
 		}
 	})
 	return &logger{
