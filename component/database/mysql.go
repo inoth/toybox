@@ -65,6 +65,6 @@ func (mc *MysqlComponent) Name() string {
 	return Name
 }
 
-func (mc *MysqlComponent) GetDB() any {
+func (mc *MysqlComponent) GetDB() *gorm.DB {
 	return mc.db
 }

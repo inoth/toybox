@@ -11,18 +11,17 @@ import (
 	"golang.org/x/sync/singleflight"
 )
 
-// 开启任务添加服务，通过channel发送task到executor
 const (
 	name = "gin"
 )
 
-type CronHttpServer struct {
+type GinHttpServer struct {
 	option
 	sfg singleflight.Group
 	svr *http.Server
 }
 
-func New(opts ...Option) *CronHttpServer {
+func New(opts ...Option) *GinHttpServer {
 	o := option{
 		Port:    ":9050",
 		engine:  gin.New(),
@@ -31,17 +30,17 @@ func New(opts ...Option) *CronHttpServer {
 	for _, opt := range opts {
 		opt(&o)
 	}
-	return &CronHttpServer{
+	return &GinHttpServer{
 		option: o,
 		sfg:    singleflight.Group{},
 	}
 }
 
-func (h *CronHttpServer) Name() string {
+func (h *GinHttpServer) Name() string {
 	return name
 }
 
-func (e *CronHttpServer) Start(ctx context.Context) error {
+func (e *GinHttpServer) Start(ctx context.Context) error {
 
 	e.loadRouter()
 
@@ -80,15 +79,15 @@ func (e *CronHttpServer) Start(ctx context.Context) error {
 	return nil
 }
 
-func (e *CronHttpServer) Stop(ctx context.Context) error {
+func (e *GinHttpServer) Stop(ctx context.Context) error {
 	return e.svr.Shutdown(ctx)
 }
 
-func (e *CronHttpServer) Do(key string, fn func() (any, error)) (v any, err error, shared bool) {
+func (e *GinHttpServer) Do(key string, fn func() (any, error)) (v any, err error, shared bool) {
 	return e.sfg.Do(key, fn)
 }
 
-func (e *CronHttpServer) loadRouter() {
+func (e *GinHttpServer) loadRouter() {
 	for _, h := range e.handles {
 		for _, r := range h.Routers() {
 			e.engine.Handle(
