@@ -3,10 +3,18 @@ package ginsvr
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net/http"
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
+	"github.com/go-playground/validator/v10/translations/zh"
+
+	"github.com/inoth/toybox/validation"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/singleflight"
 )
@@ -43,6 +51,10 @@ func (h *GinHttpServer) Name() string {
 func (e *GinHttpServer) Start(ctx context.Context) error {
 
 	e.loadRouter()
+
+	if err := e.loadValidation(); err != nil {
+		return errors.Wrap(err, "loadValidation() failed")
+	}
 
 	e.svr = &http.Server{
 		Addr:           e.Port,
@@ -97,4 +109,29 @@ func (e *GinHttpServer) loadRouter() {
 			)
 		}
 	}
+}
+
+func (e *GinHttpServer) loadValidation() error {
+	trans := validation.GetTranslator()
+	validate, ok := binding.Validator.Engine().(*validator.Validate)
+	if !ok {
+		return fmt.Errorf("failed to get validator engine")
+	}
+	_ = zh.RegisterDefaultTranslations(validate, trans)
+	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+		if name == "-" {
+			return ""
+		}
+		return name
+	})
+	for _, valid := range e.validator {
+		if valid.Validator() != nil {
+			validate.RegisterValidation(valid.Tag(), valid.Validator())
+		}
+		if valid.RegisterTranslation() != nil && valid.Translation() != nil {
+			validate.RegisterTranslation(valid.Tag(), trans, valid.RegisterTranslation(), valid.Translation())
+		}
+	}
+	return nil
 }

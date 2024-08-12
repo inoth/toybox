@@ -1,6 +1,9 @@
 package ginsvr
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/inoth/toybox/validation"
+)
 
 type Option func(opt *option)
 
@@ -13,8 +16,9 @@ type option struct {
 	Key            string `toml:"key" json:"key"`
 	Port           string `toml:"port" json:"port"`
 
-	engine  *gin.Engine
-	handles []Handler
+	engine    *gin.Engine
+	handles   []Handler
+	validator []validation.Validation
 }
 
 func WithPort(port string) Option {
@@ -34,6 +38,12 @@ func WithTLS(cert, key string) Option {
 func WithHandlers(handles ...Handler) Option {
 	return func(opt *option) {
 		opt.handles = append(opt.handles, handles...)
+	}
+}
+
+func WithValidator(v ...validation.Validation) Option {
+	return func(opt *option) {
+		opt.validator = append(opt.validator, v...)
 	}
 }
 
