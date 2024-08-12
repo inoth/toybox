@@ -41,7 +41,15 @@ type CfgBasic struct {
 	Env      string
 }
 
-func NewConfig(cbs ...CfgBasic) ConfigMate {
+func NewDefaultConfig() ConfigMate {
+	return newConfig()
+}
+
+func NewConfig(cb CfgBasic) ConfigMate {
+	return newConfig(cb)
+}
+
+func newConfig(cbs ...CfgBasic) ConfigMate {
 	cb := util.First(defaultCfg, cbs)
 	if cb.CfgDir == "" {
 		cb.CfgDir = defaultCfg.CfgDir
