@@ -41,6 +41,12 @@ func WithHandlers(handles ...Handler) Option {
 	}
 }
 
+func WithMiddleware(handles ...gin.HandlerFunc) Option {
+	return func(opt *option) {
+		opt.engine.Use(handles...)
+	}
+}
+
 func WithValidator(v ...validation.Validation) Option {
 	return func(opt *option) {
 		opt.validator = append(opt.validator, v...)
