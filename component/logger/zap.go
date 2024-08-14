@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -12,7 +13,7 @@ import (
 
 const (
 	Name        = "zap"
-	DefaultPath = "/toybox/log/"
+	DefaultPath = "log/"
 )
 
 var (
@@ -48,6 +49,18 @@ func WithConfig(conf config.ConfigMate) Option {
 	}
 }
 
+func NewWithWire(conf config.ConfigMate) ToyBoxLogger {
+	once.Do(func() {
+		o := ZapComponent{}
+		if err := conf.PrimitiveDecode(&o); err != nil {
+			panic(fmt.Errorf("init logger err: %v", err))
+		}
+		o.zp, _ = o.newLogger()
+		log = &o
+	})
+	return log
+}
+
 func New(opts ...Option) *ZapComponent {
 	o := ZapComponent{
 		Debug:     DefaultPath + "debug/debug.log",
@@ -65,6 +78,13 @@ func New(opts ...Option) *ZapComponent {
 	}
 	o.zp, _ = o.newLogger()
 	return &o
+}
+
+func (zc *ZapComponent) NewLogger(server_name string) Logger {
+	return &logger{
+		server_name: server_name,
+		log:         log,
+	}
 }
 
 func (zc *ZapComponent) Name() string {

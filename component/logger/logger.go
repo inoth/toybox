@@ -11,6 +11,10 @@ var (
 	once sync.Once
 )
 
+type ToyBoxLogger interface {
+	NewLogger(server_name string) Logger
+}
+
 type Logger interface {
 	Debug(ctx context.Context, msg string)
 	Info(ctx context.Context, msg string)
