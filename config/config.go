@@ -16,7 +16,7 @@ const (
 var (
 	defaultCfg = CfgBasic{
 		Remote:   false,
-		CfgDir:   "/toybox/data/config",
+		CfgDir:   "config",
 		FileType: "toml",
 		Env:      "",
 	}

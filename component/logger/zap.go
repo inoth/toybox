@@ -49,9 +49,19 @@ func WithConfig(conf config.ConfigMate) Option {
 	}
 }
 
-func NewWithWire(conf config.ConfigMate) ToyBoxLogger {
+func NewLogger(conf config.ConfigMate) ToyBoxLogger {
 	once.Do(func() {
-		o := ZapComponent{}
+		o := ZapComponent{
+			Debug:     DefaultPath + "debug/debug.log",
+			Info:      DefaultPath + "info/info.log",
+			Warn:      DefaultPath + "warn/warn.log",
+			Err:       DefaultPath + "err/err.log",
+			MaxSize:   10 << 10,
+			MaxAge:    15,
+			MaxBackup: 30,
+			Compress:  true,
+			Json:      true,
+		}
 		if err := conf.PrimitiveDecode(&o); err != nil {
 			panic(fmt.Errorf("init logger err: %v", err))
 		}
