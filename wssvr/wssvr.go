@@ -22,6 +22,7 @@ type WebsocketServer struct {
 	ctx      context.Context
 	cancel   context.CancelFunc
 	upgrader websocket.Upgrader
+	pool     sync.Pool
 
 	clients    map[string]*Client
 	register   chan *Client
@@ -49,6 +50,9 @@ func New(opts ...Option) *WebsocketServer {
 		option: o,
 		ctx:    ctx,
 		cancel: cancel,
+		pool: sync.Pool{New: func() any {
+			return &Context{}
+		}},
 	}
 }
 

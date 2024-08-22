@@ -16,6 +16,12 @@ type Context struct {
 	Keys map[string]any
 }
 
+func (c *Context) reset() {
+	c.Keys = nil
+	c.input = nil
+	c.output = nil
+}
+
 func (c *Context) Message() []byte {
 	return c.output
 }
