@@ -2,7 +2,6 @@ package wssvr
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -29,7 +28,7 @@ type WebsocketServer struct {
 	unregister chan *Client
 
 	input  chan []byte
-	output chan []byte
+	output chan Message
 }
 
 func New(opts ...Option) *WebsocketServer {
@@ -46,14 +45,15 @@ func New(opts ...Option) *WebsocketServer {
 		opt(&o)
 	}
 	ctx, cancel := context.WithCancel(o.ctx)
-	return &WebsocketServer{
+	ws := &WebsocketServer{
 		option: o,
 		ctx:    ctx,
 		cancel: cancel,
-		pool: sync.Pool{New: func() any {
-			return &Context{}
-		}},
 	}
+	ws.pool = sync.Pool{New: func() any {
+		return &Context{ws: ws}
+	}}
+	return ws
 }
 
 func (w *WebsocketServer) Name() string {
@@ -72,7 +72,7 @@ func (w *WebsocketServer) Start(ctx context.Context) error {
 	w.register = make(chan *Client, util.Max(1, int(w.ChannelSize)/10))
 	w.unregister = make(chan *Client, util.Max(1, int(w.ChannelSize)/10))
 	w.input = make(chan []byte, w.ChannelSize)
-	w.output = make(chan []byte, w.ChannelSize)
+	w.output = make(chan Message, w.ChannelSize)
 
 	return w.run()
 }
@@ -95,9 +95,22 @@ func (w *WebsocketServer) run() error {
 		case client := <-w.unregister:
 			w.unregisterClient(client)
 		case msg := <-w.input:
-			fmt.Printf("%v", string(msg))
+			c := w.pool.Get().(*Context)
+			c.reset()
+
+			c.send(msg)
+			for _, handle := range w.handles {
+				if !c.state {
+					break
+				}
+				handle(c)
+			}
+
+			w.pool.Put(c)
 		case msg := <-w.output:
-			fmt.Printf("%v", string(msg))
+			if client, ok := w.clients[msg.ID]; ok {
+				client.send <- msg.Body
+			}
 		}
 	}
 }

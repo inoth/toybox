@@ -40,14 +40,12 @@ func First[T any](defaultArg T, args []T) T {
 	return defaultArg
 }
 
-func UUID() string {
-	return uuid.New().String()
-}
-
-func UUID16() string {
+func UUID(ns ...int) string {
+	n := First(16, ns)
 	uuidStr := uuid.New().String()
 	uuidStr = strings.ReplaceAll(uuidStr, "-", "")
-	return uuidStr[0:16]
+	return uuidStr[0:n]
+
 }
 
 func RandStr(ns ...int) string {

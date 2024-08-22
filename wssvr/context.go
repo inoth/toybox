@@ -1,6 +1,7 @@
 package wssvr
 
 import (
+	"encoding/json"
 	"sync"
 	"time"
 )
@@ -8,26 +9,44 @@ import (
 type HandlerFunc func(*Context)
 
 type Context struct {
-	m sync.RWMutex
-
-	input  []byte
-	output []byte
+	body  []byte
+	state bool
 
 	Keys map[string]any
+	m    sync.RWMutex
+	ws   *WebsocketServer
 }
 
 func (c *Context) reset() {
 	c.Keys = nil
-	c.input = nil
-	c.output = nil
+	c.body = nil
+	c.state = true
 }
 
-func (c *Context) Message() []byte {
-	return c.output
+func (c *Context) send(msg []byte) {
+	c.body = msg
 }
 
-func (c *Context) Send(msg []byte) {
-	c.input = msg
+func (c *Context) Body() []byte {
+	return c.body
+}
+
+func (c *Context) Render(id string, msg []byte) {
+	c.ws.output <- Message{
+		ID:   id,
+		Body: msg,
+	}
+}
+
+func (c *Context) Abort() {
+	c.state = false
+}
+
+func (c *Context) BindJson(obj any) error {
+	if err := json.Unmarshal(c.body, obj); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *Context) Set(key string, val any) {
