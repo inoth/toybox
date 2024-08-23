@@ -1,7 +1,12 @@
 package controller
 
-import "github.com/google/wire"
+import (
+	"example/internal/controller/ws"
+
+	"github.com/google/wire"
+)
 
 var ProviderSet = wire.NewSet(
 	NewUserController,
+	ws.NewMessageController,
 )

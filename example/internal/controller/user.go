@@ -1,17 +1,20 @@
 package controller
 
 import (
-	"context"
 	"example/internal/service"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/inoth/toybox/component/logger"
 	"github.com/inoth/toybox/ginsvr"
+	"github.com/inoth/toybox/util"
+	"github.com/inoth/toybox/wssvr"
 )
 
 type UserController struct {
 	log  logger.Logger
 	usvr *service.UserService
+	hub  *wssvr.WebsocketServer
 }
 
 func (uc *UserController) Prefix() string {
@@ -25,11 +28,14 @@ func (uc *UserController) Middlewares() []gin.HandlerFunc {
 func (uc *UserController) Routers() []ginsvr.Router {
 	return []ginsvr.Router{
 		{Method: "GET", Path: "/user/:uid", Handle: []gin.HandlerFunc{uc.UserList}},
+		{Method: "GET", Path: "/send/:id", Handle: []gin.HandlerFunc{uc.SendMessage}},
+		{Method: "GET", Path: "/ws", Handle: []gin.HandlerFunc{uc.Connect}},
 	}
 }
 
-func NewUserController(usvr *service.UserService) *UserController {
+func NewUserController(usvr *service.UserService, hub *wssvr.WebsocketServer) *UserController {
 	return &UserController{
+		hub:  hub,
 		usvr: usvr,
 		log:  logger.GetLogger("user_controller"),
 	}
@@ -37,6 +43,21 @@ func NewUserController(usvr *service.UserService) *UserController {
 
 func (uc *UserController) UserList(c *gin.Context) {
 	uid := c.Param("uid")
-	uc.log.Info(context.Background(), "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-	c.JSON(200, uc.usvr.Query(uid))
+	c.String(200, uid)
+}
+
+func (uc *UserController) SendMessage(c *gin.Context) {
+	id := c.Param("id")
+	msg := c.Query("msg")
+	uc.hub.SendMessage([]byte(util.JsonString(map[string]string{"id": id, "body": msg})))
+	c.String(200, "ok")
+}
+
+func (uc *UserController) Connect(c *gin.Context) {
+	clientID, err := wssvr.NewClient(uc.hub, c.Writer, c.Request)
+	if err != nil {
+		c.String(200, err.Error())
+		return
+	}
+	fmt.Println(clientID)
 }

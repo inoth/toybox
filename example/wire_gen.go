@@ -8,29 +8,31 @@ package main
 
 import (
 	"example/internal/controller"
+	"example/internal/controller/ws"
 	"example/internal/server"
 	"example/internal/service"
 	"github.com/inoth/toybox"
-	"github.com/inoth/toybox/component/database"
 	"github.com/inoth/toybox/config"
 	"github.com/inoth/toybox/ginsvr"
+	"github.com/inoth/toybox/wssvr"
 )
 
 // Injectors from wire.go:
 
 func initApp(cfg config.CfgBasic) *toybox.ToyBox {
 	configMate := config.NewConfig(cfg)
-	mysqlComponent := database.NewDB(configMate)
-	userService := service.NewUserService(mysqlComponent)
-	userController := controller.NewUserController(userService)
+	userService := service.NewUserService()
+	messageController := ws.NewMessageController()
+	websocketServer := server.NewWebSocketServer(messageController)
+	userController := controller.NewUserController(userService, websocketServer)
 	ginHttpServer := server.NewHttpServer(userController)
-	toyBox := newApp(configMate, ginHttpServer)
+	toyBox := newApp(configMate, ginHttpServer, websocketServer)
 	return toyBox
 }
 
 // wire.go:
 
-func newApp(conf config.ConfigMate, hs *ginsvr.GinHttpServer) *toybox.ToyBox {
-	t := toybox.New(toybox.WithConfig(conf), toybox.WithServer(hs))
+func newApp(conf config.ConfigMate, hs *ginsvr.GinHttpServer, ws2 *wssvr.WebsocketServer) *toybox.ToyBox {
+	t := toybox.New(toybox.WithConfig(conf), toybox.WithServer(hs, ws2))
 	return t
 }

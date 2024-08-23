@@ -39,30 +39,30 @@ func New(opts ...Option) *ToyBox {
 	}
 }
 
-func (ce *ToyBox) ID() string      { return ce.id }
-func (ce *ToyBox) Name() string    { return ce.name }
-func (ce *ToyBox) Version() string { return ce.version }
+func (tb *ToyBox) ID() string      { return tb.id }
+func (tb *ToyBox) Name() string    { return tb.name }
+func (tb *ToyBox) Version() string { return tb.version }
 
-func (ce *ToyBox) Run() (err error) {
-	fmt.Printf("server start %s\n", ce.ID())
+func (tb *ToyBox) Run() (err error) {
+	fmt.Printf("server start %s\n", tb.ID())
 
-	if ce.cfg == nil {
+	if tb.cfg == nil {
 		return ErrNotConfig
 	}
 
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, ce.sigs...)
+	signal.Notify(c, tb.sigs...)
 
 	wg := sync.WaitGroup{}
-	eg, ctx := errgroup.WithContext(ce.ctx)
+	eg, ctx := errgroup.WithContext(tb.ctx)
 
-	for _, svc := range ce.svcs {
+	for _, svc := range tb.svcs {
 		svc := svc
 		cm, ok := svc.(config.ConfigureMatcher)
 		if !ok {
 			continue
 		}
-		if err := ce.cfg.PrimitiveDecode(svc.(config.ConfigureMatcher)); err != nil {
+		if err := tb.cfg.PrimitiveDecode(svc.(config.ConfigureMatcher)); err != nil {
 			return err
 		}
 		eg.Go(func() error {
@@ -83,11 +83,11 @@ func (ce *ToyBox) Run() (err error) {
 	eg.Go(func() error {
 		select {
 		case <-ctx.Done():
-			fmt.Printf("Done server %s ...............\n", ce.ID())
+			fmt.Printf("Done server %s ...............\n", tb.ID())
 			return nil
 		case <-c:
-			fmt.Printf("Done server %s ...............\n", ce.ID())
-			return ce.Stop()
+			fmt.Printf("Done server %s ...............\n", tb.ID())
+			return tb.Stop()
 		}
 	})
 	if err = eg.Wait(); err != nil && !errors.Is(err, context.Canceled) {
@@ -96,9 +96,9 @@ func (ce *ToyBox) Run() (err error) {
 	return nil
 }
 
-func (ce *ToyBox) Stop() error {
-	if ce.cancel != nil {
-		ce.cancel()
+func (tb *ToyBox) Stop() error {
+	if tb.cancel != nil {
+		tb.cancel()
 	}
 	return nil
 }

@@ -85,7 +85,7 @@ func (e *GinHttpServer) Start(ctx context.Context) error {
 	} else {
 		err = e.svr.ListenAndServe()
 	}
-	if err != nil {
+	if err != nil && err != context.Canceled {
 		return errors.Wrap(err, "start http server err")
 	}
 	return nil

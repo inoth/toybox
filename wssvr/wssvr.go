@@ -45,11 +45,8 @@ func New(opts ...Option) *WebsocketServer {
 	for _, opt := range opts {
 		opt(&o)
 	}
-	ctx, cancel := context.WithCancel(o.ctx)
 	ws := &WebsocketServer{
 		option: o,
-		ctx:    ctx,
-		cancel: cancel,
 	}
 	ws.pool = sync.Pool{New: func() any {
 		return &Context{ws: ws}
@@ -62,6 +59,7 @@ func (w *WebsocketServer) Name() string {
 }
 
 func (w *WebsocketServer) Start(ctx context.Context) error {
+	w.ctx, w.cancel = context.WithCancel(ctx)
 	w.upgrader = websocket.Upgrader{
 		ReadBufferSize:  int(w.ReadBufferSize),
 		WriteBufferSize: int(w.WriteBufferSize),
@@ -145,6 +143,12 @@ func (w *WebsocketServer) unregisterClient(client *Client) {
 	w.m.Lock()
 	defer w.m.Unlock()
 
-	delete(w.clients, client.ID)
-	client.Close()
+	if _, ok := w.clients[client.ID]; ok {
+		delete(w.clients, client.ID)
+		client.Close()
+	}
+}
+
+func (w *WebsocketServer) SendMessage(msg []byte) {
+	w.input <- msg
 }

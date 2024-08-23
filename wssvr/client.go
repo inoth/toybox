@@ -71,7 +71,6 @@ func (c *Client) read() {
 	for {
 		select {
 		case <-c.ctx.Done():
-			close(c.send)
 			return
 		default:
 			_, msg, err := c.conn.ReadMessage()
@@ -94,7 +93,6 @@ func (c *Client) write() {
 	for {
 		select {
 		case <-c.ctx.Done():
-			close(c.send)
 			return
 		case <-ticker.C:
 			c.conn.SetWriteDeadline(time.Now().Add(c.hub.WriteWait))
