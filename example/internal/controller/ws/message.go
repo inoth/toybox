@@ -24,7 +24,7 @@ func (m *MessageController) Handler() wssvr.HandlerFunc {
 			return
 		}
 
-		c.Render(data.ID, []byte(data.Body))
+		c.String(data.ID, data.Body)
 	}
 }
 

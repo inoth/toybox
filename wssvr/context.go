@@ -31,6 +31,18 @@ func (c *Context) Body() []byte {
 	return c.body
 }
 
+func (c *Context) Json(id string, data any) {
+	buf, err := json.Marshal(&data)
+	if err != nil {
+		return
+	}
+	c.Render(id, buf)
+}
+
+func (c *Context) String(id, body string) {
+	c.Render(id, []byte(body))
+}
+
 func (c *Context) Render(id string, msg []byte) {
 	c.Abort()
 	c.ws.output <- Message{
