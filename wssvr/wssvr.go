@@ -2,7 +2,7 @@ package wssvr
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -103,7 +103,7 @@ func (w *WebsocketServer) run() error {
 			go func(msg []byte) {
 				defer func() {
 					if err := recover(); err != nil {
-						fmt.Printf("%v\n", err)
+						log.Printf("%v\n", err)
 					}
 				}()
 				w.sendMessage(msg)
