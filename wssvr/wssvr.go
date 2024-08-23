@@ -2,6 +2,7 @@ package wssvr
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -74,6 +75,10 @@ func (w *WebsocketServer) Start(ctx context.Context) error {
 	w.input = make(chan []byte, w.ChannelSize)
 	w.output = make(chan Message, w.ChannelSize)
 
+	if len(w.handles) == 0 {
+		w.handles = append(w.handles, defaultHandle())
+	}
+
 	return w.run()
 }
 
@@ -95,24 +100,35 @@ func (w *WebsocketServer) run() error {
 		case client := <-w.unregister:
 			w.unregisterClient(client)
 		case msg := <-w.input:
-			c := w.pool.Get().(*Context)
-			c.reset()
-
-			c.send(msg)
-			for _, handle := range w.handles {
-				if !c.state {
-					break
-				}
-				handle(c)
-			}
-
-			w.pool.Put(c)
+			go func(msg []byte) {
+				defer func() {
+					if err := recover(); err != nil {
+						fmt.Printf("%v\n", err)
+					}
+				}()
+				w.sendMessage(msg)
+			}(msg)
 		case msg := <-w.output:
 			if client, ok := w.clients[msg.ID]; ok {
 				client.send <- msg.Body
 			}
 		}
 	}
+}
+
+func (w *WebsocketServer) sendMessage(msg []byte) {
+	c := w.pool.Get().(*Context)
+	c.reset()
+
+	c.send(msg)
+	for _, handle := range w.handles {
+		if !c.state {
+			break
+		}
+		handle(c)
+	}
+
+	w.pool.Put(c)
 }
 
 func (w *WebsocketServer) registerClient(client *Client) {

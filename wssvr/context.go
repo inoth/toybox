@@ -32,6 +32,7 @@ func (c *Context) Body() []byte {
 }
 
 func (c *Context) Render(id string, msg []byte) {
+	c.Abort()
 	c.ws.output <- Message{
 		ID:   id,
 		Body: msg,
