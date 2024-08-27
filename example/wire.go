@@ -14,7 +14,7 @@ import (
 	"github.com/inoth/toybox/wssvr"
 )
 
-func newApp(conf config.ConfigMate, hs *ginsvr.GinHttp3Server, ws *wssvr.WebsocketServer) *toybox.ToyBox {
+func newApp(conf config.ConfigMate, hs *ginsvr.GinHttp2Server, ws *wssvr.WebsocketServer) *toybox.ToyBox {
 	t := toybox.New(
 		toybox.WithConfig(conf),
 		toybox.WithServer(hs, ws),

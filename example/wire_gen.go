@@ -25,14 +25,14 @@ func initApp(cfg config.CfgBasic) *toybox.ToyBox {
 	messageController := ws.NewMessageController()
 	websocketServer := server.NewWebSocketServer(messageController)
 	userController := controller.NewUserController(userService, websocketServer)
-	ginHttp3Server := server.NewHttp3Server(userController)
-	toyBox := newApp(configMate, ginHttp3Server, websocketServer)
+	ginHttp2Server := server.NewHttp2Server(userController)
+	toyBox := newApp(configMate, ginHttp2Server, websocketServer)
 	return toyBox
 }
 
 // wire.go:
 
-func newApp(conf config.ConfigMate, hs *ginsvr.GinHttp3Server, ws2 *wssvr.WebsocketServer) *toybox.ToyBox {
+func newApp(conf config.ConfigMate, hs *ginsvr.GinHttp2Server, ws2 *wssvr.WebsocketServer) *toybox.ToyBox {
 	t := toybox.New(toybox.WithConfig(conf), toybox.WithServer(hs, ws2))
 	return t
 }
