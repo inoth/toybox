@@ -14,6 +14,7 @@ type option struct {
 	WriteTimeout   int    `toml:"write_timeout" json:"write_timeout"`
 	MaxHeaderBytes int    `toml:"max_header_bytes" json:"max_header_bytes"`
 	TLS            bool   `toml:"tls" json:"tls"`
+	IsTCP          bool   `toml:"is_tcp" json:"is_tcp"`
 	Cert           string `toml:"cert" json:"cert"`
 	Key            string `toml:"key" json:"key"`
 	Port           string `toml:"port" json:"port"`
