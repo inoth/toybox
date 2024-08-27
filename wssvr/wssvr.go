@@ -45,6 +45,9 @@ func New(opts ...Option) *WebsocketServer {
 	for _, opt := range opts {
 		opt(&o)
 	}
+	if o.serverName == "" {
+		o.serverName = name
+	}
 	ws := &WebsocketServer{
 		option: o,
 	}
@@ -55,7 +58,7 @@ func New(opts ...Option) *WebsocketServer {
 }
 
 func (w *WebsocketServer) Name() string {
-	return name
+	return w.serverName
 }
 
 func (w *WebsocketServer) Start(ctx context.Context) error {

@@ -8,6 +8,8 @@ import (
 type Option func(opt *option)
 
 type option struct {
+	serverName string
+
 	ReadBufferSize  int64 `toml:"read_buffer_size"`
 	WriteBufferSize int64 `toml:"write_buffer_size"`
 	ChannelSize     int64 `toml:"channel_size"`

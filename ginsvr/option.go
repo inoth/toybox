@@ -8,6 +8,8 @@ import (
 type Option func(opt *option)
 
 type option struct {
+	serverName string
+
 	ReadTimeout    int    `toml:"read_timeout" json:"read_timeout"`
 	WriteTimeout   int    `toml:"write_timeout" json:"write_timeout"`
 	MaxHeaderBytes int    `toml:"max_header_bytes" json:"max_header_bytes"`
@@ -19,6 +21,12 @@ type option struct {
 	engine    *gin.Engine
 	handles   []Handler
 	validator []validation.Validation
+}
+
+func WithName(name string) Option {
+	return func(opt *option) {
+		opt.serverName = name
+	}
 }
 
 func WithPort(port string) Option {

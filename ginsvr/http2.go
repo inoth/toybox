@@ -16,20 +16,21 @@ import (
 
 	"github.com/inoth/toybox/validation"
 	"github.com/pkg/errors"
+	"golang.org/x/net/http2"
 	"golang.org/x/sync/singleflight"
 )
 
 const (
-	name = "gin"
+	http2name = "gin2"
 )
 
-type GinHttpServer struct {
+type GinHttp2Server struct {
 	option
 	sfg singleflight.Group
 	svr *http.Server
 }
 
-func New(opts ...Option) *GinHttpServer {
+func NewHttp2(opts ...Option) *GinHttp2Server {
 	o := option{
 		Port:    ":9050",
 		engine:  gin.New(),
@@ -39,36 +40,37 @@ func New(opts ...Option) *GinHttpServer {
 		opt(&o)
 	}
 	if o.serverName == "" {
-		o.serverName = name
+		o.serverName = http2name
 	}
-	return &GinHttpServer{
+	return &GinHttp2Server{
 		option: o,
 		sfg:    singleflight.Group{},
 	}
 }
 
-func (h *GinHttpServer) Name() string {
-	return h.serverName
+func (h2 *GinHttp2Server) Name() string {
+	return h2.serverName
 }
 
-func (h *GinHttpServer) Start(ctx context.Context) error {
+func (h2 *GinHttp2Server) Start(ctx context.Context) error {
 
-	h.loadRouter()
+	h2.loadRouter()
 
-	if err := h.loadValidation(); err != nil {
+	if err := h2.loadValidation(); err != nil {
 		return errors.Wrap(err, "loadValidation() failed")
 	}
 
-	h.svr = &http.Server{
-		Addr:           h.Port,
-		Handler:        h.engine,
-		ReadTimeout:    time.Second * time.Duration(h.ReadTimeout),
-		WriteTimeout:   time.Second * time.Duration(h.WriteTimeout),
-		MaxHeaderBytes: 1 << uint(h.MaxHeaderBytes),
+	if h2.Cert == "" || h2.Key == "" {
+		return fmt.Errorf("server %s must be config with tls", http2name)
 	}
-	var err error
-	if h.TLS {
-		h.svr.TLSConfig = &tls.Config{
+
+	h2.svr = &http.Server{
+		Addr:           h2.Port,
+		Handler:        h2.engine,
+		ReadTimeout:    time.Second * time.Duration(h2.ReadTimeout),
+		WriteTimeout:   time.Second * time.Duration(h2.WriteTimeout),
+		MaxHeaderBytes: 1 << uint(h2.MaxHeaderBytes),
+		TLSConfig: &tls.Config{
 			MinVersion:               tls.VersionTLS13,
 			CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
 			PreferServerCipherSuites: true,
@@ -82,39 +84,42 @@ func (h *GinHttpServer) Start(ctx context.Context) error {
 				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 				tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
 				tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
-			},
-		}
-		err = h.svr.ListenAndServeTLS(h.Cert, h.Key)
-	} else {
-		err = h.svr.ListenAndServe()
+			}},
 	}
+
+	err := http2.ConfigureServer(h2.svr, &http2.Server{})
+	if err != nil {
+		return errors.Wrap(err, "ConfigureServer err")
+	}
+
+	err = h2.svr.ListenAndServeTLS(h2.Cert, h2.Key)
 	if err != nil && err != context.Canceled {
 		return errors.Wrap(err, "start http server err")
 	}
 	return nil
 }
 
-func (h *GinHttpServer) Stop(ctx context.Context) error {
-	return h.svr.Shutdown(ctx)
+func (h2 *GinHttp2Server) Stop(ctx context.Context) error {
+	return h2.svr.Shutdown(ctx)
 }
 
-func (h *GinHttpServer) Do(key string, fn func() (any, error)) (v any, err error, shared bool) {
-	return h.sfg.Do(key, fn)
+func (h2 *GinHttp2Server) Do(key string, fn func() (any, error)) (v any, err error, shared bool) {
+	return h2.sfg.Do(key, fn)
 }
 
-func (h *GinHttpServer) loadRouter() {
-	for _, handle := range h.handles {
-		for _, r := range handle.Routers() {
-			h.engine.Handle(
+func (h2 *GinHttp2Server) loadRouter() {
+	for _, h := range h2.handles {
+		for _, r := range h.Routers() {
+			h2.engine.Handle(
 				r.Method,
-				handle.Prefix()+"/"+r.Path,
-				append(handle.Middlewares(), r.Handle...)...,
+				h.Prefix()+"/"+r.Path,
+				append(h.Middlewares(), r.Handle...)...,
 			)
 		}
 	}
 }
 
-func (h *GinHttpServer) loadValidation() error {
+func (h2 *GinHttp2Server) loadValidation() error {
 	trans := validation.GetTranslator()
 	validate, ok := binding.Validator.Engine().(*validator.Validate)
 	if !ok {
@@ -128,7 +133,7 @@ func (h *GinHttpServer) loadValidation() error {
 		}
 		return name
 	})
-	for _, valid := range h.validator {
+	for _, valid := range h2.validator {
 		if valid.Validator() != nil {
 			validate.RegisterValidation(valid.Tag(), valid.Validator())
 		}
