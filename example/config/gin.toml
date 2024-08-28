@@ -11,14 +11,15 @@ port = ":9060"
 read_timeout = 10
 write_timeout = 10
 max_header_bytes = 20
-cert = "cert/cert.cer"
-key = "cert/key.key"
+cert = "cert/cert.pem"
+key = "cert/priv.key"
 
 [server.gin3]
 
-port = "localhost:9060"
+port = ":9060"
 read_timeout = 10
 write_timeout = 10
 max_header_bytes = 20
-cert = "cert/cert.cer"
-key = "cert/key.key"
+cert = "cert/cert.pem"
+key = "cert/priv.key"
+is_tcp = true

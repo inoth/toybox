@@ -2,7 +2,6 @@ package ginsvr
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"reflect"
 	"strings"
@@ -64,39 +63,17 @@ func (h3 *GinHttp3Server) Start(ctx context.Context) error {
 		return fmt.Errorf("server %s must be config with tls", http2name)
 	}
 
-	if h3.IsTCP {
-		err := http3.ListenAndServeTLS(h3.Port, h3.Cert, h3.Key, h3.engine)
-		if err != nil && err != context.Canceled {
-			return errors.Wrap(err, "start http3 with tcp server err")
-		}
-	} else {
-		h3.svr = &http3.Server{
-			Addr:           h3.Port,
-			Handler:        h3.engine,
-			MaxHeaderBytes: 1 << uint(h3.MaxHeaderBytes),
-			QUICConfig: &quic.Config{
-				Tracer: qlog.DefaultConnectionTracer,
-			},
-			TLSConfig: &tls.Config{
-				MinVersion:               tls.VersionTLS13,
-				CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
-				PreferServerCipherSuites: true,
-				CipherSuites: []uint16{
-					tls.TLS_AES_128_GCM_SHA256,
-					tls.TLS_AES_256_GCM_SHA384,
-					tls.TLS_CHACHA20_POLY1305_SHA256,
-					tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-					tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-					tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-					tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-					tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
-					tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
-				}},
-		}
-		err := h3.svr.ListenAndServeTLS(h3.Cert, h3.Key)
-		if err != nil && err != context.Canceled {
-			return errors.Wrap(err, "start http3 with udp server err")
-		}
+	h3.svr = &http3.Server{
+		Addr:           h3.Port,
+		Handler:        h3.engine,
+		MaxHeaderBytes: 1 << uint(h3.MaxHeaderBytes),
+		QUICConfig: &quic.Config{
+			Tracer: qlog.DefaultConnectionTracer,
+		},
+	}
+	err := h3.svr.ListenAndServeTLS(h3.Cert, h3.Key)
+	if err != nil && err != context.Canceled {
+		return errors.Wrap(err, "start http3 with udp server err")
 	}
 	return nil
 }
