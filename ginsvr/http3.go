@@ -98,10 +98,6 @@ func (h3 *GinHttp3Server) loadRouter() {
 
 func (h3 *GinHttp3Server) loadValidation() error {
 	trans := validation.GetTranslator()
-	// validate, ok := binding.Validator.Engine().(*validator.Validate)
-	// if !ok {
-	// 	return fmt.Errorf("failed to get validator engine")
-	// }
 	validate := validation.GetDefaultValidator()
 	_ = zh.RegisterDefaultTranslations(validate, trans)
 	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
