@@ -13,7 +13,7 @@ import (
 	"github.com/quic-go/quic-go/qlog"
 )
 
-func getHttp3RoundTripper(caCertPath string) *http3.RoundTripper {
+func getHttp3RoundTripper(caCertPath string) (*http3.RoundTripper, error) {
 	pool, err := x509.SystemCertPool()
 	if err != nil {
 		log.Fatal(err)
@@ -21,10 +21,10 @@ func getHttp3RoundTripper(caCertPath string) *http3.RoundTripper {
 
 	caCertRaw, err := os.ReadFile(caCertPath)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "load ca path failed.")
 	}
 	if ok := pool.AppendCertsFromPEM(caCertRaw); !ok {
-		panic("Could not add root ceritificate to pool.")
+		return nil, errors.Wrap(err, "Could not add root ceritificate to pool.")
 	}
 
 	return &http3.RoundTripper{
@@ -34,12 +34,15 @@ func getHttp3RoundTripper(caCertPath string) *http3.RoundTripper {
 		QUICConfig: &quic.Config{
 			Tracer: qlog.DefaultConnectionTracer,
 		},
-	}
+	}, nil
 }
 
 func Http3Get(url string, params map[string]string, token string, headers map[string]string, caCertPath string) ([]byte, error) {
 	client := resty.New()
-	roundTripper := getHttp3RoundTripper(caCertPath)
+	roundTripper, err := getHttp3RoundTripper(caCertPath)
+	if err != nil {
+		return nil, err
+	}
 	defer roundTripper.Close()
 
 	resp, err := client.SetTransport(roundTripper).R().
@@ -58,7 +61,10 @@ func Http3Get(url string, params map[string]string, token string, headers map[st
 func Http3GetWith[T RespData](url string, params map[string]string, token string, headers map[string]string, caCertPath string) (T, error) {
 	var res T
 	client := resty.New()
-	roundTripper := getHttp3RoundTripper(caCertPath)
+	roundTripper, err := getHttp3RoundTripper(caCertPath)
+	if err != nil {
+		return res, err
+	}
 	defer roundTripper.Close()
 
 	resp, err := client.SetTransport(roundTripper).R().
@@ -77,7 +83,10 @@ func Http3GetWith[T RespData](url string, params map[string]string, token string
 
 func Http3Post(url string, params any, token string, headers map[string]string, caCertPath string) ([]byte, error) {
 	client := resty.New()
-	roundTripper := getHttp3RoundTripper(caCertPath)
+	roundTripper, err := getHttp3RoundTripper(caCertPath)
+	if err != nil {
+		return nil, err
+	}
 	defer roundTripper.Close()
 
 	resp, err := client.SetTransport(roundTripper).R().
@@ -96,7 +105,10 @@ func Http3Post(url string, params any, token string, headers map[string]string, 
 func Http3PostWith[T RespData](url string, params any, token string, headers map[string]string, caCertPath string) (T, error) {
 	var res T
 	client := resty.New()
-	roundTripper := getHttp3RoundTripper(caCertPath)
+	roundTripper, err := getHttp3RoundTripper(caCertPath)
+	if err != nil {
+		return res, err
+	}
 	defer roundTripper.Close()
 
 	resp, err := client.SetTransport(roundTripper).R().
@@ -115,7 +127,10 @@ func Http3PostWith[T RespData](url string, params any, token string, headers map
 
 func Http3Put(url string, params any, token string, headers map[string]string, caCertPath string) ([]byte, error) {
 	client := resty.New()
-	roundTripper := getHttp3RoundTripper(caCertPath)
+	roundTripper, err := getHttp3RoundTripper(caCertPath)
+	if err != nil {
+		return nil, err
+	}
 	defer roundTripper.Close()
 
 	resp, err := client.SetTransport(roundTripper).R().
@@ -134,7 +149,10 @@ func Http3Put(url string, params any, token string, headers map[string]string, c
 func Http3PutWith[T RespData](url string, params any, token string, headers map[string]string, caCertPath string) (T, error) {
 	var res T
 	client := resty.New()
-	roundTripper := getHttp3RoundTripper(caCertPath)
+	roundTripper, err := getHttp3RoundTripper(caCertPath)
+	if err != nil {
+		return res, err
+	}
 	defer roundTripper.Close()
 
 	resp, err := client.SetTransport(roundTripper).R().
@@ -153,7 +171,10 @@ func Http3PutWith[T RespData](url string, params any, token string, headers map[
 
 func Http3Delete(url string, params any, token string, headers map[string]string, caCertPath string) ([]byte, error) {
 	client := resty.New()
-	roundTripper := getHttp3RoundTripper(caCertPath)
+	roundTripper, err := getHttp3RoundTripper(caCertPath)
+	if err != nil {
+		return nil, err
+	}
 	defer roundTripper.Close()
 
 	resp, err := client.SetTransport(roundTripper).R().
@@ -172,7 +193,10 @@ func Http3Delete(url string, params any, token string, headers map[string]string
 func Http3DeleteWith[T RespData](url string, params any, token string, headers map[string]string, caCertPath string) (T, error) {
 	var res T
 	client := resty.New()
-	roundTripper := getHttp3RoundTripper(caCertPath)
+	roundTripper, err := getHttp3RoundTripper(caCertPath)
+	if err != nil {
+		return res, err
+	}
 	defer roundTripper.Close()
 
 	resp, err := client.SetTransport(roundTripper).R().
