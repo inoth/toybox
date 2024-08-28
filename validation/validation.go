@@ -90,11 +90,9 @@ func removeTopStruct(fields map[string]string) map[string]string {
 }
 
 func GetDefaultValidator() *validator.Validate {
-	once.Do(func() {
-		if validate == nil {
-			validate, _ = binding.Validator.Engine().(*validator.Validate)
-		}
-	})
+	if validate == nil {
+		validate, _ = binding.Validator.Engine().(*validator.Validate)
+	}
 	return validate
 }
 
@@ -102,15 +100,17 @@ func LoadValidation(valids []Validation) {
 	lock.Lock()
 	defer lock.Unlock()
 
-	trans := GetTranslator()
-	validate := GetDefaultValidator()
-	_ = zh2.RegisterDefaultTranslations(validate, trans)
-	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
-		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
-		if name == "-" {
-			return ""
-		}
-		return name
+	once.Do(func() {
+		trans = GetTranslator()
+		validate = GetDefaultValidator()
+		_ = zh2.RegisterDefaultTranslations(validate, trans)
+		validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+			name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+			if name == "-" {
+				return ""
+			}
+			return name
+		})
 	})
 	for _, valid := range valids {
 		if valid.Validator() != nil {
