@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"reflect"
 	"strings"
 	"sync"
 
@@ -8,11 +9,14 @@ import (
 	"github.com/go-playground/locales/zh"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
+	zh2 "github.com/go-playground/validator/v10/translations/zh"
 )
 
 var (
+	once sync.Once
+	lock sync.RWMutex
+
 	trans    ut.Translator
-	once     sync.Once
 	validate *validator.Validate
 )
 
@@ -92,4 +96,28 @@ func GetDefaultValidator() *validator.Validate {
 		}
 	})
 	return validate
+}
+
+func LoadValidation(valids []Validation) {
+	lock.Lock()
+	defer lock.Unlock()
+
+	trans := GetTranslator()
+	validate := GetDefaultValidator()
+	_ = zh2.RegisterDefaultTranslations(validate, trans)
+	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+		if name == "-" {
+			return ""
+		}
+		return name
+	})
+	for _, valid := range valids {
+		if valid.Validator() != nil {
+			validate.RegisterValidation(valid.Tag(), valid.Validator())
+		}
+		if valid.RegisterTranslation() != nil && valid.Translation() != nil {
+			validate.RegisterTranslation(valid.Tag(), trans, valid.RegisterTranslation(), valid.Translation())
+		}
+	}
 }

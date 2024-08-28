@@ -3,11 +3,8 @@ package ginsvr
 import (
 	"context"
 	"fmt"
-	"reflect"
-	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10/translations/zh"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 	"github.com/quic-go/quic-go/qlog"
@@ -97,23 +94,24 @@ func (h3 *GinHttp3Server) loadRouter() {
 }
 
 func (h3 *GinHttp3Server) loadValidation() error {
-	trans := validation.GetTranslator()
-	validate := validation.GetDefaultValidator()
-	_ = zh.RegisterDefaultTranslations(validate, trans)
-	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
-		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
-		if name == "-" {
-			return ""
-		}
-		return name
-	})
-	for _, valid := range h3.validator {
-		if valid.Validator() != nil {
-			validate.RegisterValidation(valid.Tag(), valid.Validator())
-		}
-		if valid.RegisterTranslation() != nil && valid.Translation() != nil {
-			validate.RegisterTranslation(valid.Tag(), trans, valid.RegisterTranslation(), valid.Translation())
-		}
-	}
+	validation.LoadValidation(h3.validator)
+	// trans := validation.GetTranslator()
+	// validate := validation.GetDefaultValidator()
+	// _ = zh.RegisterDefaultTranslations(validate, trans)
+	// validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+	// 	name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+	// 	if name == "-" {
+	// 		return ""
+	// 	}
+	// 	return name
+	// })
+	// for _, valid := range h3.validator {
+	// 	if valid.Validator() != nil {
+	// 		validate.RegisterValidation(valid.Tag(), valid.Validator())
+	// 	}
+	// 	if valid.RegisterTranslation() != nil && valid.Translation() != nil {
+	// 		validate.RegisterTranslation(valid.Tag(), trans, valid.RegisterTranslation(), valid.Translation())
+	// 	}
+	// }
 	return nil
 }

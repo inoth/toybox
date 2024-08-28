@@ -5,12 +5,9 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
-	"reflect"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10/translations/zh"
 
 	"github.com/inoth/toybox/validation"
 	"github.com/pkg/errors"
@@ -118,23 +115,24 @@ func (h2 *GinHttp2Server) loadRouter() {
 }
 
 func (h2 *GinHttp2Server) loadValidation() error {
-	trans := validation.GetTranslator()
-	validate := validation.GetDefaultValidator()
-	_ = zh.RegisterDefaultTranslations(validate, trans)
-	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
-		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
-		if name == "-" {
-			return ""
-		}
-		return name
-	})
-	for _, valid := range h2.validator {
-		if valid.Validator() != nil {
-			validate.RegisterValidation(valid.Tag(), valid.Validator())
-		}
-		if valid.RegisterTranslation() != nil && valid.Translation() != nil {
-			validate.RegisterTranslation(valid.Tag(), trans, valid.RegisterTranslation(), valid.Translation())
-		}
-	}
+	validation.LoadValidation(h2.validator)
+	// trans := validation.GetTranslator()
+	// validate := validation.GetDefaultValidator()
+	// _ = zh.RegisterDefaultTranslations(validate, trans)
+	// validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+	// 	name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+	// 	if name == "-" {
+	// 		return ""
+	// 	}
+	// 	return name
+	// })
+	// for _, valid := range h2.validator {
+	// 	if valid.Validator() != nil {
+	// 		validate.RegisterValidation(valid.Tag(), valid.Validator())
+	// 	}
+	// 	if valid.RegisterTranslation() != nil && valid.Translation() != nil {
+	// 		validate.RegisterTranslation(valid.Tag(), trans, valid.RegisterTranslation(), valid.Translation())
+	// 	}
+	// }
 	return nil
 }
