@@ -3,15 +3,12 @@ package ginsvr
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"net/http"
 	"reflect"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
-	"github.com/go-playground/validator/v10"
 	"github.com/go-playground/validator/v10/translations/zh"
 
 	"github.com/inoth/toybox/validation"
@@ -116,10 +113,11 @@ func (h *GinHttpServer) loadRouter() {
 
 func (h *GinHttpServer) loadValidation() error {
 	trans := validation.GetTranslator()
-	validate, ok := binding.Validator.Engine().(*validator.Validate)
-	if !ok {
-		return fmt.Errorf("failed to get validator engine")
-	}
+	// validate, ok := binding.Validator.Engine().(*validator.Validate)
+	// if !ok {
+	// 	return fmt.Errorf("failed to get validator engine")
+	// }
+	validate := validation.GetDefaultValidator()
 	_ = zh.RegisterDefaultTranslations(validate, trans)
 	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
 		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]

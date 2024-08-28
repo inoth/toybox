@@ -2,14 +2,18 @@ package validation
 
 import (
 	"strings"
+	"sync"
 
+	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/locales/zh"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 )
 
 var (
-	trans ut.Translator
+	trans    ut.Translator
+	once     sync.Once
+	validate *validator.Validate
 )
 
 type Validation interface {
@@ -79,4 +83,13 @@ func removeTopStruct(fields map[string]string) map[string]string {
 		rsp[field[strings.Index(field, ".")+1:]] = err
 	}
 	return rsp
+}
+
+func GetDefaultValidator() *validator.Validate {
+	once.Do(func() {
+		if validate == nil {
+			validate, _ = binding.Validator.Engine().(*validator.Validate)
+		}
+	})
+	return validate
 }

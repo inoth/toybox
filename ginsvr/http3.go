@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
-	"github.com/go-playground/validator/v10"
 	"github.com/go-playground/validator/v10/translations/zh"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
@@ -100,10 +98,11 @@ func (h3 *GinHttp3Server) loadRouter() {
 
 func (h3 *GinHttp3Server) loadValidation() error {
 	trans := validation.GetTranslator()
-	validate, ok := binding.Validator.Engine().(*validator.Validate)
-	if !ok {
-		return fmt.Errorf("failed to get validator engine")
-	}
+	// validate, ok := binding.Validator.Engine().(*validator.Validate)
+	// if !ok {
+	// 	return fmt.Errorf("failed to get validator engine")
+	// }
+	validate := validation.GetDefaultValidator()
 	_ = zh.RegisterDefaultTranslations(validate, trans)
 	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
 		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
