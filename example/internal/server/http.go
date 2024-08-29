@@ -14,10 +14,11 @@ func NewHttpServer(uc *controller.UserController) *ginsvr.GinHttpServer {
 	)
 }
 
-func NewHttp2Server(uc *controller.UserController) *ginsvr.GinHttp2Server {
+func NewHttp2Server(p *controller.ProxyController) *ginsvr.GinHttp2Server {
 	return ginsvr.NewHttp2(
-		ginsvr.WithValidator(validation.PhoneValidate),
-		ginsvr.WithHandlers(uc),
+		// ginsvr.WithValidator(validation.PhoneValidate),
+		ginsvr.WithMiddleware(p.Middlewares()...),
+		// ginsvr.WithHandlers(p),
 	)
 }
 

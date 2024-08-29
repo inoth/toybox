@@ -17,6 +17,14 @@ type UserController struct {
 	hub  *wssvr.WebsocketServer
 }
 
+func NewUserController(usvr *service.UserService, hub *wssvr.WebsocketServer) *UserController {
+	return &UserController{
+		hub:  hub,
+		usvr: usvr,
+		log:  logger.GetLogger("user_controller"),
+	}
+}
+
 func (uc *UserController) Prefix() string {
 	return "/api"
 }
@@ -30,20 +38,26 @@ func (uc *UserController) Routers() []ginsvr.Router {
 		{Method: "GET", Path: "/user/:uid", Handle: []gin.HandlerFunc{uc.UserList}},
 		{Method: "GET", Path: "/send/:id", Handle: []gin.HandlerFunc{uc.SendMessage}},
 		{Method: "GET", Path: "/ws", Handle: []gin.HandlerFunc{uc.Connect}},
+		{Method: "GET", Path: "/request", Handle: []gin.HandlerFunc{uc.SendHttp3}},
 	}
 }
 
-func NewUserController(usvr *service.UserService, hub *wssvr.WebsocketServer) *UserController {
-	return &UserController{
-		hub:  hub,
-		usvr: usvr,
-		log:  logger.GetLogger("user_controller"),
+func (uc *UserController) SendHttp3(c *gin.Context) {
+	res, err := util.HttpGet("https://localhost:9060/api/user/1232131231", nil, util.RequestOption{
+		Http3:      true,
+		CaCertPath: "cert/ca.pem",
+	})
+	if err != nil {
+		c.String(200, err.Error())
+		return
 	}
+	c.String(200, string(res))
 }
 
 func (uc *UserController) UserList(c *gin.Context) {
 	uid := c.Param("uid")
-	c.String(200, uid)
+	hd := c.GetHeader("SELF_PROXY")
+	c.String(200, "key=%s; uid=%s", hd, uid)
 }
 
 func (uc *UserController) SendMessage(c *gin.Context) {

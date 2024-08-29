@@ -8,5 +8,6 @@ import (
 
 var ProviderSet = wire.NewSet(
 	NewUserController,
+	NewProxyController,
 	ws.NewMessageController,
 )
