@@ -110,23 +110,5 @@ func (h *GinHttpServer) loadRouter() {
 
 func (h *GinHttpServer) loadValidation() error {
 	validation.LoadValidation(h.validator)
-	// trans := validation.GetTranslator()
-	// validate := validation.GetDefaultValidator()
-	// _ = zh.RegisterDefaultTranslations(validate, trans)
-	// validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
-	// 	name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
-	// 	if name == "-" {
-	// 		return ""
-	// 	}
-	// 	return name
-	// })
-	// for _, valid := range h.validator {
-	// 	if valid.Validator() != nil {
-	// 		validate.RegisterValidation(valid.Tag(), valid.Validator())
-	// 	}
-	// 	if valid.RegisterTranslation() != nil && valid.Translation() != nil {
-	// 		validate.RegisterTranslation(valid.Tag(), trans, valid.RegisterTranslation(), valid.Translation())
-	// 	}
-	// }
 	return nil
 }
