@@ -28,7 +28,7 @@ func TestHttpGetWith(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := HttpGetWith[map[string]any](tt.args.url, tt.args.params, tt.args.token, tt.args.headers)
+			got, err := HttpGetWith[map[string]any](tt.args.url, tt.args.params)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("HttpGetWith() error = %v, wantErr %v", err, tt.wantErr)
 				return
