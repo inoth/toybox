@@ -26,9 +26,12 @@ type GinHttp3Server struct {
 
 func NewHttp3(opts ...Option) *GinHttp3Server {
 	o := option{
-		Port:    ":9050",
-		engine:  gin.New(),
-		handles: make([]Handler, 0),
+		ReadTimeout:    10,
+		WriteTimeout:   10,
+		MaxHeaderBytes: 20,
+		Port:           ":9050",
+		engine:         gin.New(),
+		handles:        make([]Handler, 0),
 	}
 	for _, opt := range opts {
 		opt(&o)
