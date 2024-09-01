@@ -7,7 +7,7 @@ import (
 	"encoding/pem"
 	"fmt"
 
-	"github.com/inoth/toybox/util"
+	"github.com/inoth/toybox/util/file"
 )
 
 func parsePrivateKey(privateKeyStr string) (*rsa.PrivateKey, error) {
@@ -67,7 +67,7 @@ func DecryptRSA(privateKey string, encryptedData []byte) ([]byte, error) {
 }
 
 func EncryptRSAFile(pubKeyPath string, data []byte) ([]byte, error) {
-	publicKey, err := util.ReadFile(pubKeyPath)
+	publicKey, err := file.ReadFile(pubKeyPath)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func EncryptRSAFile(pubKeyPath string, data []byte) ([]byte, error) {
 }
 
 func DecryptRSAFile(privKeyPath string, encryptedData []byte) ([]byte, error) {
-	privateKey, err := util.ReadFile(privKeyPath)
+	privateKey, err := file.ReadFile(privKeyPath)
 	if err != nil {
 		return nil, err
 	}

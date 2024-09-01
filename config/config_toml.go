@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/BurntSushi/toml"
-	"github.com/inoth/toybox/util"
+	"github.com/inoth/toybox/util/file"
 )
 
 type ConfigWithToml struct {
@@ -20,7 +20,7 @@ func (ct *ConfigWithToml) Decode() error {
 	if ct.basic.Env != "" {
 		prefix += ct.basic.Env + "/"
 	}
-	paths, err := util.PathGlobPattern(fmt.Sprintf("%s*.%s", prefix, ct.basic.FileType))
+	paths, err := file.PathGlobPattern(fmt.Sprintf("%s*.%s", prefix, ct.basic.FileType))
 	if err != nil {
 		panic(fmt.Errorf("no configuration available"))
 	}

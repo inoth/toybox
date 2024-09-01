@@ -1,4 +1,4 @@
-package util
+package file
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/hpcloud/tail"
+	"github.com/inoth/toybox/util"
 	"github.com/pkg/errors"
 )
 
@@ -34,7 +35,7 @@ func WriteFile(path string, buf []byte) error {
 }
 
 func WalkPath(path string, wildcards ...string) ([]string, error) {
-	wildcard := First("", wildcards)
+	wildcard := util.First("", wildcards)
 
 	var files []string
 	if err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
