@@ -51,10 +51,7 @@ func (h *GinHttpServer) Name() string {
 func (h *GinHttpServer) Start(ctx context.Context) error {
 
 	h.loadRouter()
-
-	if err := h.loadValidation(); err != nil {
-		return errors.Wrap(err, "loadValidation() failed")
-	}
+	h.loadValidation()
 
 	h.svr = &http.Server{
 		Addr:           h.Port,
@@ -111,7 +108,6 @@ func (h *GinHttpServer) loadRouter() {
 	}
 }
 
-func (h *GinHttpServer) loadValidation() error {
+func (h *GinHttpServer) loadValidation() {
 	validation.LoadValidation(h.validator)
-	return nil
 }

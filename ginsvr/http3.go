@@ -52,10 +52,7 @@ func (h3 *GinHttp3Server) Name() string {
 func (h3 *GinHttp3Server) Start(ctx context.Context) error {
 
 	h3.loadRouter()
-
-	if err := h3.loadValidation(); err != nil {
-		return errors.Wrap(err, "loadValidation() failed")
-	}
+	h3.loadValidation()
 
 	if h3.Cert == "" || h3.Key == "" {
 		return fmt.Errorf("server %s must be config with tls", http2name)
@@ -96,7 +93,6 @@ func (h3 *GinHttp3Server) loadRouter() {
 	}
 }
 
-func (h3 *GinHttp3Server) loadValidation() error {
+func (h3 *GinHttp3Server) loadValidation() {
 	validation.LoadValidation(h3.validator)
-	return nil
 }

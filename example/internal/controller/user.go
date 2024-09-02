@@ -8,6 +8,7 @@ import (
 	"github.com/inoth/toybox/component/logger"
 	"github.com/inoth/toybox/ginsvr"
 	"github.com/inoth/toybox/util"
+	"github.com/inoth/toybox/util/http/http3"
 	"github.com/inoth/toybox/wssvr"
 )
 
@@ -43,8 +44,7 @@ func (uc *UserController) Routers() []ginsvr.Router {
 }
 
 func (uc *UserController) SendHttp3(c *gin.Context) {
-	res, err := util.HttpGet("https://localhost:9060/api/user/1232131231", nil, util.RequestOption{
-		Http3:      true,
+	res, err := http3.HttpGet("https://localhost:9060/api/user/1232131231", nil, http3.RequestOption{
 		CaCertPath: "cert/ca.pem",
 	})
 	if err != nil {

@@ -53,10 +53,7 @@ func (h2 *GinHttp2Server) Name() string {
 func (h2 *GinHttp2Server) Start(ctx context.Context) error {
 
 	h2.loadRouter()
-
-	if err := h2.loadValidation(); err != nil {
-		return errors.Wrap(err, "loadValidation() failed")
-	}
+	h2.loadValidation()
 
 	if h2.Cert == "" || h2.Key == "" {
 		return fmt.Errorf("server %s must be config with tls", http2name)
@@ -117,7 +114,6 @@ func (h2 *GinHttp2Server) loadRouter() {
 	}
 }
 
-func (h2 *GinHttp2Server) loadValidation() error {
+func (h2 *GinHttp2Server) loadValidation() {
 	validation.LoadValidation(h2.validator)
-	return nil
 }
