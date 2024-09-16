@@ -18,6 +18,7 @@ type option struct {
 	PongWait       time.Duration `toml:"pong_wait"`
 	PingPeriod     time.Duration `toml:"ping_period"`
 	MaxMessageSize int64         `toml:"max_message_size"`
+	GZIP           bool          `toml:"gzip"`
 
 	ctx     context.Context
 	handles []HandlerFunc

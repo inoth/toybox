@@ -78,7 +78,13 @@ func (c *Client) read() {
 				return
 			}
 			msg = bytes.TrimSpace(bytes.Replace(msg, newline, space, -1))
-			c.hub.input <- msg
+			if c.hub.GZIP {
+				if buf, err := util.DecompressGzip(msg); err == nil {
+					c.hub.input <- buf
+				}
+			} else {
+				c.hub.input <- msg
+			}
 		}
 	}
 }
@@ -109,7 +115,13 @@ func (c *Client) write() {
 			if err != nil {
 				return
 			}
-			w.Write(message)
+			if c.hub.GZIP {
+				if compressed, err := util.CompressGzip(message); err == nil {
+					w.Write(compressed)
+				}
+			} else {
+				w.Write(message)
+			}
 			for i := 0; i < len(c.send); i++ {
 				w.Write(newline)
 				w.Write(<-c.send)
