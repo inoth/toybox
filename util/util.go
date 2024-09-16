@@ -165,6 +165,8 @@ func CompressGzip(data []byte) ([]byte, error) {
 	if _, err := writer.Write(data); err != nil {
 		return nil, err
 	}
-
+	if err := writer.Close(); err != nil {
+		return nil, err
+	}
 	return buffer.Bytes(), nil
 }
