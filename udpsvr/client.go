@@ -1,9 +1,19 @@
 package udpsvr
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"time"
 
+	"github.com/inoth/toybox/util"
+	"github.com/pkg/errors"
 	"github.com/quic-go/quic-go"
+)
+
+var (
+	newline = []byte{'\n'}
+	space   = []byte{' '}
 )
 
 // const addr = ":4242"
@@ -68,8 +78,98 @@ type Client struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	sess quic.Connection
-	hub  *UDPQuicServer
+	stream quic.Stream
+	svr    *UDPQuicServer
 }
 
-func NewClient(hub *UDPQuicServer, sess quic.Connection)
+func NewClient(svr *UDPQuicServer, conn quic.Connection) error {
+	if svr == nil {
+		return fmt.Errorf("UDPQuicServer not init")
+	}
+
+	stream, err := conn.AcceptStream(svr.ctx)
+	if err != nil {
+		return errors.Wrap(err, "Error accepting stream")
+	}
+
+	client := &Client{
+		ID:     util.UUID(32),
+		send:   make(chan []byte, svr.ChannelSize),
+		stream: stream,
+		svr:    svr,
+	}
+	client.ctx, client.cancel = context.WithCancel(svr.ctx)
+
+	go client.read()
+	go client.write()
+
+	svr.register <- client
+	return nil
+}
+
+func (c *Client) Close() {
+	close(c.send)
+	c.cancel()
+}
+
+func (c *Client) read() {
+	defer func() {
+		c.svr.unregister <- c
+		c.stream.Close()
+	}()
+	buf := make([]byte, c.svr.MaxMessageSize)
+	c.stream.SetReadDeadline(time.Now().Add(c.svr.PongWait))
+	for {
+		select {
+		case <-c.ctx.Done():
+			return
+		default:
+			n, err := c.stream.Read(buf)
+			if err != nil {
+				return
+			}
+			msg := buf[:n]
+			bytes.TrimSpace(bytes.Replace(msg, newline, space, -1))
+			if c.svr.GZIP {
+				if buf, err := util.DecompressGzip(msg); err == nil {
+					c.svr.input <- buf
+				}
+			} else {
+				c.svr.input <- msg
+			}
+		}
+	}
+}
+
+func (c *Client) write() {
+	ticker := time.NewTicker(c.svr.PingPeriod)
+	defer func() {
+		ticker.Stop()
+		c.svr.unregister <- c
+		c.stream.Close()
+	}()
+	for {
+		select {
+		case <-c.ctx.Done():
+			return
+		case <-ticker.C:
+			c.stream.SetWriteDeadline(time.Now().Add(c.svr.WriteWait))
+			if _, err := c.stream.Write([]byte{}); err != nil {
+				return
+			}
+		case message, ok := <-c.send:
+			c.stream.SetWriteDeadline(time.Now().Add(c.svr.WriteWait))
+			if !ok {
+				c.stream.Write([]byte{})
+				return
+			}
+			if c.svr.GZIP {
+				if compressed, err := util.CompressGzip(message); err == nil {
+					c.stream.Write(compressed)
+				}
+			} else {
+				c.stream.Write(message)
+			}
+		}
+	}
+}

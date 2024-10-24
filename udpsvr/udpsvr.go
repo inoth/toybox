@@ -3,6 +3,7 @@ package udpsvr
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -30,7 +31,7 @@ type UDPQuicServer struct {
 	unregister chan *Client
 
 	input  chan []byte
-	output chan []byte
+	output chan Message
 }
 
 func New(opts ...Option) *UDPQuicServer {
@@ -55,7 +56,7 @@ func New(opts ...Option) *UDPQuicServer {
 		option: o,
 	}
 	uqs.pool = sync.Pool{New: func() any {
-		return &Context{uqs: uqs}
+		return &Context{svr: uqs}
 	}}
 	return uqs
 }
@@ -71,7 +72,7 @@ func (uq *UDPQuicServer) Start(ctx context.Context) error {
 	uq.register = make(chan *Client, util.Max(1, int(uq.ChannelSize)))
 	uq.unregister = make(chan *Client, util.Max(1, int(uq.ChannelSize)))
 	uq.input = make(chan []byte, uq.ChannelSize)
-	uq.output = make(chan []byte, uq.ChannelSize)
+	uq.output = make(chan Message, uq.ChannelSize)
 
 	tlsConfig, err := generateTLSConfig(uq.CertFile, uq.KeyFile)
 	if err != nil {
@@ -98,17 +99,88 @@ func (uq *UDPQuicServer) Stop(ctx context.Context) error {
 }
 
 func (uq *UDPQuicServer) run() error {
-	return nil
+
+	go uq.accept()
+
+	for {
+		select {
+		case <-uq.ctx.Done():
+			return uq.ctx.Err()
+		case client := <-uq.register:
+			uq.registerClient(client)
+		case client := <-uq.unregister:
+			uq.unregisterClient(client)
+		case msg := <-uq.input:
+			go func(msg []byte) {
+				defer func() {
+					if err := recover(); err != nil {
+						log.Printf("%v\n", err)
+					}
+				}()
+				uq.sendMessage(msg)
+			}(msg)
+		case msg := <-uq.output:
+			if client, ok := uq.clients[msg.ID]; ok {
+				client.send <- msg.Body
+			}
+		}
+	}
 }
 
-func (uq *UDPQuicServer) accept() error {
-	// for {
-	// 	sess, err := uq.listen.Accept(context.Background())
-	// 	if err != nil {
-	// 		fmt.Println("Error accepting connection:", err)
-	// 		continue
-	// 	}
-	// }
+func (uq *UDPQuicServer) accept() {
+	for {
+		select {
+		case <-uq.ctx.Done():
+			return
+		default:
+			conn, err := uq.listen.Accept(context.Background())
+			if err != nil {
+				fmt.Println("Error accepting connection:", err)
+				continue
+			}
+			if err = NewClient(uq, conn); err != nil {
+				fmt.Println("Error new client:", err)
+				continue
+			}
+		}
+	}
+}
 
-	return nil
+func (uq *UDPQuicServer) registerClient(client *Client) {
+	uq.m.Lock()
+	defer uq.m.Unlock()
+
+	if val, ok := uq.clients[client.ID]; ok {
+		val.Close()
+	}
+	uq.clients[client.ID] = client
+}
+
+func (uq *UDPQuicServer) unregisterClient(client *Client) {
+	uq.m.Lock()
+	defer uq.m.Unlock()
+
+	if _, ok := uq.clients[client.ID]; ok {
+		delete(uq.clients, client.ID)
+		client.Close()
+	}
+}
+
+func (uq *UDPQuicServer) SendMessage(msg []byte) {
+	uq.input <- msg
+}
+
+func (uq *UDPQuicServer) sendMessage(msg []byte) {
+	c := uq.pool.Get().(*Context)
+	c.reset()
+
+	c.send(msg)
+	for _, handle := range uq.handles {
+		if !c.state {
+			break
+		}
+		handle(c)
+	}
+
+	uq.pool.Put(c)
 }
