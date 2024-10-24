@@ -24,7 +24,7 @@ type UDPQuicServer struct {
 	cancel context.CancelFunc
 	pool   sync.Pool
 
-	listen *quic.Listener
+	ln *quic.Listener
 
 	clients    map[string]*Client
 	register   chan *Client
@@ -36,15 +36,16 @@ type UDPQuicServer struct {
 
 func New(opts ...Option) *UDPQuicServer {
 	o := option{
+		Addr:            ":4242",
 		WriteWait:       10 * time.Second,
-		PongWait:        60 * time.Second,
+		PongWait:        10 * time.Second,
 		PingPeriod:      (60 * time.Second) * 9 / 10,
 		MaxMessageSize:  1 << 10,
 		ReadBufferSize:  1 << 10,
 		WriteBufferSize: 1 << 10,
 		ChannelSize:     100,
-		CertFile:        "cert.pem",
-		KeyFile:         "priv.key",
+		CertFile:        "cert/cert.pem",
+		KeyFile:         "cert/priv.key",
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -83,13 +84,13 @@ func (uq *UDPQuicServer) Start(ctx context.Context) error {
 		return errors.Wrap(err, "load certificate failed")
 	}
 
-	listen, err := quic.ListenAddr(uq.Addr, tlsConfig, nil)
+	ln, err := quic.ListenAddr(uq.Addr, tlsConfig, nil)
 	if err != nil {
 		return errors.Wrap(err, "listening failed")
 	}
 	fmt.Printf("Server listening on %s\n", uq.Addr)
 
-	uq.listen = listen
+	uq.ln = ln
 
 	return uq.run()
 }
@@ -100,7 +101,23 @@ func (uq *UDPQuicServer) Stop(ctx context.Context) error {
 	close(uq.input)
 	close(uq.output)
 
-	return uq.listen.Close()
+	return uq.ln.Close()
+}
+
+func (uq *UDPQuicServer) accept() {
+	for {
+		select {
+		case <-uq.ctx.Done():
+			return
+		default:
+			conn, err := uq.ln.Accept(uq.ctx)
+			if err != nil && err != context.Canceled {
+				fmt.Println("Error accepting connection:", err)
+				continue
+			}
+			go NewClient(uq, conn)
+		}
+	}
 }
 
 func (uq *UDPQuicServer) run() error {
@@ -112,8 +129,10 @@ func (uq *UDPQuicServer) run() error {
 		case <-uq.ctx.Done():
 			return uq.ctx.Err()
 		case client := <-uq.register:
+			fmt.Println("register client: ", client.ID)
 			uq.registerClient(client)
 		case client := <-uq.unregister:
+			fmt.Println("unregister client: ", client.ID)
 			uq.unregisterClient(client)
 		case msg := <-uq.input:
 			go func(msg []byte) {
@@ -127,25 +146,6 @@ func (uq *UDPQuicServer) run() error {
 		case msg := <-uq.output:
 			if client, ok := uq.clients[msg.ID]; ok {
 				client.send <- msg.Body
-			}
-		}
-	}
-}
-
-func (uq *UDPQuicServer) accept() {
-	for {
-		select {
-		case <-uq.ctx.Done():
-			return
-		default:
-			conn, err := uq.listen.Accept(context.Background())
-			if err != nil {
-				fmt.Println("Error accepting connection:", err)
-				continue
-			}
-			if err = NewClient(uq, conn); err != nil {
-				fmt.Println("Error new client:", err)
-				continue
 			}
 		}
 	}

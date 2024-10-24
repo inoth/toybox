@@ -7,39 +7,30 @@
 package main
 
 import (
-	"example/internal/controller"
-	"example/internal/controller/ws"
 	"example/internal/server"
-	"example/internal/service"
 	"github.com/inoth/toybox"
 	"github.com/inoth/toybox/config"
-	"github.com/inoth/toybox/ginsvr"
-	"github.com/inoth/toybox/wssvr"
+	"github.com/inoth/toybox/udpsvr"
 )
 
 // Injectors from wire.go:
 
 func initApp(cfg config.CfgBasic) *toybox.ToyBox {
 	configMate := config.NewConfig(cfg)
-	userService := service.NewUserService()
-	messageController := ws.NewMessageController()
-	websocketServer := server.NewWebSocketServer(messageController)
-	userController := controller.NewUserController(userService, websocketServer)
-	ginHttpServer := server.NewHttpServer(userController)
-	proxyController := controller.NewProxyController(configMate)
-	ginHttp2Server := server.NewHttp2Server(proxyController)
-	toyBox := newApp(configMate, ginHttpServer, ginHttp2Server, websocketServer)
+	udpQuicServer := server.NewUDPQuicServer()
+	toyBox := newApp(configMate, udpQuicServer)
 	return toyBox
 }
 
 // wire.go:
 
 func newApp(conf config.ConfigMate,
-	hs *ginsvr.GinHttpServer,
-	h2s *ginsvr.GinHttp2Server, ws2 *wssvr.WebsocketServer) *toybox.ToyBox {
+
+	udp *udpsvr.UDPQuicServer,
+) *toybox.ToyBox {
 	t := toybox.New(toybox.WithConfig(conf), toybox.WithServer(
-		hs,
-		h2s, ws2,
+
+		udp,
 	),
 	)
 	return t
