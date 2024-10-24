@@ -74,10 +74,15 @@ func (uq *UDPQuicServer) Start(ctx context.Context) error {
 	uq.input = make(chan []byte, uq.ChannelSize)
 	uq.output = make(chan Message, uq.ChannelSize)
 
+	if len(uq.handles) == 0 {
+		uq.handles = append(uq.handles, defaultHandle())
+	}
+
 	tlsConfig, err := generateTLSConfig(uq.CertFile, uq.KeyFile)
 	if err != nil {
 		return errors.Wrap(err, "load certificate failed")
 	}
+
 	listen, err := quic.ListenAddr(uq.Addr, tlsConfig, nil)
 	if err != nil {
 		return errors.Wrap(err, "listening failed")
