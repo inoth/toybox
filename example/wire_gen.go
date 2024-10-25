@@ -7,6 +7,7 @@
 package main
 
 import (
+	"example/internal/controller/uqs"
 	"example/internal/server"
 	"github.com/inoth/toybox"
 	"github.com/inoth/toybox/config"
@@ -17,7 +18,8 @@ import (
 
 func initApp(cfg config.CfgBasic) *toybox.ToyBox {
 	configMate := config.NewConfig(cfg)
-	udpQuicServer := server.NewUDPQuicServer()
+	messageController := uqs.NewMessageController()
+	udpQuicServer := server.NewUDPQuicServer(messageController)
 	toyBox := newApp(configMate, udpQuicServer)
 	return toyBox
 }

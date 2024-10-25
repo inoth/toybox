@@ -3,6 +3,7 @@
 package main
 
 import (
+	"example/internal/controller"
 	"example/internal/server"
 
 	"github.com/google/wire"
@@ -34,5 +35,5 @@ func newApp(conf config.ConfigMate,
 func initApp(cfg config.CfgBasic) *toybox.ToyBox {
 	// panic(wire.Build(config.NewConfig, database.NewDB, service.ProviderSet, controller.ProviderSet, server.ProviderSet, newApp))
 	// panic(wire.Build(config.NewConfig, service.ProviderSet, controller.ProviderSet, server.ProviderSet, newApp))
-	panic(wire.Build(config.NewConfig, server.ProviderSet, newApp))
+	panic(wire.Build(config.NewConfig, server.ProviderSet, controller.ProviderSet, newApp))
 }

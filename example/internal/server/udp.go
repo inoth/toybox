@@ -1,16 +1,17 @@
 package server
 
 import (
-	"fmt"
+	"example/internal/controller/uqs"
 
 	"github.com/inoth/toybox/udpsvr"
 )
 
-func NewUDPQuicServer() *udpsvr.UDPQuicServer {
+func NewUDPQuicServer(col *uqs.MessageController) *udpsvr.UDPQuicServer {
 	ws := udpsvr.New(udpsvr.WithHandler(
-		func(c *udpsvr.Context) {
-			fmt.Printf("%v\n", string(c.Body()))
-		},
+		// func(c *udpsvr.Context) {
+		// 	fmt.Printf("%v\n", string(c.Body()))
+		// },
+		col.Handler(),
 	))
 	return ws
 }

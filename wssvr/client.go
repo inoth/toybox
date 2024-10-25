@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -18,7 +19,8 @@ var (
 )
 
 type Client struct {
-	send chan []byte
+	send   chan []byte
+	closed atomic.Int32
 
 	ID string
 
@@ -30,8 +32,10 @@ type Client struct {
 }
 
 func (c *Client) Close() {
-	close(c.send)
-	c.cancel()
+	if c.closed.CompareAndSwap(0, 1) {
+		close(c.send)
+		c.cancel()
+	}
 }
 
 func NewClient(hub *WebsocketServer, w http.ResponseWriter, r *http.Request) (string, error) {

@@ -96,12 +96,12 @@ func (uq *UDPQuicServer) Start(ctx context.Context) error {
 }
 
 func (uq *UDPQuicServer) Stop(ctx context.Context) error {
+	uq.ln.Close()
 	close(uq.register)
 	close(uq.unregister)
 	close(uq.input)
 	close(uq.output)
-
-	return uq.ln.Close()
+	return nil
 }
 
 func (uq *UDPQuicServer) accept() {
@@ -111,7 +111,10 @@ func (uq *UDPQuicServer) accept() {
 			return
 		default:
 			conn, err := uq.ln.Accept(uq.ctx)
-			if err != nil && err != context.Canceled {
+			if err != nil {
+				if err == context.Canceled {
+					return
+				}
 				fmt.Println("Error accepting connection:", err)
 				continue
 			}
@@ -129,10 +132,10 @@ func (uq *UDPQuicServer) run() error {
 		case <-uq.ctx.Done():
 			return uq.ctx.Err()
 		case client := <-uq.register:
-			fmt.Println("register client: ", client.ID)
+			fmt.Printf("register client: %s; remote addr = %s\n", client.ID, client.RemoteAddr)
 			uq.registerClient(client)
 		case client := <-uq.unregister:
-			fmt.Println("unregister client: ", client.ID)
+			fmt.Printf("unregister client: %s; remote addr = %s\n", client.ID, client.RemoteAddr)
 			uq.unregisterClient(client)
 		case msg := <-uq.input:
 			go func(msg []byte) {
@@ -165,10 +168,12 @@ func (uq *UDPQuicServer) unregisterClient(client *Client) {
 	uq.m.Lock()
 	defer uq.m.Unlock()
 
-	if _, ok := uq.clients[client.ID]; ok {
-		delete(uq.clients, client.ID)
-		client.Close()
-	}
+	// if _, ok := uq.clients[client.ID]; ok {
+	// 	delete(uq.clients, client.ID)
+	// 	client.Close()
+	// }
+	delete(uq.clients, client.ID)
+	client.Close()
 }
 
 func (uq *UDPQuicServer) SendMessage(msg []byte) {

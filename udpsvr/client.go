@@ -4,10 +4,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/inoth/toybox/util"
 	"github.com/quic-go/quic-go"
+)
+
+const (
+	IsDebug = false
 )
 
 var (
@@ -16,71 +21,66 @@ var (
 )
 
 type Client struct {
-	send chan []byte
+	send   chan []byte
+	closed atomic.Int32
 
-	ID     string
-	ctx    context.Context
-	cancel context.CancelFunc
+	ID         string
+	RemoteAddr string
+	ctx        context.Context
+	cancel     context.CancelFunc
 
 	conn quic.Connection
 	svr  *UDPQuicServer
 }
 
 func NewClient(svr *UDPQuicServer, conn quic.Connection) {
-	if svr == nil {
-		fmt.Println("UDPQuicServer not init")
-		return
-	}
-	if conn == nil {
-		fmt.Println("Connection not init")
+	if svr == nil || conn == nil {
+		fmt.Println("NewClient failed")
 		return
 	}
 
 	client := &Client{
-		ID:   util.UUID(32),
-		send: make(chan []byte, svr.ChannelSize),
-		conn: conn,
-		svr:  svr,
+		ID:         util.UUID(32),
+		send:       make(chan []byte, svr.ChannelSize),
+		conn:       conn,
+		svr:        svr,
+		RemoteAddr: conn.RemoteAddr().String(),
+	}
+	if IsDebug {
+		client.ID = "testclient"
 	}
 	client.ctx, client.cancel = context.WithCancel(svr.ctx)
 
-	svr.register <- client
-	defer func() {
-		svr.unregister <- client
-	}()
-	for {
-		select {
-		case <-client.conn.Context().Done():
-		case <-client.ctx.Done():
-			return
-		default:
-			stream, err := conn.AcceptStream(svr.ctx)
-			if err != nil {
-				fmt.Printf("Error client %s accepting stream: %v\n", client.ID, err)
-				return
-			}
-
-			go client.read(stream)
-			go client.write(stream)
-		}
+	stream, err := conn.AcceptStream(svr.ctx)
+	if err != nil {
+		fmt.Printf("Error client %s accepting stream: %v\n", client.ID, err)
 	}
+
+	go client.read(stream)
+	go client.write(stream)
+
+	svr.register <- client
 }
 
 func (c *Client) Close() {
-	close(c.send)
-	c.conn.CloseWithError(0, "connection closed")
-	c.cancel()
+	if c.closed.CompareAndSwap(0, 1) {
+		c.conn.CloseWithError(0, "connection closed")
+		close(c.send)
+		c.cancel()
+	}
 }
 
 func (c *Client) read(stream quic.Stream) {
 	defer func() {
 		stream.Close()
+		c.svr.unregister <- c
 	}()
 	buf := make([]byte, c.svr.MaxMessageSize)
 	stream.SetReadDeadline(time.Now().Add(c.svr.PongWait))
 	for {
 		select {
 		case <-c.ctx.Done():
+		case <-stream.Context().Done():
 			return
 		default:
 			n, err := stream.Read(buf)
@@ -88,7 +88,7 @@ func (c *Client) read(stream quic.Stream) {
 				return
 			}
 			msg := buf[:n]
-			bytes.TrimSpace(bytes.Replace(msg, newline, space, -1))
+			msg = bytes.TrimSpace(bytes.Replace(msg, newline, space, -1))
 			if c.svr.GZIP {
 				if buf, err := util.DecompressGzip(msg); err == nil {
 					c.svr.input <- buf
@@ -105,10 +105,12 @@ func (c *Client) write(stream quic.Stream) {
 	defer func() {
 		ticker.Stop()
 		stream.Close()
+		c.svr.unregister <- c
 	}()
 	for {
 		select {
 		case <-c.ctx.Done():
+		case <-stream.Context().Done():
 			return
 		case <-ticker.C:
 			stream.SetWriteDeadline(time.Now().Add(c.svr.WriteWait))
