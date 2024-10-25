@@ -38,7 +38,7 @@ func New(opts ...Option) *UDPQuicServer {
 		Addr:            ":4242",
 		WriteWait:       10 * time.Second,
 		PongWait:        10 * time.Second,
-		PingPeriod:      (60 * time.Second) * 9 / 10,
+		PingPeriod:      (10 * time.Second) * 9 / 10,
 		MaxMessageSize:  1 << 10,
 		ReadBufferSize:  1 << 10,
 		WriteBufferSize: 1 << 10,
@@ -167,10 +167,6 @@ func (uq *UDPQuicServer) unregisterClient(client *Client) {
 	uq.m.Lock()
 	defer uq.m.Unlock()
 
-	// if _, ok := uq.clients[client.ID]; ok {
-	// 	delete(uq.clients, client.ID)
-	// 	client.Close()
-	// }
 	delete(uq.clients, client.ID)
 	client.Close()
 }

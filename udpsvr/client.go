@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	IsDebug = false
+	IsDebug = true
 )
 
 var (
@@ -88,7 +88,7 @@ func (c *Client) read(stream quic.Stream) {
 				return
 			}
 			msg := bytes.TrimSpace(bytes.Replace(buf[:n], newline, space, -1))
-			if c.svr.GZIP {
+			if c.svr.Gzip {
 				if buf, err := util.DecompressGzip(msg); err == nil {
 					c.svr.input <- buf
 				}
@@ -113,7 +113,7 @@ func (c *Client) write(stream quic.Stream) {
 			return
 		case <-ticker.C:
 			stream.SetWriteDeadline(time.Now().Add(c.svr.WriteWait))
-			if _, err := stream.Write([]byte("PING")); err != nil {
+			if _, err := stream.Write([]byte{}); err != nil {
 				return
 			}
 		case message, ok := <-c.send:
@@ -122,7 +122,7 @@ func (c *Client) write(stream quic.Stream) {
 				stream.Write([]byte{})
 				return
 			}
-			if c.svr.GZIP {
+			if c.svr.Gzip {
 				if compressed, err := util.CompressGzip(message); err == nil {
 					stream.Write(compressed)
 				}

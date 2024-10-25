@@ -146,10 +146,6 @@ func (w *WebsocketServer) unregisterClient(client *Client) {
 	w.m.Lock()
 	defer w.m.Unlock()
 
-	// if _, ok := w.clients[client.ID]; ok {
-	// 	delete(w.clients, client.ID)
-	// 	client.Close()
-	// }
 	delete(w.clients, client.ID)
 	client.Close()
 }
