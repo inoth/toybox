@@ -3,7 +3,6 @@ package udpsvr
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -115,7 +114,7 @@ func (uq *UDPQuicServer) accept() {
 				if err == context.Canceled {
 					return
 				}
-				fmt.Println("Error accepting connection:", err)
+				fmt.Printf("Error accepting connection: %v\n", err)
 				continue
 			}
 			go NewClient(uq, conn)
@@ -141,7 +140,7 @@ func (uq *UDPQuicServer) run() error {
 			go func(msg []byte) {
 				defer func() {
 					if err := recover(); err != nil {
-						log.Printf("%v\n", err)
+						fmt.Printf("%v\n", err)
 					}
 				}()
 				uq.sendMessage(msg)
