@@ -87,8 +87,7 @@ func (c *Client) read(stream quic.Stream) {
 			if err != nil {
 				return
 			}
-			msg := buf[:n]
-			msg = bytes.TrimSpace(bytes.Replace(msg, newline, space, -1))
+			msg := bytes.TrimSpace(bytes.Replace(buf[:n], newline, space, -1))
 			if c.svr.GZIP {
 				if buf, err := util.DecompressGzip(msg); err == nil {
 					c.svr.input <- buf
