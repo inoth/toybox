@@ -24,7 +24,9 @@ func (m *MessageController) Handler() udpsvr.HandlerFunc {
 			return
 		}
 
-		c.String(data.ID, data.Body)
+		for i := 0; i < 3; i++ {
+			c.String(data.ID, data.Body)
+		}
 	}
 }
 

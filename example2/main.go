@@ -18,6 +18,7 @@ func main() {
 		fmt.Printf("%v\n", err)
 		return
 	}
+	defer client.Close()
 
 	msg := make(chan []byte)
 	go client.ReceiveMessage(msg)
