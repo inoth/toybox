@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/AlecAivazis/survey/v2"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/fatih/color"
 	"github.com/inoth/toybox/cmd/toybox/internal/base"
 )
@@ -20,16 +20,13 @@ func (p *Project) New(ctx context.Context, dir, layout, branch string) error {
 	to := filepath.Join(dir, p.Name)
 	if _, err := os.Stat(to); !os.IsNotExist(err) {
 		fmt.Printf("🚫 %s already exists\n", p.Name)
-		prompt := &survey.Confirm{
-			Message: "📂 Do you want to override the folder ?",
-			Help:    "Delete the existing folder and create the project.",
+
+		var model base.SelectModel
+		p := tea.NewProgram(&model)
+		if _, err := p.Run(); err != nil {
+			return err
 		}
-		var override bool
-		e := survey.AskOne(prompt, &override)
-		if e != nil {
-			return e
-		}
-		if !override {
+		if model.Choice == "no" {
 			return err
 		}
 		os.RemoveAll(to)
@@ -39,23 +36,18 @@ func (p *Project) New(ctx context.Context, dir, layout, branch string) error {
 	if err := repo.CopyTo(ctx, to, p.Name, []string{".git", ".github"}); err != nil {
 		return err
 	}
-	e := os.Rename(
-		filepath.Join(to, "cmd", "server"),
-		filepath.Join(to, "cmd", p.Name),
-	)
-	if e != nil {
-		return e
-	}
+	// e := os.Rename(
+	// 	filepath.Join(to, "cmd", "server"),
+	// 	filepath.Join(to, "cmd", p.Name),
+	// )
+	// if e != nil {
+	// 	return e
+	// }
 	base.Tree(to, dir)
 
 	fmt.Printf("\n🍺 Project creation succeeded %s\n", color.GreenString(p.Name))
 	fmt.Print("💻 Use the following command to start the project 👇:\n\n")
 
 	fmt.Println(color.WhiteString("$ cd %s", p.Name))
-	fmt.Println(color.WhiteString("$ go generate ./..."))
-	fmt.Println(color.WhiteString("$ go build -o ./bin/ ./... "))
-	fmt.Println(color.WhiteString("$ ./bin/%s -conf ./configs\n", p.Name))
-	fmt.Println("			🤝 Thanks for using Kratos")
-	fmt.Println("	📚 Tutorial: https://go-kratos.dev/docs/getting-started/start")
 	return nil
 }

@@ -19,9 +19,6 @@ func ParseVCSUrl(repo string) (*url.URL, error) {
 	)
 
 	if m := scpSyntaxRe.FindStringSubmatch(repo); m != nil {
-		// Match SCP-like syntax and convert it to a URL.
-		// Eg, "git@github.com:user/repo" becomes
-		// "ssh://git@github.com/user/repo".
 		repoURL = &url.URL{
 			Scheme: "ssh",
 			User:   url.User(m[1]),
@@ -43,9 +40,6 @@ func ParseVCSUrl(repo string) (*url.URL, error) {
 		}
 	}
 
-	// Iterate over insecure schemes too, because this function simply
-	// reports the state of the repo. If we can't see insecure schemes then
-	// we can't report the actual repo URL.
 	for _, s := range scheme {
 		if repoURL.Scheme == s {
 			return repoURL, nil

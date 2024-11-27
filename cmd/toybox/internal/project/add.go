@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/AlecAivazis/survey/v2"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/fatih/color"
 	"github.com/inoth/toybox/cmd/toybox/internal/base"
 )
@@ -20,16 +20,13 @@ func (p *Project) Add(ctx context.Context, dir string, layout string, branch str
 
 	if _, err := os.Stat(to); !os.IsNotExist(err) {
 		fmt.Printf("🚫 %s already exists\n", p.Name)
-		override := false
-		prompt := &survey.Confirm{
-			Message: "📂 Do you want to override the folder ?",
-			Help:    "Delete the existing folder and create the project.",
+
+		var model base.SelectModel
+		p := tea.NewProgram(&model)
+		if _, err := p.Run(); err != nil {
+			return err
 		}
-		e := survey.AskOne(prompt, &override)
-		if e != nil {
-			return e
-		}
-		if !override {
+		if model.Choice == "no" {
 			return err
 		}
 		os.RemoveAll(to)
@@ -44,13 +41,13 @@ func (p *Project) Add(ctx context.Context, dir string, layout string, branch str
 		return err
 	}
 
-	e := os.Rename(
-		filepath.Join(to, "cmd", "server"),
-		filepath.Join(to, "cmd", p.Name),
-	)
-	if e != nil {
-		return e
-	}
+	// e := os.Rename(
+	// 	filepath.Join(to, "cmd", "server"),
+	// 	filepath.Join(to, "cmd", p.Name),
+	// )
+	// if e != nil {
+	// 	return e
+	// }
 
 	base.Tree(to, dir)
 
@@ -58,10 +55,6 @@ func (p *Project) Add(ctx context.Context, dir string, layout string, branch str
 	fmt.Print("💻 Use the following command to add a project 👇:\n\n")
 
 	fmt.Println(color.WhiteString("$ cd %s", p.Name))
-	fmt.Println(color.WhiteString("$ go generate ./..."))
-	fmt.Println(color.WhiteString("$ go build -o ./bin/ ./... "))
-	fmt.Println(color.WhiteString("$ ./bin/%s -conf ./configs\n", p.Name))
-	fmt.Println("			🤝 Thanks for using Kratos")
-	fmt.Println("	📚 Tutorial: https://go-kratos.dev/docs/getting-started/start")
+	fmt.Println(color.WhiteString("$ code ./"))
 	return nil
 }

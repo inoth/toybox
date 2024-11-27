@@ -11,12 +11,12 @@ import (
 	"github.com/fatih/color"
 )
 
-func kratosHome() string {
+func toyboxHome() string {
 	dir, err := os.UserHomeDir()
 	if err != nil {
 		log.Fatal(err)
 	}
-	home := filepath.Join(dir, ".kratos")
+	home := filepath.Join(dir, ".toybox")
 	if _, err := os.Stat(home); os.IsNotExist(err) {
 		if err := os.MkdirAll(home, 0o700); err != nil {
 			log.Fatal(err)
@@ -25,8 +25,8 @@ func kratosHome() string {
 	return home
 }
 
-func kratosHomeWithDir(dir string) string {
-	home := filepath.Join(kratosHome(), dir)
+func toyboxHomeWithDir(dir string) string {
+	home := filepath.Join(toyboxHome(), dir)
 	if _, err := os.Stat(home); os.IsNotExist(err) {
 		if err := os.MkdirAll(home, 0o700); err != nil {
 			log.Fatal(err)

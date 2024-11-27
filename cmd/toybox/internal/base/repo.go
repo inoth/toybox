@@ -13,7 +13,6 @@ import (
 
 var unExpandVarPath = []string{"~", ".", ".."}
 
-// Repo is git repository manager.
 type Repo struct {
 	url    string
 	home   string
@@ -38,16 +37,14 @@ func repoDir(url string) string {
 	return url
 }
 
-// NewRepo new a repository manager.
 func NewRepo(url string, branch string) *Repo {
 	return &Repo{
 		url:    url,
-		home:   kratosHomeWithDir("repo/" + repoDir(url)),
+		home:   toyboxHomeWithDir("repo/" + repoDir(url)),
 		branch: branch,
 	}
 }
 
-// Path returns the repository cache path.
 func (r *Repo) Path() string {
 	start := strings.LastIndex(r.url, "/")
 	end := strings.LastIndex(r.url, ".git")
@@ -63,7 +60,6 @@ func (r *Repo) Path() string {
 	return path.Join(r.home, r.url[start+1:end]+branch)
 }
 
-// Pull fetch the repository from remote url.
 func (r *Repo) Pull(ctx context.Context) error {
 	cmd := exec.CommandContext(ctx, "git", "symbolic-ref", "HEAD")
 	cmd.Dir = r.Path()
@@ -81,7 +77,6 @@ func (r *Repo) Pull(ctx context.Context) error {
 	return err
 }
 
-// Clone clones the repository to cache path.
 func (r *Repo) Clone(ctx context.Context) error {
 	if _, err := os.Stat(r.Path()); !os.IsNotExist(err) {
 		return r.Pull(ctx)
@@ -100,7 +95,6 @@ func (r *Repo) Clone(ctx context.Context) error {
 	return nil
 }
 
-// CopyTo copies the repository to project path.
 func (r *Repo) CopyTo(ctx context.Context, to string, modPath string, ignores []string) error {
 	if err := r.Clone(ctx); err != nil {
 		return err
@@ -112,7 +106,6 @@ func (r *Repo) CopyTo(ctx context.Context, to string, modPath string, ignores []
 	return copyDir(r.Path(), to, []string{mod, modPath}, ignores)
 }
 
-// CopyToV2 copies the repository to project path
 func (r *Repo) CopyToV2(ctx context.Context, to string, modPath string, ignores, replaces []string) error {
 	if err := r.Clone(ctx); err != nil {
 		return err

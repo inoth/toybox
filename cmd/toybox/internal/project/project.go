@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlecAivazis/survey/v2"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/inoth/toybox/cmd/toybox/internal/base"
 	"github.com/spf13/cobra"
 )
@@ -18,7 +18,7 @@ import (
 var CmdNew = &cobra.Command{
 	Use:   "new",
 	Short: "Create a service template",
-	Long:  "Create a service project using the repository template. Example: kratos new helloworld",
+	Long:  "Create a service project using the repository template. Example: toybox new helloworld",
 	Run:   run,
 }
 
@@ -30,8 +30,8 @@ var (
 )
 
 func init() {
-	if repoURL = os.Getenv("KRATOS_LAYOUT_REPO"); repoURL == "" {
-		repoURL = "https://github.com/go-kratos/kratos-layout.git"
+	if repoURL = os.Getenv("TOYBOX_LAYOUT_REPO"); repoURL == "" {
+		repoURL = "https://github.com/inoth/toybox-layout.git"
 	}
 	timeout = "60s"
 	CmdNew.Flags().StringVarP(&repoURL, "repo-url", "r", repoURL, "layout repo")
@@ -53,14 +53,15 @@ func run(_ *cobra.Command, args []string) {
 	defer cancel()
 	name := ""
 	if len(args) == 0 {
-		prompt := &survey.Input{
-			Message: "What is project name ?",
-			Help:    "Created project name.",
-		}
-		err = survey.AskOne(prompt, &name)
-		if err != nil || name == "" {
+		m := base.NewTextModel("What is project name ?")
+		p := tea.NewProgram(&m)
+		if _, err := p.Run(); err != nil {
 			return
 		}
+		if m.Value == "" {
+			return
+		}
+		name = m.Value
 	} else {
 		name = args[0]
 	}

@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"github.com/inoth/toybox/cmd/toybox/internal/project"
+	"github.com/inoth/toybox/cmd/toybox/internal/upgrade"
 	"github.com/spf13/cobra"
 )
 
@@ -19,6 +20,7 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(project.CmdNew)
+	rootCmd.AddCommand(upgrade.CmdUpgrade)
 }
 
 func main() {
