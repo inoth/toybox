@@ -80,6 +80,7 @@ func (c *Client) read(stream quic.Stream) {
 	for {
 		select {
 		case <-c.ctx.Done():
+			return
 		case <-stream.Context().Done():
 			return
 		default:
@@ -109,6 +110,7 @@ func (c *Client) write(stream quic.Stream) {
 	for {
 		select {
 		case <-c.ctx.Done():
+			return
 		case <-stream.Context().Done():
 			return
 		case <-ticker.C:
