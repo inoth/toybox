@@ -2,25 +2,26 @@ package config
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/BurntSushi/toml"
 	"github.com/inoth/toybox/util/file"
 )
 
 type ConfigWithToml struct {
-	basic CfgBasic
-	mate  toml.MetaData
-	cfg   struct {
+	mate toml.MetaData
+	cfg  struct {
 		Server map[string]toml.Primitive `toml:"server"`
 	}
 }
 
-func (ct *ConfigWithToml) Decode() error {
-	prefix := ct.basic.CfgDir + "/"
-	if ct.basic.Env != "" {
-		prefix += ct.basic.Env + "/"
+func (ct *ConfigWithToml) Decode(dir string) error {
+	cfgEnv := os.Getenv("CONFIG_ENV")
+	if cfgEnv != "" {
+		dir = filepath.Join(dir, cfgEnv)
 	}
-	paths, err := file.PathGlobPattern(fmt.Sprintf("%s*.%s", prefix, ct.basic.FileType))
+	paths, err := file.PathGlobPattern(filepath.Join(dir, "*.toml"))
 	if err != nil {
 		panic(fmt.Errorf("no configuration available"))
 	}

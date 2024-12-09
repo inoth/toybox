@@ -32,8 +32,8 @@ func newApp(conf config.ConfigMate,
 	return t
 }
 
-func initApp(cfg config.CfgBasic) *toybox.ToyBox {
+func initApp(dir string) *toybox.ToyBox {
 	// panic(wire.Build(config.NewConfig, database.NewDB, service.ProviderSet, controller.ProviderSet, server.ProviderSet, newApp))
 	// panic(wire.Build(config.NewConfig, service.ProviderSet, controller.ProviderSet, server.ProviderSet, newApp))
-	panic(wire.Build(config.NewConfig, server.ProviderSet, controller.ProviderSet, newApp))
+	panic(wire.Build(server.ProviderSet, controller.ProviderSet, newApp))
 }
