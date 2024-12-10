@@ -10,12 +10,10 @@ import (
 )
 
 const (
-	Name = "mysql"
+	Name = "mysqls"
 )
 
-type MysqlComponent struct {
-	db *gorm.DB
-
+type Config struct {
 	Host            string `toml:"host" json:"host"`
 	Port            int    `toml:"port" json:"port"`
 	User            string `toml:"user" json:"user"`
@@ -27,8 +25,15 @@ type MysqlComponent struct {
 	ConnMaxLifetime int    `toml:"conn_max_lifetime" json:"conn_max_lifetime"`
 }
 
+type MysqlComponent struct {
+	dbMap   map[string]*gorm.DB
+	Configs []Config `toml:"configs" json:"configs"`
+}
+
 func NewDB(conf config.ConfigMate) *MysqlComponent {
-	mc := MysqlComponent{}
+	mc := MysqlComponent{
+		dbMap: make(map[string]*gorm.DB),
+	}
 	err := conf.PrimitiveDecode(&mc)
 	if err != nil {
 		panic(fmt.Errorf("init mysql err: %v", err))
@@ -38,33 +43,46 @@ func NewDB(conf config.ConfigMate) *MysqlComponent {
 }
 
 func (mc *MysqlComponent) newDB() {
-	constr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", mc.User, mc.Passwd, mc.Host, mc.Port, mc.DbName)
-	client, err := gorm.Open(mysql.New(mysql.Config{
-		DSN:                       constr,
-		DefaultStringSize:         1 << 10,
-		DisableDatetimePrecision:  true,
-		DontSupportRenameIndex:    true,  // 重命名索引时采用删除并新建的方式，MySQL 5.7 之前的数据库和 MariaDB 不支持重命名索引
-		DontSupportRenameColumn:   true,  // 用 `change` 重命名列，MySQL 8 之前的数据库和 MariaDB 不支持重命名列
-		SkipInitializeWithVersion: false, // 根据当前 MySQL 版本自动配置
-	}))
-	if err != nil {
-		panic(fmt.Errorf("failed to connect to mysql: %v", err))
+	for _, cfg := range mc.Configs {
+		constr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+			cfg.User,
+			cfg.Passwd,
+			cfg.Host,
+			cfg.Port,
+			cfg.DbName,
+		)
+		client, err := gorm.Open(mysql.New(mysql.Config{
+			DSN:                       constr,
+			DefaultStringSize:         1 << 10,
+			DisableDatetimePrecision:  true,
+			DontSupportRenameIndex:    true,  // 重命名索引时采用删除并新建的方式，MySQL 5.7 之前的数据库和 MariaDB 不支持重命名索引
+			DontSupportRenameColumn:   true,  // 用 `change` 重命名列，MySQL 8 之前的数据库和 MariaDB 不支持重命名列
+			SkipInitializeWithVersion: false, // 根据当前 MySQL 版本自动配置
+		}))
+		if err != nil {
+			panic(fmt.Errorf("failed to connect to mysql: %v", err))
+		}
+		sqlDB, err := client.DB()
+		if err != nil {
+			panic(fmt.Errorf("failed to get to sql.DB: %v", err))
+		}
+		sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)                                    // 最大空闲连接数
+		sqlDB.SetConnMaxIdleTime(time.Second * time.Duration(cfg.ConnMaxIdletime)) // 连接最大空闲时间
+		sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)                                    // 最大打开连接数
+		sqlDB.SetConnMaxLifetime(time.Second * time.Duration(cfg.ConnMaxLifetime)) // 连接最大生命周期
+
+		mc.dbMap[cfg.DbName] = client
 	}
-	sqlDB, err := client.DB()
-	if err != nil {
-		panic(fmt.Errorf("failed to get to sql.DB: %v", err))
-	}
-	sqlDB.SetMaxIdleConns(mc.MaxIdleConns)                                    // 最大空闲连接数
-	sqlDB.SetConnMaxIdleTime(time.Second * time.Duration(mc.ConnMaxIdletime)) // 连接最大空闲时间
-	sqlDB.SetMaxOpenConns(mc.MaxOpenConns)                                    // 最大打开连接数
-	sqlDB.SetConnMaxLifetime(time.Second * time.Duration(mc.ConnMaxLifetime)) // 连接最大生命周期
-	mc.db = client
+
 }
 
 func (mc *MysqlComponent) Name() string {
 	return Name
 }
 
-func (mc *MysqlComponent) GetDB() *gorm.DB {
-	return mc.db
+func (mc *MysqlComponent) GetDB(dbname string) *gorm.DB {
+	if db, ok := mc.dbMap[dbname]; ok {
+		return db
+	}
+	panic(fmt.Errorf("not found database %s", dbname))
 }

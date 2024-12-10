@@ -1,4 +1,4 @@
-package http3
+package resty3
 
 import (
 	"crypto/tls"

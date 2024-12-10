@@ -1,4 +1,4 @@
-package http
+package resty
 
 import (
 	"reflect"
