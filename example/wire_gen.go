@@ -10,8 +10,6 @@ import (
 	"example/internal/controller/uqs"
 	"example/internal/server"
 	"github.com/inoth/toybox"
-	"github.com/inoth/toybox/config"
-	"github.com/inoth/toybox/udpsvr"
 )
 
 // Injectors from wire.go:
@@ -22,18 +20,4 @@ func initApp(dir string) *toybox.ToyBox {
 	udpQuicServer := server.NewUDPQuicServer(messageController)
 	toyBox := newApp(configMate, udpQuicServer)
 	return toyBox
-}
-
-// wire.go:
-
-func newApp(conf config.ConfigMate,
-
-	udp *udpsvr.UDPQuicServer,
-) *toybox.ToyBox {
-	t := toybox.New(toybox.WithConfig(conf), toybox.WithServer(
-
-		udp,
-	),
-	)
-	return t
 }
