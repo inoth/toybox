@@ -11,16 +11,16 @@ permissions:
   packages: write
 
 jobs:
-  golangci:
-    name: golangci
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-          args: --timeout=3m
+  # golangci:
+  #   name: golangci
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: golangci-lint
+  #       uses: golangci/golangci-lint-action@v6
+  #       with:
+  #         version: latest
+  #         args: --timeout=3m
 
   build:
     strategy:

@@ -1,6 +1,6 @@
 module github.com/inoth/toybox
 
-go 1.21
+go 1.22
 
 retract (
 	[v1.0.0, v1.1.9]
