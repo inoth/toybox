@@ -3,7 +3,7 @@ package toybox
 import (
 	"context"
 	"errors"
-	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"sync"
@@ -44,10 +44,16 @@ func (tb *ToyBox) Name() string    { return tb.name }
 func (tb *ToyBox) Version() string { return tb.version }
 
 func (tb *ToyBox) Run() (err error) {
-	fmt.Printf("server start %s\n", tb.ID())
+	log.Printf("server start %s\n", tb.ID())
 
 	if tb.cfg == nil {
 		return ErrNotConfig
+	}
+
+	ch := make(chan struct{})
+	if watch, ok := tb.cfg.(config.Watcher); ok {
+		go watch.Next(tb.ctx)
+		go watch.Probe(ch)
 	}
 
 	c := make(chan os.Signal, 1)
@@ -67,13 +73,13 @@ func (tb *ToyBox) Run() (err error) {
 		}
 		eg.Go(func() error {
 			<-ctx.Done()
-			fmt.Printf("Done %s ...............\n", cm.Name())
+			log.Printf("Done %s ...............\n", cm.Name())
 			return svc.Stop(ctx)
 		})
 		wg.Add(1)
 		eg.Go(func() error {
 			wg.Done()
-			fmt.Printf("Start %s ...............\n", cm.Name())
+			log.Printf("Start %s ...............\n", cm.Name())
 			return svc.Start(ctx)
 		})
 	}
@@ -83,15 +89,20 @@ func (tb *ToyBox) Run() (err error) {
 	eg.Go(func() error {
 		select {
 		case <-ctx.Done():
-			fmt.Printf("Done server %s ...............\n", tb.ID())
+			log.Printf("Done server %s ...............\n", tb.ID())
 			return nil
 		case sig := <-c:
-			fmt.Printf("Done server %s ...............\n", tb.ID())
+			log.Printf("Done server %s ...............\n", tb.ID())
 			_ = tb.Stop()
 			if sig == syscall.SIGHUP {
 				return ErrRestart
 			}
 			return nil
+		case <-ch:
+			log.Printf("Config change detected, restarting...\n")
+			close(ch)
+			_ = tb.Stop()
+			return ErrRestart
 		}
 	})
 	if err = eg.Wait(); err != nil && !errors.Is(err, context.Canceled) {

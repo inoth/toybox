@@ -1,6 +1,8 @@
 package config
 
+import "context"
+
 type Watcher interface {
-	Next() ([]byte, error)
-	Stop() error
+	Next(ctx context.Context)
+	Probe(chan<- struct{})
 }

@@ -3,8 +3,9 @@ package config
 type Option func(opt *option)
 
 type option struct {
-	dir string
-	cfg Configuration
+	interval int
+	dir      string
+	cfg      Configuration
 }
 
 func WithConfiguration(cfg Configuration) Option {
@@ -16,5 +17,11 @@ func WithConfiguration(cfg Configuration) Option {
 func WithConfigDir(dir string) Option {
 	return func(opt *option) {
 		opt.dir = dir
+	}
+}
+
+func WithConfigInterval(interval int) Option {
+	return func(opt *option) {
+		opt.interval = interval
 	}
 }

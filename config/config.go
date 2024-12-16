@@ -30,7 +30,7 @@ type ConfigureMatcher interface {
 }
 
 func NewDefaultConfig() ConfigMate {
-	tomlCfg := &ConfigWithToml{}
+	tomlCfg := &ConfigWithToml{interval: 10}
 	if err := tomlCfg.Decode(DefaultDir); err != nil {
 		panic(err)
 	}
@@ -38,12 +38,14 @@ func NewDefaultConfig() ConfigMate {
 }
 func NewConfig(opts ...Option) ConfigMate {
 	o := &option{
-		cfg: &ConfigWithToml{},
-		dir: DefaultDir,
+		dir:      DefaultDir,
+		interval: 10,
 	}
-
 	for _, opt := range opts {
 		opt(o)
+	}
+	o.cfg = &ConfigWithToml{
+		interval: o.interval,
 	}
 	if err := o.cfg.Decode(o.dir); err != nil {
 		panic(err)
@@ -51,6 +53,8 @@ func NewConfig(opts ...Option) ConfigMate {
 
 	return o.cfg.(ConfigMate)
 }
+
+// TODO: 改成接口方式获取不同的数据源
 func loadConfig(paths []string) string {
 	var sb strings.Builder
 	for _, path := range paths {
