@@ -25,19 +25,20 @@ type ConfigWithToml struct {
 	}
 }
 
-func (ct *ConfigWithToml) Decode(dir string) error {
+func (ct *ConfigWithToml) Decode(dir string) (err error) {
 	cfgEnv := os.Getenv("CONFIG_ENV")
 	if cfgEnv != "" {
 		dir = filepath.Join(dir, cfgEnv)
 	}
-	paths, err := file.PathGlobPattern(filepath.Join(dir, "*.toml"))
+	ct.paths, err = file.PathGlobPattern(filepath.Join(dir, "*.toml"))
 	if err != nil {
 		panic(fmt.Errorf("no configuration available"))
 	}
-	cfgStr := loadConfig(paths)
+	cfgStr := loadConfig(ct.paths)
 	if cfgStr == "" {
 		return fmt.Errorf("failed to load configuration")
 	}
+	ct.hash = encrypt.EncryptMd5(cfgStr)
 
 	ct.mate, err = toml.Decode(cfgStr, &(ct.cfg))
 	if err != nil {
@@ -65,7 +66,7 @@ func (ct *ConfigWithToml) Next(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			// log.Println("checking configuration...")
+			log.Println("checking configuration...")
 
 			cfgStr := loadConfig(ct.paths)
 			if cfgStr == "" {
@@ -75,7 +76,6 @@ func (ct *ConfigWithToml) Next(ctx context.Context) {
 
 			hash := encrypt.EncryptMd5(cfgStr)
 			if hash == ct.hash {
-				// log.Println("no change in configuration")
 				continue
 			}
 			ct.hash = hash

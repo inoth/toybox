@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
+	"log"
 	"os"
+	"time"
 
 	"github.com/inoth/toybox"
 	"github.com/inoth/toybox/config"
@@ -17,6 +20,7 @@ func newApp(conf config.ConfigMate,
 	udp *udpsvr.UDPQuicServer,
 ) *toybox.ToyBox {
 	t := toybox.New(
+		toybox.WithWatch(),
 		toybox.WithConfig(conf),
 		toybox.WithServer(
 			// hs,
@@ -34,10 +38,18 @@ func main() {
 	if os.Getenv("CONFIG_ENV") == "dev" {
 		cfgDir = "../config"
 	}
-	app := initApp(cfgDir)
-
+	cfg := config.NewConfig(
+		config.WithConfigDir(cfgDir),
+		config.WithConfigInterval(10),
+	)
+restart:
+	app := initApp(cfg)
 	// start and wait for stop signal
-	if err := app.Run(); err != nil && err != context.Canceled {
+	if err := app.Run(); err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, toybox.ErrRestart) {
 		panic(err)
+	} else if errors.Is(err, toybox.ErrRestart) {
+		log.Println("restart dbproxy, wait 5s...")
+		time.Sleep(time.Second * 5)
+		goto restart
 	}
 }

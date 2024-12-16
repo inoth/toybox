@@ -10,14 +10,14 @@ import (
 	"example/internal/controller/uqs"
 	"example/internal/server"
 	"github.com/inoth/toybox"
+	"github.com/inoth/toybox/config"
 )
 
 // Injectors from wire.go:
 
-func initApp(dir string) *toybox.ToyBox {
-	configMate := server.NewConfig(dir)
+func initApp(conf config.ConfigMate) *toybox.ToyBox {
 	messageController := uqs.NewMessageController()
 	udpQuicServer := server.NewUDPQuicServer(messageController)
-	toyBox := newApp(configMate, udpQuicServer)
+	toyBox := newApp(conf, udpQuicServer)
 	return toyBox
 }

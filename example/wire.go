@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/wire"
 	"github.com/inoth/toybox"
+	"github.com/inoth/toybox/config"
 )
 
 // func newApp(conf config.ConfigMate,
@@ -30,7 +31,7 @@ import (
 // 	return t
 // }
 
-func initApp(dir string) *toybox.ToyBox {
+func initApp(conf config.ConfigMate) *toybox.ToyBox {
 	// panic(wire.Build(config.NewConfig, database.NewDB, service.ProviderSet, controller.ProviderSet, server.ProviderSet, newApp))
 	// panic(wire.Build(config.NewConfig, service.ProviderSet, controller.ProviderSet, server.ProviderSet, newApp))
 	panic(wire.Build(server.ProviderSet, controller.ProviderSet, newApp))

@@ -8,5 +8,5 @@ var ProviderSet = wire.NewSet(
 	// NewHttp3Server,
 	// NewWebSocketServer,
 	NewUDPQuicServer,
-	NewConfig,
+	// NewConfig,
 )

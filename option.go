@@ -18,6 +18,7 @@ type option struct {
 	sigs    []os.Signal
 	svcs    []server.Server
 	cfg     config.ConfigMate
+	watch   bool
 }
 
 func WithName(name string) Option {
@@ -47,5 +48,11 @@ func WithServer(svcs ...server.Server) Option {
 func WithConfig(cfg config.ConfigMate) Option {
 	return func(opt *option) {
 		opt.cfg = cfg
+	}
+}
+
+func WithWatch() Option {
+	return func(opt *option) {
+		opt.watch = true
 	}
 }

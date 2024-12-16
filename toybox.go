@@ -51,7 +51,8 @@ func (tb *ToyBox) Run() (err error) {
 	}
 
 	ch := make(chan struct{})
-	if watch, ok := tb.cfg.(config.Watcher); ok {
+	if watch, ok := tb.cfg.(config.Watcher); ok && tb.watch {
+		log.Println("watch configuration...")
 		go watch.Next(tb.ctx)
 		go watch.Probe(ch)
 	}
