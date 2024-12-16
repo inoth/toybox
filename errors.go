@@ -1,7 +1,8 @@
 package toybox
 
-import "fmt"
+import "errors"
 
 var (
-	ErrNotConfig = fmt.Errorf("unable to load configuration")
+	ErrNotConfig = errors.New("unable to load configuration")
+	ErrRestart   = errors.New("restart")
 )

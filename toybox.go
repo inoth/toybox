@@ -26,7 +26,7 @@ func New(opts ...Option) *ToyBox {
 		id:      util.UUID(),
 		version: util.UUID(),
 		ctx:     context.Background(),
-		sigs:    []os.Signal{syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT},
+		sigs:    []os.Signal{syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT, syscall.SIGHUP},
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -85,9 +85,13 @@ func (tb *ToyBox) Run() (err error) {
 		case <-ctx.Done():
 			fmt.Printf("Done server %s ...............\n", tb.ID())
 			return nil
-		case <-c:
+		case sig := <-c:
 			fmt.Printf("Done server %s ...............\n", tb.ID())
-			return tb.Stop()
+			_ = tb.Stop()
+			if sig == syscall.SIGHUP {
+				return ErrRestart
+			}
+			return nil
 		}
 	})
 	if err = eg.Wait(); err != nil && !errors.Is(err, context.Canceled) {
