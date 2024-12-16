@@ -18,6 +18,7 @@ type ConfigWithToml struct {
 	hash     string
 	interval int
 	p        chan<- struct{}
+	source   Source
 
 	mate toml.MetaData
 	cfg  struct {

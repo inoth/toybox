@@ -1,5 +1,5 @@
 package config
 
-type ConfigSource interface {
-	Config(path string) string
+type Source interface {
+	LoadConfig() (string, error)
 }
