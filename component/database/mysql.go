@@ -26,23 +26,34 @@ type Config struct {
 }
 
 type MysqlComponent struct {
-	dbMap   map[string]*gorm.DB
-	Configs []Config `toml:"configs" json:"configs"`
+	DbMap   map[string]*gorm.DB `toml:"-"`
+	Configs []Config            `toml:"configs" json:"configs"`
 }
 
-func NewDB(conf config.ConfigMate) *MysqlComponent {
+func NewGormDatabase(conf config.ConfigMate) *MysqlComponent {
 	mc := MysqlComponent{
-		dbMap: make(map[string]*gorm.DB),
+		DbMap: make(map[string]*gorm.DB),
 	}
 	err := conf.PrimitiveDecode(&mc)
 	if err != nil {
 		panic(fmt.Errorf("init mysql err: %v", err))
 	}
-	mc.newDB()
+	mc.initConnect()
 	return &mc
 }
 
-func (mc *MysqlComponent) newDB() {
+func (mc *MysqlComponent) Name() string {
+	return Name
+}
+
+func (mc *MysqlComponent) GetDatabase(dbname string) *gorm.DB {
+	if db, ok := mc.DbMap[dbname]; ok {
+		return db
+	}
+	panic(fmt.Errorf("not found database %s", dbname))
+}
+
+func (mc *MysqlComponent) initConnect() {
 	for _, cfg := range mc.Configs {
 		constr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 			cfg.User,
@@ -55,9 +66,9 @@ func (mc *MysqlComponent) newDB() {
 			DSN:                       constr,
 			DefaultStringSize:         1 << 10,
 			DisableDatetimePrecision:  true,
-			DontSupportRenameIndex:    true,  // 重命名索引时采用删除并新建的方式，MySQL 5.7 之前的数据库和 MariaDB 不支持重命名索引
-			DontSupportRenameColumn:   true,  // 用 `change` 重命名列，MySQL 8 之前的数据库和 MariaDB 不支持重命名列
-			SkipInitializeWithVersion: false, // 根据当前 MySQL 版本自动配置
+			DontSupportRenameIndex:    true,
+			DontSupportRenameColumn:   true,
+			SkipInitializeWithVersion: false,
 		}))
 		if err != nil {
 			panic(fmt.Errorf("failed to connect to mysql: %v", err))
@@ -71,18 +82,6 @@ func (mc *MysqlComponent) newDB() {
 		sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)                                    // 最大打开连接数
 		sqlDB.SetConnMaxLifetime(time.Second * time.Duration(cfg.ConnMaxLifetime)) // 连接最大生命周期
 
-		mc.dbMap[cfg.DbName] = client
+		mc.DbMap[cfg.DbName] = client
 	}
-
-}
-
-func (mc *MysqlComponent) Name() string {
-	return Name
-}
-
-func (mc *MysqlComponent) GetDB(dbname string) *gorm.DB {
-	if db, ok := mc.dbMap[dbname]; ok {
-		return db
-	}
-	panic(fmt.Errorf("not found database %s", dbname))
 }

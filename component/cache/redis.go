@@ -28,17 +28,17 @@ func (rds *RedisComponent) Name() string {
 	return Name
 }
 
-func NewCache(conf config.ConfigMate) *RedisComponent {
+func NewRedisCache(conf config.ConfigMate) *RedisComponent {
 	rd := RedisComponent{}
 	err := conf.PrimitiveDecode(&rd)
 	if err != nil {
 		panic(fmt.Errorf("init mysql err: %v", err))
 	}
-	rd.newCache()
+	rd.initConnect()
 	return &rd
 }
 
-func (rds *RedisComponent) newCache() {
+func (rds *RedisComponent) initConnect() {
 	client := redis.NewClient(&redis.Options{
 		Addr:        rds.Addr,
 		Username:    rds.Username,
