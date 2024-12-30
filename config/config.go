@@ -1,5 +1,7 @@
 package config
 
+import "context"
+
 const (
 	DefaultDir = "config"
 )
@@ -11,7 +13,11 @@ type ConfigMate interface {
 type ConfigureMatcher interface {
 	Name() string
 }
+type Source interface {
+	Load(format string) (string, error)
+}
 
-// type Configuration interface {
-// 	Decode() error
-// }
+type Watcher interface {
+	Next(ctx context.Context)
+	Probe(chan<- struct{})
+}

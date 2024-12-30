@@ -7,7 +7,7 @@ type Option struct {
 	Source   Source
 }
 
-func WithConfigInterval(interval int) Options {
+func WithInterval(interval int) Options {
 	return func(opt *Option) {
 		opt.Interval = interval
 	}

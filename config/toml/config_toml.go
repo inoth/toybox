@@ -11,6 +11,10 @@ import (
 	"github.com/inoth/toybox/util/encrypt"
 )
 
+const (
+	format = "*.toml"
+)
+
 type ConfigWithToml struct {
 	config.Option
 
@@ -43,7 +47,7 @@ func NewConfiguration(opts ...config.Options) config.ConfigMate {
 }
 
 func (ct *ConfigWithToml) decode() (err error) {
-	cfgStr, err := ct.Source.Load()
+	cfgStr, err := ct.Source.Load(format)
 	if err != nil {
 		return fmt.Errorf("load config err %v\n", err)
 	}
@@ -72,6 +76,9 @@ func (ct *ConfigWithToml) PrimitiveDecode(vals ...config.ConfigureMatcher) error
 }
 
 func (ct *ConfigWithToml) Next(ctx context.Context) {
+	if ct.Interval <= 0 {
+		return
+	}
 	ticker := time.NewTicker(time.Second * time.Duration(ct.Interval))
 	for {
 		select {
@@ -80,7 +87,7 @@ func (ct *ConfigWithToml) Next(ctx context.Context) {
 		case <-ticker.C:
 			log.Println("checking configuration...")
 
-			cfgStr, err := ct.Source.Load()
+			cfgStr, err := ct.Source.Load(format)
 			if err != nil {
 				log.Printf("load config err %v\n", err)
 				continue

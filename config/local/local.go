@@ -21,13 +21,13 @@ func NewSource(dir string) *LocalConfig {
 	}
 }
 
-func (c *LocalConfig) Load() (str string, err error) {
+func (c *LocalConfig) Load(format string) (str string, err error) {
 	if c.Paths == nil {
 		cfgEnv := os.Getenv("CONFIG_ENV")
 		if cfgEnv != "" {
 			c.Dir = filepath.Join(c.Dir, cfgEnv)
 		}
-		c.Paths, err = file.PathGlobPattern(c.Dir)
+		c.Paths, err = file.PathGlobPattern(filepath.Join(c.Dir, format))
 		if err != nil {
 			return "", errors.Wrap(err, "no configuration available")
 		}
