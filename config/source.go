@@ -1,5 +1,5 @@
 package config
 
 type Source interface {
-	LoadConfig() (string, error)
+	Load() (string, error)
 }

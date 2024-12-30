@@ -4,21 +4,18 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/BurntSushi/toml"
+	"github.com/inoth/toybox/config"
 	"github.com/inoth/toybox/util/encrypt"
-	"github.com/inoth/toybox/util/file"
 )
 
 type ConfigWithToml struct {
-	paths    []string
-	hash     string
-	interval int
-	p        chan<- struct{}
-	source   Source
+	config.Option
+
+	hash string
+	p    chan<- struct{}
 
 	mate toml.MetaData
 	cfg  struct {
@@ -26,16 +23,30 @@ type ConfigWithToml struct {
 	}
 }
 
-func (ct *ConfigWithToml) Decode(dir string) (err error) {
-	cfgEnv := os.Getenv("CONFIG_ENV")
-	if cfgEnv != "" {
-		dir = filepath.Join(dir, cfgEnv)
+func NewConfiguration(opts ...config.Options) config.ConfigMate {
+	o := config.Option{
+		Interval: 0,
 	}
-	ct.paths, err = file.PathGlobPattern(filepath.Join(dir, "*.toml"))
+	for _, opt := range opts {
+		opt(&o)
+	}
+	if o.Source == nil {
+		panic(fmt.Errorf("the configuration source is not set"))
+	}
+	cfg := &ConfigWithToml{
+		Option: o,
+	}
+	if err := cfg.decode(); err != nil {
+		panic(err)
+	}
+	return cfg
+}
+
+func (ct *ConfigWithToml) decode() (err error) {
+	cfgStr, err := ct.Source.Load()
 	if err != nil {
-		panic(fmt.Errorf("no configuration available"))
+		return fmt.Errorf("load config err %v\n", err)
 	}
-	cfgStr := loadConfig(ct.paths)
 	if cfgStr == "" {
 		return fmt.Errorf("failed to load configuration")
 	}
@@ -49,7 +60,7 @@ func (ct *ConfigWithToml) Decode(dir string) (err error) {
 	return nil
 }
 
-func (ct *ConfigWithToml) PrimitiveDecode(vals ...ConfigureMatcher) error {
+func (ct *ConfigWithToml) PrimitiveDecode(vals ...config.ConfigureMatcher) error {
 	for i := 0; i < len(vals); i++ {
 		if val, ok := ct.cfg.Server[vals[i].Name()]; ok {
 			if err := ct.mate.PrimitiveDecode(val, vals[i]); err != nil {
@@ -61,7 +72,7 @@ func (ct *ConfigWithToml) PrimitiveDecode(vals ...ConfigureMatcher) error {
 }
 
 func (ct *ConfigWithToml) Next(ctx context.Context) {
-	ticker := time.NewTicker(time.Second * time.Duration(ct.interval))
+	ticker := time.NewTicker(time.Second * time.Duration(ct.Interval))
 	for {
 		select {
 		case <-ctx.Done():
@@ -69,7 +80,11 @@ func (ct *ConfigWithToml) Next(ctx context.Context) {
 		case <-ticker.C:
 			log.Println("checking configuration...")
 
-			cfgStr := loadConfig(ct.paths)
+			cfgStr, err := ct.Source.Load()
+			if err != nil {
+				log.Printf("load config err %v\n", err)
+				continue
+			}
 			if cfgStr == "" {
 				log.Println("configuration is empty")
 				continue
@@ -81,7 +96,6 @@ func (ct *ConfigWithToml) Next(ctx context.Context) {
 			}
 			ct.hash = hash
 
-			var err error
 			ct.mate, err = toml.Decode(cfgStr, &(ct.cfg))
 			if err != nil {
 				log.Printf("decode configuration error: %v\n", err)

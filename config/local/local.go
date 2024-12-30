@@ -2,6 +2,8 @@ package local
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/inoth/toybox/util/file"
@@ -13,16 +15,22 @@ type LocalConfig struct {
 	Paths []string
 }
 
-func NewLocalConfig(dir string) *LocalConfig {
+func NewSource(dir string) *LocalConfig {
 	return &LocalConfig{
 		Dir: dir,
 	}
 }
 
-func (c *LocalConfig) LoadConfig() (str string, err error) {
-	c.Paths, err = file.PathGlobPattern(c.Dir)
-	if err != nil {
-		return "", errors.Wrap(err, "no configuration available")
+func (c *LocalConfig) Load() (str string, err error) {
+	if c.Paths == nil {
+		cfgEnv := os.Getenv("CONFIG_ENV")
+		if cfgEnv != "" {
+			c.Dir = filepath.Join(c.Dir, cfgEnv)
+		}
+		c.Paths, err = file.PathGlobPattern(c.Dir)
+		if err != nil {
+			return "", errors.Wrap(err, "no configuration available")
+		}
 	}
 	var sb strings.Builder
 	for _, path := range c.Paths {

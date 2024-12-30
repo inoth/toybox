@@ -1,27 +1,20 @@
 package config
 
-type Option func(opt *option)
+type Options func(opt *Option)
 
-type option struct {
-	interval int
-	dir      string
-	cfg      Configuration
+type Option struct {
+	Interval int
+	Source   Source
 }
 
-func WithConfiguration(cfg Configuration) Option {
-	return func(opt *option) {
-		opt.cfg = cfg
+func WithConfigInterval(interval int) Options {
+	return func(opt *Option) {
+		opt.Interval = interval
 	}
 }
 
-func WithConfigDir(dir string) Option {
-	return func(opt *option) {
-		opt.dir = dir
-	}
-}
-
-func WithConfigInterval(interval int) Option {
-	return func(opt *option) {
-		opt.interval = interval
+func WithSource(source Source) Options {
+	return func(opt *Option) {
+		opt.Source = source
 	}
 }
