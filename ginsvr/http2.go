@@ -88,7 +88,7 @@ func (h2 *GinHttp2Server) Start(ctx context.Context) error {
 	}
 
 	err = h2.svr.ListenAndServeTLS(h2.Cert, h2.Key)
-	if err != nil && err != context.Canceled {
+	if err != nil && err != context.Canceled && err != http.ErrServerClosed {
 		return errors.Wrap(err, "start http2 server err")
 	}
 	return nil

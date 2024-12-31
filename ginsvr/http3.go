@@ -3,6 +3,7 @@ package ginsvr
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/quic-go/quic-go"
@@ -67,7 +68,7 @@ func (h3 *GinHttp3Server) Start(ctx context.Context) error {
 		},
 	}
 	err := h3.svr.ListenAndServeTLS(h3.Cert, h3.Key)
-	if err != nil && err != context.Canceled {
+	if err != nil && err != context.Canceled && err != http.ErrServerClosed {
 		return errors.Wrap(err, "start http3 with udp server err")
 	}
 	return nil

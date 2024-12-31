@@ -23,7 +23,7 @@ type GinHttpServer struct {
 	svr *http.Server
 }
 
-func New(opts ...Option) *GinHttpServer {
+func NewHttp(opts ...Option) *GinHttpServer {
 	o := option{
 		ReadTimeout:    10,
 		WriteTimeout:   10,
@@ -82,7 +82,7 @@ func (h *GinHttpServer) Start(ctx context.Context) error {
 	} else {
 		err = h.svr.ListenAndServe()
 	}
-	if err != nil && err != context.Canceled {
+	if err != nil && err != context.Canceled && err != http.ErrServerClosed {
 		return errors.Wrap(err, "start http server err")
 	}
 	return nil
