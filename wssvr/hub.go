@@ -2,6 +2,7 @@ package wssvr
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -77,7 +78,7 @@ func (w *WebsocketServer) Start(ctx context.Context) error {
 	w.output = make(chan Message, w.ChannelSize)
 
 	if len(w.handles) == 0 {
-		w.handles = append(w.handles, defaultHandle())
+		return fmt.Errorf("handles is empty")
 	}
 
 	return w.run()
@@ -122,12 +123,7 @@ func (w *WebsocketServer) sendMessage(msg []byte) {
 	c.reset()
 
 	c.send(msg)
-	for _, handle := range w.handles {
-		if !c.state {
-			break
-		}
-		handle(c)
-	}
+	c.Next()
 
 	w.pool.Put(c)
 }

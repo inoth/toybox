@@ -67,9 +67,9 @@ func (c *Client) read() {
 		c.conn.Close()
 	}()
 	c.conn.SetReadLimit(c.hub.MaxMessageSize)
-	c.conn.SetReadDeadline(time.Now().Add(c.hub.PongWait))
+	_ = c.conn.SetReadDeadline(time.Now().Add(c.hub.PongWait))
 	c.conn.SetPongHandler(func(string) error {
-		c.conn.SetReadDeadline(time.Now().Add(c.hub.PongWait))
+		_ = c.conn.SetReadDeadline(time.Now().Add(c.hub.PongWait))
 		return nil
 	})
 	for {
@@ -105,14 +105,14 @@ func (c *Client) write() {
 		case <-c.ctx.Done():
 			return
 		case <-ticker.C:
-			c.conn.SetWriteDeadline(time.Now().Add(c.hub.WriteWait))
+			_ = c.conn.SetWriteDeadline(time.Now().Add(c.hub.WriteWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
 		case message, ok := <-c.send:
-			c.conn.SetWriteDeadline(time.Now().Add(c.hub.WriteWait))
+			_ = c.conn.SetWriteDeadline(time.Now().Add(c.hub.WriteWait))
 			if !ok {
-				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				_ = c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 			w, err := c.conn.NextWriter(websocket.TextMessage)
@@ -121,14 +121,14 @@ func (c *Client) write() {
 			}
 			if c.hub.GZIP {
 				if compressed, err := util.CompressGzip(message); err == nil {
-					w.Write(compressed)
+					_, _ = w.Write(compressed)
 				}
 			} else {
-				w.Write(message)
+				_, _ = w.Write(message)
 			}
 			for i := 0; i < len(c.send); i++ {
-				w.Write(newline)
-				w.Write(<-c.send)
+				_, _ = w.Write(newline)
+				_, _ = w.Write(<-c.send)
 			}
 			if err := w.Close(); err != nil {
 				return

@@ -11,6 +11,7 @@ import (
 	"github.com/inoth/toybox/config/local"
 	"github.com/inoth/toybox/config/toml"
 	"github.com/inoth/toybox/ginsvr"
+	"github.com/inoth/toybox/wssvr"
 )
 
 var (
@@ -22,12 +23,14 @@ func newApp(
 	hs *ginsvr.GinHttpServer,
 	hs2 *ginsvr.GinHttp2Server,
 	hs3 *ginsvr.GinHttp3Server,
+	w *wssvr.WebsocketServer,
 ) *toybox.ToyBox {
 	t := toybox.New(
 		toybox.WithConfig(conf),
 		toybox.WithServer(hs),
 		toybox.WithServer(hs2),
 		toybox.WithServer(hs3),
+		toybox.WithServer(w),
 	)
 	return t
 }

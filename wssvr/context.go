@@ -2,15 +2,20 @@ package wssvr
 
 import (
 	"encoding/json"
+	"math"
 	"sync"
 	"time"
+)
+
+const (
+	indexAbort = math.MaxInt8 >> 1
 )
 
 type HandlerFunc func(*Context)
 
 type Context struct {
 	body  []byte
-	state bool
+	index int8
 
 	Keys map[string]any
 	m    sync.RWMutex
@@ -20,7 +25,7 @@ type Context struct {
 func (c *Context) reset() {
 	c.Keys = nil
 	c.body = nil
-	c.state = true
+	c.index = -1
 }
 
 func (c *Context) send(msg []byte) {
@@ -52,7 +57,17 @@ func (c *Context) Render(id string, msg []byte) {
 }
 
 func (c *Context) Abort() {
-	c.state = false
+	c.index = indexAbort
+}
+
+func (c *Context) Next() {
+	c.index++
+	for c.index < int8(len(c.ws.handles)) {
+		if c.ws.handles[c.index] != nil {
+			c.ws.handles[c.index](c)
+		}
+		c.index++
+	}
 }
 
 func (c *Context) BindJson(obj any) error {

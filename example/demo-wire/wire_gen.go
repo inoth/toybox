@@ -8,6 +8,7 @@ package main
 
 import (
 	"demo-wire/internal/controller"
+	"demo-wire/internal/controller/ws"
 	"demo-wire/internal/provider"
 	"demo-wire/internal/service"
 	"github.com/inoth/toybox"
@@ -18,10 +19,12 @@ import (
 
 func initApp(conf config.ConfigMate) *toybox.ToyBox {
 	greeterService := service.NewGreeterService()
-	greeterController := controller.NewGreeterController(greeterService)
+	messageController := ws.NewMessageController()
+	websocketServer := provider.NewWebsocketServer(messageController)
+	greeterController := controller.NewGreeterController(greeterService, websocketServer)
 	ginHttpServer := provider.NewHttpServer(greeterController)
 	ginHttp2Server := provider.NewHttp2Server(greeterController)
 	ginHttp3Server := provider.NewHttp3Server(greeterController)
-	toyBox := newApp(conf, ginHttpServer, ginHttp2Server, ginHttp3Server)
+	toyBox := newApp(conf, ginHttpServer, ginHttp2Server, ginHttp3Server, websocketServer)
 	return toyBox
 }
