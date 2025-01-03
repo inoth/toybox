@@ -8,4 +8,5 @@ var ProviderSet = wire.NewSet(
 	NewHttp3Server,
 	NewWebsocketServer,
 	NewMetric,
+	NewProperty,
 )
