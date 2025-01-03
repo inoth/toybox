@@ -8,10 +8,10 @@ import (
 
 	"github.com/inoth/toybox"
 	"github.com/inoth/toybox/config"
-	"github.com/inoth/toybox/config/local"
+	"github.com/inoth/toybox/config/file"
 	"github.com/inoth/toybox/config/toml"
-	"github.com/inoth/toybox/ginsvr"
-	"github.com/inoth/toybox/wssvr"
+	"github.com/inoth/toybox/ginserver"
+	"github.com/inoth/toybox/wsserver"
 )
 
 var (
@@ -20,10 +20,10 @@ var (
 
 func newApp(
 	conf config.ConfigMate,
-	hs *ginsvr.GinHttpServer,
-	hs2 *ginsvr.GinHttp2Server,
-	hs3 *ginsvr.GinHttp3Server,
-	w *wssvr.WebsocketServer,
+	hs *ginserver.GinHttpServer,
+	hs2 *ginserver.GinHttp2Server,
+	hs3 *ginserver.GinHttp3Server,
+	w *wsserver.WebsocketServer,
 ) *toybox.ToyBox {
 	t := toybox.New(
 		toybox.WithConfig(conf),
@@ -38,7 +38,7 @@ func newApp(
 func main() {
 	cfg := toml.NewConfiguration(
 		config.WithSource(
-			local.NewSource(DefaultDir),
+			file.NewSource(DefaultDir),
 		),
 	)
 

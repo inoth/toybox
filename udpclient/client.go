@@ -1,4 +1,4 @@
-package udpsdk
+package udpclient
 
 import (
 	"bytes"

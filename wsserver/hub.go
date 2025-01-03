@@ -1,4 +1,4 @@
-package wssvr
+package wsserver
 
 import (
 	"context"

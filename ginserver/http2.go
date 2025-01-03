@@ -1,4 +1,4 @@
-package ginsvr
+package ginserver
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-
 	"github.com/inoth/toybox/validation"
 	"github.com/pkg/errors"
 	"golang.org/x/net/http2"
@@ -26,14 +25,8 @@ type GinHttp2Server struct {
 }
 
 func NewHttp2(opts ...Option) *GinHttp2Server {
-	o := option{
-		ReadTimeout:    10,
-		WriteTimeout:   10,
-		MaxHeaderBytes: 20,
-		Port:           ":9050",
-		engine:         gin.New(),
-		handles:        make([]Handler, 0),
-	}
+	o := defaultOption
+	o.engine = gin.New()
 	for _, opt := range opts {
 		opt(&o)
 	}

@@ -1,4 +1,4 @@
-package resty3
+package resty
 
 import (
 	"crypto/tls"

@@ -5,16 +5,17 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/inoth/toybox/ginsvr"
-	"github.com/inoth/toybox/wssvr"
+	"github.com/inoth/toybox/ginserver"
+	"github.com/inoth/toybox/ginserver/res"
+	"github.com/inoth/toybox/wsserver"
 )
 
 type GreeterController struct {
 	svr *service.GreeterService
-	hub *wssvr.WebsocketServer
+	hub *wsserver.WebsocketServer
 }
 
-func NewGreeterController(svr *service.GreeterService, hub *wssvr.WebsocketServer) *GreeterController {
+func NewGreeterController(svr *service.GreeterService, hub *wsserver.WebsocketServer) *GreeterController {
 	return &GreeterController{
 		svr: svr,
 		hub: hub,
@@ -29,8 +30,8 @@ func (gc *GreeterController) Middlewares() []gin.HandlerFunc {
 	return nil
 }
 
-func (gc *GreeterController) Routers() []ginsvr.Router {
-	return []ginsvr.Router{
+func (gc *GreeterController) Routers() []ginserver.Router {
+	return []ginserver.Router{
 		{Method: "GET", Path: "/sayhi/:name", Handle: []gin.HandlerFunc{gc.SayHi}},
 		{Method: "GET", Path: "/ws", Handle: []gin.HandlerFunc{gc.Connect}},
 	}
@@ -39,11 +40,11 @@ func (gc *GreeterController) Routers() []ginsvr.Router {
 func (gc *GreeterController) SayHi(c *gin.Context) {
 	name := c.Param("name")
 	r := gc.svr.SayHi(name)
-	c.String(200, r)
+	res.Ok(c, r)
 }
 
 func (uc *GreeterController) Connect(c *gin.Context) {
-	clientID, err := wssvr.NewClient(uc.hub, c.Writer, c.Request)
+	clientID, err := wsserver.NewClient(uc.hub, c.Writer, c.Request)
 	if err != nil {
 		c.String(200, err.Error())
 		return

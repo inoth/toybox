@@ -1,31 +1,26 @@
-package wssvr
+package udpserver
 
 import (
 	"encoding/json"
-	"math"
 	"sync"
 	"time"
-)
-
-const (
-	indexAbort = math.MaxInt8 >> 1
 )
 
 type HandlerFunc func(*Context)
 
 type Context struct {
 	body  []byte
-	index int8
+	state bool
 
 	Keys map[string]any
 	m    sync.RWMutex
-	ws   *WebsocketServer
+	svr  *UDPQuicServer
 }
 
 func (c *Context) reset() {
 	c.Keys = nil
 	c.body = nil
-	c.index = -1
+	c.state = true
 }
 
 func (c *Context) send(msg []byte) {
@@ -50,24 +45,14 @@ func (c *Context) String(id, body string) {
 
 func (c *Context) Render(id string, msg []byte) {
 	c.Abort()
-	c.ws.output <- Message{
+	c.svr.output <- Message{
 		ID:   id,
 		Body: msg,
 	}
 }
 
 func (c *Context) Abort() {
-	c.index = indexAbort
-}
-
-func (c *Context) Next() {
-	c.index++
-	for c.index < int8(len(c.ws.handles)) {
-		if c.ws.handles[c.index] != nil {
-			c.ws.handles[c.index](c)
-		}
-		c.index++
-	}
+	c.state = false
 }
 
 func (c *Context) BindJson(obj any) error {

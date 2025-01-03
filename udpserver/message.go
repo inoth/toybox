@@ -1,4 +1,4 @@
-package wssvr
+package udpserver
 
 type Message struct {
 	ID   string

@@ -1,4 +1,4 @@
-package ginsvr
+package ginserver
 
 import "github.com/gin-gonic/gin"
 

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/inoth/toybox/config"
-	"github.com/inoth/toybox/config/local"
+	"github.com/inoth/toybox/config/file"
 	"github.com/stretchr/testify/require"
 )
 
@@ -50,7 +50,7 @@ func TestNewConfiguration(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			got := NewConfiguration(
 				config.WithSource(
-					local.NewSource(test.dir),
+					file.NewSource(test.dir),
 				),
 			)
 			err := got.PrimitiveDecode(&test.data)

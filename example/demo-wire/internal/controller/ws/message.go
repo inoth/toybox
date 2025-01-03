@@ -3,7 +3,7 @@ package ws
 import (
 	"fmt"
 
-	"github.com/inoth/toybox/wssvr"
+	"github.com/inoth/toybox/wsserver"
 )
 
 type body struct {
@@ -17,8 +17,8 @@ func NewMessageController() *MessageController {
 	return &MessageController{}
 }
 
-func (m *MessageController) Handler() wssvr.HandlerFunc {
-	return func(c *wssvr.Context) {
+func (m *MessageController) Handler() wsserver.HandlerFunc {
+	return func(c *wsserver.Context) {
 		fmt.Printf("%v\n", string(c.Body()))
 
 		var data body

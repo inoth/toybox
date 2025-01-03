@@ -1,4 +1,4 @@
-package udpsvr
+package udpserver
 
 import (
 	"bytes"

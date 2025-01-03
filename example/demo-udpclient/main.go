@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/inoth/toybox/udpsdk"
+	"github.com/inoth/toybox/udpclient"
 )
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	client, err := udpsdk.NewClient(ctx)
+	client, err := udpclient.NewClient(ctx)
 	if err != nil {
 		fmt.Printf("%v\n", err)
 		return
