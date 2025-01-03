@@ -1,4 +1,4 @@
-package property
+package profile
 
 import (
 	"context"
@@ -12,29 +12,29 @@ const (
 	name = "property"
 )
 
-type Property struct {
+type Profile struct {
 	option
 
 	svr *http.Server
 }
 
-func New(opts ...Option) *Property {
+func New(opts ...Option) *Profile {
 	o := option{
 		Port: ":9001",
 	}
 	for _, opt := range opts {
 		opt(&o)
 	}
-	return &Property{
+	return &Profile{
 		option: o,
 	}
 }
 
-func (p *Property) Name() string {
+func (p *Profile) Name() string {
 	return name
 }
 
-func (p *Property) Start(ctx context.Context) error {
+func (p *Profile) Start(ctx context.Context) error {
 	p.svr = &http.Server{
 		Addr: p.Port,
 	}
@@ -44,6 +44,6 @@ func (p *Property) Start(ctx context.Context) error {
 	return nil
 }
 
-func (p *Property) Stop(ctx context.Context) error {
+func (p *Profile) Stop(ctx context.Context) error {
 	return p.svr.Shutdown(ctx)
 }

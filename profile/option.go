@@ -1,4 +1,4 @@
-package property
+package profile
 
 type Option func(opt *option)
 

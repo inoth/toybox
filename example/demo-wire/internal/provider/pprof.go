@@ -1,7 +1,7 @@
 package provider
 
-import "github.com/inoth/toybox/property"
+import "github.com/inoth/toybox/profile"
 
-func NewProperty() *property.Property {
-	return property.New()
+func NewProperty() *profile.Profile {
+	return profile.New()
 }

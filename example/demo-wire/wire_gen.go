@@ -26,7 +26,7 @@ func initApp(conf config.ConfigMate) *toybox.ToyBox {
 	ginHttpServer := provider.NewHttpServer(greeterController, prometheus)
 	ginHttp2Server := provider.NewHttp2Server(greeterController)
 	ginHttp3Server := provider.NewHttp3Server(greeterController)
-	property := provider.NewProperty()
-	toyBox := newApp(conf, ginHttpServer, ginHttp2Server, ginHttp3Server, websocketServer, prometheus, property)
+	profile := provider.NewProperty()
+	toyBox := newApp(conf, ginHttpServer, ginHttp2Server, ginHttp3Server, websocketServer, prometheus, profile)
 	return toyBox
 }
