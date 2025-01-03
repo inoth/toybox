@@ -22,9 +22,10 @@ func initApp(conf config.ConfigMate) *toybox.ToyBox {
 	messageController := ws.NewMessageController()
 	websocketServer := provider.NewWebsocketServer(messageController)
 	greeterController := controller.NewGreeterController(greeterService, websocketServer)
-	ginHttpServer := provider.NewHttpServer(greeterController)
+	prometheus := provider.NewMetric()
+	ginHttpServer := provider.NewHttpServer(greeterController, prometheus)
 	ginHttp2Server := provider.NewHttp2Server(greeterController)
 	ginHttp3Server := provider.NewHttp3Server(greeterController)
-	toyBox := newApp(conf, ginHttpServer, ginHttp2Server, ginHttp3Server, websocketServer)
+	toyBox := newApp(conf, ginHttpServer, ginHttp2Server, ginHttp3Server, websocketServer, prometheus)
 	return toyBox
 }

@@ -38,7 +38,7 @@ func (p *Property) Start(ctx context.Context) error {
 	p.svr = &http.Server{
 		Addr: p.Port,
 	}
-	if err := p.svr.ListenAndServe(); err != nil {
+	if err := p.svr.ListenAndServe(); err != nil && err != context.Canceled && err != http.ErrServerClosed {
 		return errors.Wrap(err, "start pprof err")
 	}
 	return nil

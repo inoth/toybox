@@ -7,4 +7,5 @@ var ProviderSet = wire.NewSet(
 	NewHttp2Server,
 	NewHttp3Server,
 	NewWebsocketServer,
+	NewMetric,
 )

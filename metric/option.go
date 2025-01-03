@@ -3,9 +3,10 @@ package metric
 type Option func(opt *option)
 
 type option struct {
-	Port      string `toml:"port"`
-	Subsystem string `toml:"subsystem"`
-	Namespace string `toml:"namespace"`
+	Port      string   `toml:"port"`
+	Subsystem string   `toml:"subsystem"`
+	Namespace string   `toml:"namespace"`
+	Metrics   []Metric `toml:"metrics"`
 }
 
 func WithPort(port string) Option {
@@ -23,5 +24,11 @@ func WithSubsystem(subsystem string) Option {
 func WithNamespace(namespace string) Option {
 	return func(opt *option) {
 		opt.Namespace = namespace
+	}
+}
+
+func WithMetric(metrics ...Metric) Option {
+	return func(opt *option) {
+		opt.Metrics = append(opt.Metrics, metrics...)
 	}
 }

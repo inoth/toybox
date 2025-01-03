@@ -2,6 +2,7 @@ package metric
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -13,102 +14,191 @@ const (
 	name = "metric"
 )
 
-var (
-	cm *CronsvcMetric
-)
-
-type CronsvcMetric struct {
+type Prometheus struct {
 	option
 
-	svr *http.Server
-
-	taskCount   prometheus.Counter
-	currentTask prometheus.Gauge
-	duration    *prometheus.HistogramVec
+	svr        *http.Server
+	collectors map[string]prometheus.Collector
 }
 
-func New(opts ...Option) *CronsvcMetric {
+func New(opts ...Option) *Prometheus {
 	o := option{
 		Port: ":9000",
 	}
 	for _, opt := range opts {
 		opt(&o)
 	}
-	cm = &CronsvcMetric{
-		option: o,
+	return &Prometheus{
+		option:     o,
+		collectors: make(map[string]prometheus.Collector),
 	}
-	return cm
 }
 
-func (cc *CronsvcMetric) Name() string {
+func (p *Prometheus) Name() string {
 	return name
 }
 
-func (cc *CronsvcMetric) Start(ctx context.Context) error {
-	cc.newMetrics()
-
+func (p *Prometheus) Start(ctx context.Context) error {
+	if len(p.Metrics) <= 0 {
+		return fmt.Errorf("metrics is empty")
+	}
 	reg := prometheus.NewRegistry()
 
-	reg.MustRegister(cc.taskCount)
-	reg.MustRegister(cc.currentTask)
-	reg.MustRegister(cc.duration)
-
-	mux := http.NewServeMux()
-
-	mux.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}))
-
-	cc.svr = &http.Server{Addr: cc.Port, Handler: mux}
-
-	if err := cc.svr.ListenAndServe(); err != nil {
-		return errors.Wrap(err, "start cronsvc metric err")
+	for _, metric := range p.Metrics {
+		col := metric.init(p.Subsystem, p.Namespace)
+		if err := reg.Register(col); err != nil {
+			continue
+		}
+		p.collectors[metric.Name] = col
 	}
 
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}))
+
+	p.svr = &http.Server{Addr: p.Port, Handler: mux}
+
+	if err := p.svr.ListenAndServe(); err != nil && err != context.Canceled && err != http.ErrServerClosed {
+		return errors.Wrap(err, "start cronsvc metric err")
+	}
 	return nil
 }
 
-func (cc *CronsvcMetric) Stop(ctx context.Context) error {
-	return cc.svr.Shutdown(ctx)
+func (p *Prometheus) Stop(ctx context.Context) error {
+	return p.svr.Shutdown(ctx)
 }
 
-func (cc *CronsvcMetric) newMetrics() {
-	cc.taskCount = prometheus.NewCounter(prometheus.CounterOpts{
-		Subsystem: cc.Subsystem,
-		Namespace: cc.Namespace,
-		Name:      "task_run_total",
-		Help:      "任务数量",
-	})
-	cc.currentTask = prometheus.NewGauge(prometheus.GaugeOpts{
-		Subsystem: cc.Subsystem,
-		Namespace: cc.Namespace,
-		Name:      "current_task_total",
-		Help:      "当前任务数量",
-	})
-	cc.duration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Subsystem: cc.Subsystem,
-		Namespace: cc.Namespace,
-		Name:      "task_run_duration_seconds",
-		Help:      "任务运行耗时",
-		Buckets:   prometheus.DefBuckets,
-	}, []string{"task_id"})
-}
-
-func AddTaskCount(val float64) {
-	if cm == nil {
-		return
+func (p *Prometheus) GetCounter(name string) prometheus.Counter {
+	if val, ok := p.collectors[name]; ok {
+		if col, ok := val.(prometheus.Counter); ok {
+			return col
+		}
 	}
-	cm.taskCount.Add(val)
+	return nil
 }
 
-func SetCurrentTask(val float64) {
-	if cm == nil {
-		return
+func (p *Prometheus) GetCounterVec(name string) *prometheus.CounterVec {
+	if val, ok := p.collectors[name]; ok {
+		if col, ok := val.(*prometheus.CounterVec); ok {
+			return col
+		}
 	}
-	cm.currentTask.Set(val)
+	return nil
 }
 
-func SetDuration(taskId string, task_time float64) {
-	if cm == nil {
-		return
+func (p *Prometheus) GetGauge(name string) prometheus.Gauge {
+	if val, ok := p.collectors[name]; ok {
+		if col, ok := val.(prometheus.Gauge); ok {
+			return col
+		}
 	}
-	cm.duration.WithLabelValues(taskId).Observe(task_time)
+	return nil
+}
+
+func (p *Prometheus) GetGaugeVec(name string) *prometheus.GaugeVec {
+	if val, ok := p.collectors[name]; ok {
+		if col, ok := val.(*prometheus.GaugeVec); ok {
+			return col
+		}
+	}
+	return nil
+}
+
+func (p *Prometheus) GetHistogram(name string) prometheus.Histogram {
+	if val, ok := p.collectors[name]; ok {
+		if col, ok := val.(prometheus.Histogram); ok {
+			return col
+		}
+	}
+	return nil
+}
+
+func (p *Prometheus) GetHistogramVec(name string) *prometheus.HistogramVec {
+	if val, ok := p.collectors[name]; ok {
+		if col, ok := val.(*prometheus.HistogramVec); ok {
+			return col
+		}
+	}
+	return nil
+}
+
+func (p *Prometheus) GetSummary(name string) prometheus.Summary {
+	if val, ok := p.collectors[name]; ok {
+		if col, ok := val.(prometheus.Summary); ok {
+			return col
+		}
+	}
+	return nil
+}
+
+func (p *Prometheus) GetSummaryVec(name string) *prometheus.SummaryVec {
+	if val, ok := p.collectors[name]; ok {
+		if col, ok := val.(*prometheus.SummaryVec); ok {
+			return col
+		}
+	}
+	return nil
+}
+
+func (p *Prometheus) CallCounter(name string, fn func(prometheus.Counter)) {
+	if val, ok := p.collectors[name]; ok {
+		if col, ok := val.(prometheus.Counter); ok {
+			fn(col)
+		}
+	}
+}
+
+func (p *Prometheus) CallCounterVec(name string, fn func(*prometheus.CounterVec)) {
+	if val, ok := p.collectors[name]; ok {
+		if col, ok := val.(*prometheus.CounterVec); ok {
+			fn(col)
+		}
+	}
+}
+
+func (p *Prometheus) CallGauge(name string, fn func(prometheus.Gauge)) {
+	if val, ok := p.collectors[name]; ok {
+		if col, ok := val.(prometheus.Gauge); ok {
+			fn(col)
+		}
+	}
+}
+
+func (p *Prometheus) CallGaugeVec(name string, fn func(*prometheus.GaugeVec)) {
+	if val, ok := p.collectors[name]; ok {
+		if col, ok := val.(*prometheus.GaugeVec); ok {
+			fn(col)
+		}
+	}
+}
+
+func (p *Prometheus) CallHistogram(name string, fn func(prometheus.Histogram)) {
+	if val, ok := p.collectors[name]; ok {
+		if col, ok := val.(prometheus.Histogram); ok {
+			fn(col)
+		}
+	}
+}
+
+func (p *Prometheus) CallHistogramVec(name string, fn func(*prometheus.HistogramVec)) {
+	if val, ok := p.collectors[name]; ok {
+		if col, ok := val.(*prometheus.HistogramVec); ok {
+			fn(col)
+		}
+	}
+}
+
+func (p *Prometheus) CallSummary(name string, fn func(prometheus.Summary)) {
+	if val, ok := p.collectors[name]; ok {
+		if col, ok := val.(prometheus.Summary); ok {
+			fn(col)
+		}
+	}
+}
+
+func (p *Prometheus) CallSummaryVec(name string, fn func(*prometheus.SummaryVec)) {
+	if val, ok := p.collectors[name]; ok {
+		if col, ok := val.(*prometheus.SummaryVec); ok {
+			fn(col)
+		}
+	}
 }

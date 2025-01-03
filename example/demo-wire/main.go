@@ -11,6 +11,7 @@ import (
 	"github.com/inoth/toybox/config/file"
 	"github.com/inoth/toybox/config/toml"
 	"github.com/inoth/toybox/ginserver"
+	"github.com/inoth/toybox/metric"
 	"github.com/inoth/toybox/wsserver"
 )
 
@@ -24,6 +25,7 @@ func newApp(
 	hs2 *ginserver.GinHttp2Server,
 	hs3 *ginserver.GinHttp3Server,
 	w *wsserver.WebsocketServer,
+	p *metric.Prometheus,
 ) *toybox.ToyBox {
 	t := toybox.New(
 		toybox.WithConfig(conf),
@@ -31,6 +33,7 @@ func newApp(
 		toybox.WithServer(hs2),
 		toybox.WithServer(hs3),
 		toybox.WithServer(w),
+		toybox.WithServer(p),
 	)
 	return t
 }
