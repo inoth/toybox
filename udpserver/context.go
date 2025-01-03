@@ -2,25 +2,30 @@ package udpserver
 
 import (
 	"encoding/json"
+	"math"
 	"sync"
 	"time"
+)
+
+const (
+	indexAbort = math.MaxInt8 >> 1
 )
 
 type HandlerFunc func(*Context)
 
 type Context struct {
 	body  []byte
-	state bool
+	index int8
 
 	Keys map[string]any
 	m    sync.RWMutex
-	svr  *UDPQuicServer
+	hub  *UDPQuicServer
 }
 
 func (c *Context) reset() {
 	c.Keys = nil
 	c.body = nil
-	c.state = true
+	c.index = -1
 }
 
 func (c *Context) send(msg []byte) {
@@ -45,14 +50,24 @@ func (c *Context) String(id, body string) {
 
 func (c *Context) Render(id string, msg []byte) {
 	c.Abort()
-	c.svr.output <- Message{
+	c.hub.output <- Message{
 		ID:   id,
 		Body: msg,
 	}
 }
 
 func (c *Context) Abort() {
-	c.state = false
+	c.index = indexAbort
+}
+
+func (c *Context) Next() {
+	c.index++
+	for c.index < int8(len(c.hub.handles)) {
+		if c.hub.handles[c.index] != nil {
+			c.hub.handles[c.index](c)
+		}
+		c.index++
+	}
 }
 
 func (c *Context) BindJson(obj any) error {

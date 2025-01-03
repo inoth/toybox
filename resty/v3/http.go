@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/go-resty/resty/v2"
@@ -22,7 +21,28 @@ type RespData interface {
 type RequestOption struct {
 	Token      string
 	CaCertPath string
+	CaCertRaw  []byte
 	Headers    map[string]string
+}
+
+func getHttp3RoundTripperFromString(caCertRaw []byte) (*http3.RoundTripper, error) {
+	pool, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not load system cert pool.")
+	}
+
+	if ok := pool.AppendCertsFromPEM(caCertRaw); !ok {
+		return nil, errors.Wrap(err, "could not add root ceritificate to pool.")
+	}
+
+	return &http3.RoundTripper{
+		TLSClientConfig: &tls.Config{
+			RootCAs: pool,
+		},
+		QUICConfig: &quic.Config{
+			Tracer: qlog.DefaultConnectionTracer,
+		},
+	}, nil
 }
 
 func getHttp3RoundTripper(caCertPath string) (*http3.RoundTripper, error) {
@@ -30,17 +50,18 @@ func getHttp3RoundTripper(caCertPath string) (*http3.RoundTripper, error) {
 		return nil, fmt.Errorf("the ca file address is empty")
 	}
 
-	pool, err := x509.SystemCertPool()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	caCertRaw, err := os.ReadFile(caCertPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "load ca path failed.")
 	}
+
+	pool, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not load system cert pool.")
+	}
+
 	if ok := pool.AppendCertsFromPEM(caCertRaw); !ok {
-		return nil, errors.Wrap(err, "Could not add root ceritificate to pool.")
+		return nil, errors.Wrap(err, "could not add root ceritificate to pool.")
 	}
 
 	return &http3.RoundTripper{
@@ -57,7 +78,13 @@ func HttpGet(url string, params map[string]string, opts ...RequestOption) ([]byt
 	client := resty.New()
 	opt := util.First(RequestOption{}, opts)
 
-	roundTripper, err := getHttp3RoundTripper(opt.CaCertPath)
+	var roundTripper *http3.RoundTripper
+	var err error
+	if len(opt.CaCertRaw) == 0 {
+		roundTripper, err = getHttp3RoundTripper(opt.CaCertPath)
+	} else {
+		roundTripper, err = getHttp3RoundTripperFromString(opt.CaCertRaw)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +111,13 @@ func HttpGetWith[T RespData](url string, params map[string]string, opts ...Reque
 	client := resty.New()
 	opt := util.First(RequestOption{}, opts)
 
-	roundTripper, err := getHttp3RoundTripper(opt.CaCertPath)
+	var roundTripper *http3.RoundTripper
+	var err error
+	if len(opt.CaCertRaw) == 0 {
+		roundTripper, err = getHttp3RoundTripper(opt.CaCertPath)
+	} else {
+		roundTripper, err = getHttp3RoundTripperFromString(opt.CaCertRaw)
+	}
 	if err != nil {
 		return res, err
 	}
@@ -111,7 +144,13 @@ func HttpPost(url string, params any, opts ...RequestOption) ([]byte, error) {
 	client := resty.New()
 	opt := util.First(RequestOption{}, opts)
 
-	roundTripper, err := getHttp3RoundTripper(opt.CaCertPath)
+	var roundTripper *http3.RoundTripper
+	var err error
+	if len(opt.CaCertRaw) == 0 {
+		roundTripper, err = getHttp3RoundTripper(opt.CaCertPath)
+	} else {
+		roundTripper, err = getHttp3RoundTripperFromString(opt.CaCertRaw)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +177,13 @@ func HttpPostWith[T RespData](url string, params any, opts ...RequestOption) (T,
 	client := resty.New()
 	opt := util.First(RequestOption{}, opts)
 
-	roundTripper, err := getHttp3RoundTripper(opt.CaCertPath)
+	var roundTripper *http3.RoundTripper
+	var err error
+	if len(opt.CaCertRaw) == 0 {
+		roundTripper, err = getHttp3RoundTripper(opt.CaCertPath)
+	} else {
+		roundTripper, err = getHttp3RoundTripperFromString(opt.CaCertRaw)
+	}
 	if err != nil {
 		return res, err
 	}
@@ -165,7 +210,13 @@ func HttpPut(url string, params any, opts ...RequestOption) ([]byte, error) {
 	client := resty.New()
 	opt := util.First(RequestOption{}, opts)
 
-	roundTripper, err := getHttp3RoundTripper(opt.CaCertPath)
+	var roundTripper *http3.RoundTripper
+	var err error
+	if len(opt.CaCertRaw) == 0 {
+		roundTripper, err = getHttp3RoundTripper(opt.CaCertPath)
+	} else {
+		roundTripper, err = getHttp3RoundTripperFromString(opt.CaCertRaw)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +243,13 @@ func HttpPutWith[T RespData](url string, params any, opts ...RequestOption) (T, 
 	client := resty.New()
 	opt := util.First(RequestOption{}, opts)
 
-	roundTripper, err := getHttp3RoundTripper(opt.CaCertPath)
+	var roundTripper *http3.RoundTripper
+	var err error
+	if len(opt.CaCertRaw) == 0 {
+		roundTripper, err = getHttp3RoundTripper(opt.CaCertPath)
+	} else {
+		roundTripper, err = getHttp3RoundTripperFromString(opt.CaCertRaw)
+	}
 	if err != nil {
 		return res, err
 	}
@@ -219,7 +276,13 @@ func HttpDelete(url string, params any, opts ...RequestOption) ([]byte, error) {
 	client := resty.New()
 	opt := util.First(RequestOption{}, opts)
 
-	roundTripper, err := getHttp3RoundTripper(opt.CaCertPath)
+	var roundTripper *http3.RoundTripper
+	var err error
+	if len(opt.CaCertRaw) == 0 {
+		roundTripper, err = getHttp3RoundTripper(opt.CaCertPath)
+	} else {
+		roundTripper, err = getHttp3RoundTripperFromString(opt.CaCertRaw)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +309,13 @@ func HttpDeleteWith[T RespData](url string, params any, opts ...RequestOption) (
 	client := resty.New()
 	opt := util.First(RequestOption{}, opts)
 
-	roundTripper, err := getHttp3RoundTripper(opt.CaCertPath)
+	var roundTripper *http3.RoundTripper
+	var err error
+	if len(opt.CaCertRaw) == 0 {
+		roundTripper, err = getHttp3RoundTripper(opt.CaCertPath)
+	} else {
+		roundTripper, err = getHttp3RoundTripperFromString(opt.CaCertRaw)
+	}
 	if err != nil {
 		return res, err
 	}

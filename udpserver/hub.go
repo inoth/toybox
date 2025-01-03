@@ -56,7 +56,7 @@ func New(opts ...Option) *UDPQuicServer {
 		option: o,
 	}
 	uqs.pool = sync.Pool{New: func() any {
-		return &Context{svr: uqs}
+		return &Context{hub: uqs}
 	}}
 	return uqs
 }
@@ -180,12 +180,7 @@ func (uq *UDPQuicServer) sendMessage(msg []byte) {
 	c.reset()
 
 	c.send(msg)
-	for _, handle := range uq.handles {
-		if !c.state {
-			break
-		}
-		handle(c)
-	}
+	c.Next()
 
 	uq.pool.Put(c)
 }

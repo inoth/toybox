@@ -29,7 +29,7 @@ type CronsvcMetric struct {
 
 func New(opts ...Option) *CronsvcMetric {
 	o := option{
-		Port: ":9051",
+		Port: ":9000",
 	}
 	for _, opt := range opts {
 		opt(&o)

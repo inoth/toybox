@@ -19,7 +19,7 @@ type Context struct {
 
 	Keys map[string]any
 	m    sync.RWMutex
-	ws   *WebsocketServer
+	hub  *WebsocketServer
 }
 
 func (c *Context) reset() {
@@ -50,7 +50,7 @@ func (c *Context) String(id, body string) {
 
 func (c *Context) Render(id string, msg []byte) {
 	c.Abort()
-	c.ws.output <- Message{
+	c.hub.output <- Message{
 		ID:   id,
 		Body: msg,
 	}
@@ -62,9 +62,9 @@ func (c *Context) Abort() {
 
 func (c *Context) Next() {
 	c.index++
-	for c.index < int8(len(c.ws.handles)) {
-		if c.ws.handles[c.index] != nil {
-			c.ws.handles[c.index](c)
+	for c.index < int8(len(c.hub.handles)) {
+		if c.hub.handles[c.index] != nil {
+			c.hub.handles[c.index](c)
 		}
 		c.index++
 	}

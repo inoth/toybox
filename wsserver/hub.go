@@ -53,7 +53,7 @@ func New(opts ...Option) *WebsocketServer {
 		option: o,
 	}
 	ws.pool = sync.Pool{New: func() any {
-		return &Context{ws: ws}
+		return &Context{hub: ws}
 	}}
 	return ws
 }

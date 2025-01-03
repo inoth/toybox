@@ -20,7 +20,7 @@ type Property struct {
 
 func New(opts ...Option) *Property {
 	o := option{
-		Port: ":9052",
+		Port: ":9001",
 	}
 	for _, opt := range opts {
 		opt(&o)
