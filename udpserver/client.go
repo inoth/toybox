@@ -99,11 +99,11 @@ func (c *Client) read(stream quic.Stream) {
 					continue
 				}
 			}
-			var index uint32 = 0
-			for int(index) < n {
-				msgLength := binary.BigEndian.Uint32(buf[index : index+lengthPrefix])
-				tmpMsg := buf[index+lengthPrefix : index+lengthPrefix+msgLength]
-				index = index + lengthPrefix + msgLength
+			var idx uint32 = 0
+			for int(idx) < n {
+				msgLength := binary.BigEndian.Uint32(buf[idx : idx+lengthPrefix])
+				tmpMsg := buf[idx+lengthPrefix : idx+lengthPrefix+msgLength]
+				idx = idx + lengthPrefix + msgLength
 
 				msg := bytes.TrimSpace(bytes.Replace(tmpMsg, newline, space, -1))
 				c.svr.input <- msg
