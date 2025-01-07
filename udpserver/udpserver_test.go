@@ -10,7 +10,7 @@ import (
 
 func TestRunUdpServer(t *testing.T) {
 	us := New(
-		WithTLSFile("../cert/cert.pem", "../cert/priv.key"),
+		WithTLSFile("../test_resources/cert/cert.pem", "../test_resources/cert/priv.key"),
 		WithHandler(
 			func(c *Context) {
 				fmt.Println(string(c.Body()))

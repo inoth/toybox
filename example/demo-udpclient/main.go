@@ -24,7 +24,7 @@ func main() {
 	go client.ReceiveMessage(msg)
 
 	go func() {
-		for i := 0; i < 1; i++ {
+		for i := 0; i < 10; i++ {
 			data := &body{
 				ID:   "testclient",
 				Body: fmt.Sprintf("Hello %d, Game Server!", i),

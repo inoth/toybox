@@ -102,10 +102,8 @@ func (c *Client) read(stream quic.Stream) {
 			var idx uint32 = 0
 			for int(idx) < n {
 				msgLength := binary.BigEndian.Uint32(buf[idx : idx+lengthPrefix])
-				tmpMsg := buf[idx+lengthPrefix : idx+lengthPrefix+msgLength]
+				msg := bytes.TrimSpace(bytes.Replace(buf[idx+lengthPrefix:idx+lengthPrefix+msgLength], newline, space, -1))
 				idx = idx + lengthPrefix + msgLength
-
-				msg := bytes.TrimSpace(bytes.Replace(tmpMsg, newline, space, -1))
 				c.svr.input <- msg
 			}
 		}
@@ -136,9 +134,11 @@ func (c *Client) write(stream quic.Stream) {
 				_, _ = stream.Write([]byte{})
 				return
 			}
-			lengthPrefix := make([]byte, 4)
-			binary.BigEndian.PutUint32(lengthPrefix, uint32(len(message)))
-			msg := append(lengthPrefix, message...)
+			msg := make([]byte, 4+len(message))
+			binary.BigEndian.PutUint32(msg, uint32(len(message)))
+			for i := 0; i < len(message); i++ {
+				msg[i+4] = message[i]
+			}
 			if c.svr.Gzip {
 				if compressed, err := util.CompressGzip(msg); err == nil {
 					_, _ = stream.Write(compressed)
