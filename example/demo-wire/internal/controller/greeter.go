@@ -48,8 +48,11 @@ func (gc *GreeterController) SayHi(c *gin.Context) {
 	name := c.Param("name")
 	r := gc.svr.SayHi(name)
 
-	gc.log.Log(c, logger.LevelInfo, "this is info logger")
 	// logger.Log(c, logger.LevelInfo, "this is info logger")
+	gc.log.Log(c, logger.LevelDebug, "this is debug logger")
+	gc.log.Log(c, logger.LevelInfo, "this is info logger")
+	gc.log.Log(c, logger.LevelWarn, "this is warn logger")
+	gc.log.Log(c, logger.LevelError, "this is error logger")
 
 	res.Ok(c, "", gin.H{
 		"trace_id": c.Value("trace_id"),
