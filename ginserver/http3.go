@@ -27,7 +27,9 @@ type GinHttp3Server struct {
 
 func NewHttp3(opts ...Option) *GinHttp3Server {
 	o := defaultOption
-	o.engine = gin.New()
+	o.engine = gin.New(func(e *gin.Engine) {
+		e.ContextWithFallback = true
+	})
 	for _, opt := range opts {
 		opt(&o)
 	}

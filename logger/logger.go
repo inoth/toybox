@@ -5,7 +5,11 @@ import (
 	"log"
 )
 
-var DefaultLogger Logger = &stdLogger{}
+var DefaultLogger Logger
+
+func init() {
+	DefaultLogger = &stdLogger{}
+}
 
 type Logger interface {
 	Log(ctx context.Context, level int, msg string)
@@ -19,4 +23,8 @@ func (l *stdLogger) Log(ctx context.Context, level int, msg string) {
 	}
 	traceId := ctx.Value("trace_id")
 	log.Printf("[%s][%v]%s\n", LevelName[level], traceId, msg)
+}
+
+func Log(ctx context.Context, level int, msg string) {
+	DefaultLogger.Log(ctx, level, msg)
 }

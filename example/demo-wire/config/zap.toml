@@ -1,0 +1,11 @@
+[server.zap]
+
+debug = "log/debug/debug.log"
+info = "log/info/info.log"
+warn = "log/warn/warn.log"
+err = "log/err/err.log"
+max_size = 10
+max_age = 15
+max_backup = 30
+compress = true
+json = true

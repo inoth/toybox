@@ -7,18 +7,25 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/inoth/toybox/ginserver"
 	"github.com/inoth/toybox/ginserver/res"
+	"github.com/inoth/toybox/logger"
 	"github.com/inoth/toybox/wsserver"
 )
 
 type GreeterController struct {
 	svr *service.GreeterService
 	hub *wsserver.WebsocketServer
+	log logger.Logger
 }
 
-func NewGreeterController(svr *service.GreeterService, hub *wsserver.WebsocketServer) *GreeterController {
+func NewGreeterController(
+	svr *service.GreeterService,
+	hub *wsserver.WebsocketServer,
+	log logger.Logger,
+) *GreeterController {
 	return &GreeterController{
 		svr: svr,
 		hub: hub,
+		log: log,
 	}
 }
 
@@ -40,7 +47,11 @@ func (gc *GreeterController) Routers() []ginserver.Router {
 func (gc *GreeterController) SayHi(c *gin.Context) {
 	name := c.Param("name")
 	r := gc.svr.SayHi(name)
-	res.Ok(c, r)
+	gc.log.Log(c, logger.LevelInfo, "this is info logger")
+	res.Ok(c, "", gin.H{
+		"trace_id": c.Value("trace_id"),
+		"msg":      r,
+	})
 }
 
 func (uc *GreeterController) Connect(c *gin.Context) {

@@ -66,7 +66,6 @@ func (z *ZapLogger) Log(ctx context.Context, level int, msg string) {
 	case logger.LevelError:
 		z.log.Error(msg, zap.String("trace_id", traceId.(string)))
 	}
-	z.log.Info(msg)
 }
 
 func (z *ZapLogger) newLogger() {

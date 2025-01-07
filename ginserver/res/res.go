@@ -26,26 +26,26 @@ type ResultBody struct {
 	Data    interface{} `json:"data,omitempty"`
 }
 
-func (rb *ResultBody) result(c *gin.Context) {
-	c.JSON(http.StatusOK, rb)
+func (r *ResultBody) result(c *gin.Context) {
+	c.JSON(http.StatusOK, r)
 }
 
 func Ok(c *gin.Context, msg string, data ...any) {
-	rb := ResultBody{
+	r := ResultBody{
 		TraceId: c.GetHeader("trace_id"),
 		Ret:     Success,
 		Msg:     msg,
 		Data:    util.First(nil, data),
 	}
-	rb.result(c)
+	r.result(c)
 }
 
 func Result(c *gin.Context, ret int, msg string, data ...any) {
-	rb := ResultBody{
+	r := ResultBody{
 		TraceId: c.GetHeader("trace_id"),
 		Ret:     ret,
 		Msg:     msg,
 		Data:    util.First(nil, data),
 	}
-	rb.result(c)
+	r.result(c)
 }

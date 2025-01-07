@@ -9,4 +9,5 @@ var ProviderSet = wire.NewSet(
 	NewWebsocketServer,
 	NewMetric,
 	NewProperty,
+	NewLogger,
 )

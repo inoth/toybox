@@ -19,7 +19,7 @@ type option struct {
 	Port           string `toml:"port" json:"port"`
 
 	engine    *gin.Engine
-	handles   []Handler
+	handles   []Controller
 	validator []validation.Validation
 }
 
@@ -43,7 +43,7 @@ func WithTLS(cert, key string) Option {
 	}
 }
 
-func WithHandlers(handles ...Handler) Option {
+func WithHandlers(handles ...Controller) Option {
 	return func(opt *option) {
 		opt.handles = append(opt.handles, handles...)
 	}

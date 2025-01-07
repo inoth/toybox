@@ -2,7 +2,7 @@ package ginserver
 
 import "github.com/gin-gonic/gin"
 
-type Handler interface {
+type Controller interface {
 	Prefix() string
 	Middlewares() []gin.HandlerFunc
 	Routers() []Router
