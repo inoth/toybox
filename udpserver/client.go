@@ -3,6 +3,7 @@ package udpserver
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -12,7 +13,8 @@ import (
 )
 
 const (
-	IsDebug = true
+	IsDebug      = true
+	lengthPrefix = 4
 )
 
 var (
@@ -64,7 +66,7 @@ func NewClient(svr *UDPQuicServer, conn quic.Connection) {
 
 func (c *Client) Close() {
 	if c.closed.CompareAndSwap(0, 1) {
-		c.conn.CloseWithError(0, "connection closed")
+		_ = c.conn.CloseWithError(0, "connection closed")
 		close(c.send)
 		c.cancel()
 	}
@@ -76,7 +78,7 @@ func (c *Client) read(stream quic.Stream) {
 		c.svr.unregister <- c
 	}()
 	buf := make([]byte, c.svr.MaxMessageSize)
-	stream.SetReadDeadline(time.Now().Add(c.svr.PongWait))
+	_ = stream.SetReadDeadline(time.Now().Add(c.svr.PongWait))
 	for {
 		select {
 		case <-c.ctx.Done():
@@ -88,12 +90,22 @@ func (c *Client) read(stream quic.Stream) {
 			if err != nil {
 				return
 			}
-			msg := bytes.TrimSpace(bytes.Replace(buf[:n], newline, space, -1))
+			if n < lengthPrefix {
+				continue
+			}
 			if c.svr.Gzip {
-				if buf, err := util.DecompressGzip(msg); err == nil {
-					c.svr.input <- buf
+				buf, err = util.DecompressGzip(buf)
+				if err != nil {
+					continue
 				}
-			} else {
+			}
+			var index uint32 = 0
+			for int(index) < n {
+				msgLength := binary.BigEndian.Uint32(buf[index : index+lengthPrefix])
+				tmpMsg := buf[index+lengthPrefix : index+lengthPrefix+msgLength]
+				index = index + lengthPrefix + msgLength
+
+				msg := bytes.TrimSpace(bytes.Replace(tmpMsg, newline, space, -1))
 				c.svr.input <- msg
 			}
 		}
@@ -114,22 +126,25 @@ func (c *Client) write(stream quic.Stream) {
 		case <-stream.Context().Done():
 			return
 		case <-ticker.C:
-			stream.SetWriteDeadline(time.Now().Add(c.svr.WriteWait))
+			_ = stream.SetWriteDeadline(time.Now().Add(c.svr.WriteWait))
 			if _, err := stream.Write([]byte{}); err != nil {
 				return
 			}
 		case message, ok := <-c.send:
-			stream.SetWriteDeadline(time.Now().Add(c.svr.WriteWait))
+			_ = stream.SetWriteDeadline(time.Now().Add(c.svr.WriteWait))
 			if !ok {
-				stream.Write([]byte{})
+				_, _ = stream.Write([]byte{})
 				return
 			}
+			lengthPrefix := make([]byte, 4)
+			binary.BigEndian.PutUint32(lengthPrefix, uint32(len(message)))
+			msg := append(lengthPrefix, message...)
 			if c.svr.Gzip {
-				if compressed, err := util.CompressGzip(message); err == nil {
-					stream.Write(compressed)
+				if compressed, err := util.CompressGzip(msg); err == nil {
+					_, _ = stream.Write(compressed)
 				}
 			} else {
-				stream.Write(message)
+				_, _ = stream.Write(msg)
 			}
 		}
 	}

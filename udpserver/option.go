@@ -1,7 +1,6 @@
 package udpserver
 
 import (
-	"context"
 	"crypto/tls"
 	"time"
 )
@@ -25,14 +24,7 @@ type option struct {
 	MaxMessageSize int64         `toml:"max_message_size"`
 	Gzip           bool          `toml:"gzip"`
 
-	ctx     context.Context
 	handles []HandlerFunc
-}
-
-func WithContext(ctx context.Context) Option {
-	return func(opt *option) {
-		opt.ctx = ctx
-	}
 }
 
 func WithHandler(handles ...HandlerFunc) Option {

@@ -4,12 +4,17 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/binary"
 	"sync/atomic"
 	"time"
 
 	"github.com/inoth/toybox/util"
 	"github.com/pkg/errors"
 	"github.com/quic-go/quic-go"
+)
+
+const (
+	lengthPrefix = 4
 )
 
 var (
@@ -83,7 +88,7 @@ func NewClient(ctx context.Context, cfgs ...UDPClientConfig) (*UDPClient, error)
 
 func (c *UDPClient) Close() error {
 	if c.closed.CompareAndSwap(0, 1) {
-		c.conn.CloseWithError(0, "connection closed")
+		_ = c.conn.CloseWithError(0, "connection closed")
 		close(c.send)
 		close(c.receive)
 		c.cancel()
@@ -97,7 +102,7 @@ func (c *UDPClient) read(stream quic.Stream) {
 		c.Close()
 	}()
 	buf := make([]byte, c.cfg.MaxMessageSize)
-	stream.SetReadDeadline(time.Now().Add(time.Duration(c.cfg.PongWait)))
+	_ = stream.SetReadDeadline(time.Now().Add(time.Duration(c.cfg.PongWait)))
 	for {
 		select {
 		case <-c.ctx.Done():
@@ -109,12 +114,22 @@ func (c *UDPClient) read(stream quic.Stream) {
 			if err != nil {
 				return
 			}
-			msg := bytes.TrimSpace(bytes.Replace(buf[:n], newline, space, -1))
+			if n < lengthPrefix {
+				continue
+			}
 			if c.cfg.Gzip {
-				if buf, err := util.DecompressGzip(msg); err == nil {
-					c.receive <- buf
+				buf, err = util.DecompressGzip(buf)
+				if err != nil {
+					continue
 				}
-			} else {
+			}
+			var index uint32 = 0
+			for int(index) < n {
+				msgLength := binary.BigEndian.Uint32(buf[index : index+lengthPrefix])
+				tmpMsg := buf[index+lengthPrefix : index+lengthPrefix+msgLength]
+				index = index + lengthPrefix + msgLength
+
+				msg := bytes.TrimSpace(bytes.Replace(tmpMsg, newline, space, -1))
 				c.receive <- msg
 			}
 		}
@@ -135,26 +150,25 @@ func (c *UDPClient) write(stream quic.Stream) {
 		case <-stream.Context().Done():
 			return
 		case <-ticker.C:
-			stream.SetWriteDeadline(time.Now().Add(c.cfg.WriteWait))
+			_ = stream.SetWriteDeadline(time.Now().Add(c.cfg.WriteWait))
 			if _, err := stream.Write([]byte{}); err != nil {
 				return
 			}
 		case message, ok := <-c.send:
-			stream.SetWriteDeadline(time.Now().Add(c.cfg.WriteWait))
+			_ = stream.SetWriteDeadline(time.Now().Add(c.cfg.WriteWait))
 			if !ok {
-				stream.Write([]byte{})
+				_, _ = stream.Write([]byte{})
 				return
 			}
+			lengthPrefix := make([]byte, 4)
+			binary.BigEndian.PutUint32(lengthPrefix, uint32(len(message)))
+			msg := append(lengthPrefix, message...)
 			if c.cfg.Gzip {
-				if compressed, err := util.CompressGzip(message); err == nil {
-					stream.Write(compressed)
+				if compressed, err := util.CompressGzip(msg); err == nil {
+					_, _ = stream.Write(compressed)
 				}
 			} else {
-				stream.Write(message)
-			}
-			for i := 0; i < len(c.send); i++ {
-				stream.Write(newline)
-				stream.Write(<-c.send)
+				_, _ = stream.Write(msg)
 			}
 		}
 	}

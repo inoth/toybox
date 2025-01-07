@@ -1,7 +1,6 @@
 package wsserver
 
 import (
-	"context"
 	"time"
 )
 
@@ -20,14 +19,7 @@ type option struct {
 	MaxMessageSize int64         `toml:"max_message_size"`
 	GZIP           bool          `toml:"gzip"`
 
-	ctx     context.Context
 	handles []HandlerFunc
-}
-
-func WithContext(ctx context.Context) Option {
-	return func(opt *option) {
-		opt.ctx = ctx
-	}
 }
 
 func WithHandler(handles ...HandlerFunc) Option {

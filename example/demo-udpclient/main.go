@@ -24,16 +24,19 @@ func main() {
 	go client.ReceiveMessage(msg)
 
 	go func() {
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 1; i++ {
 			data := &body{
 				ID:   "testclient",
 				Body: fmt.Sprintf("Hello %d, Game Server!", i),
 			}
-			message, _ := json.Marshal(data)
-			client.SendMessage(message)
+			buf, _ := json.Marshal(data)
 
-			time.Sleep(time.Second * 1)
+			client.SendMessage(buf)
+			// time.Sleep(time.Millisecond * 300)
 		}
+		time.Sleep(time.Second * 3)
+		cancel()
+		close(msg)
 	}()
 
 	for buf := range msg {

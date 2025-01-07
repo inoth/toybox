@@ -35,7 +35,7 @@ type UDPQuicServer struct {
 
 func New(opts ...Option) *UDPQuicServer {
 	o := option{
-		Addr:            ":4242",
+		Addr:            "0.0.0.0:4242",
 		WriteWait:       10 * time.Second,
 		PongWait:        10 * time.Second,
 		PingPeriod:      (10 * time.Second) * 9 / 10,
@@ -83,13 +83,11 @@ func (uq *UDPQuicServer) Start(ctx context.Context) error {
 		return errors.Wrap(err, "load certificate failed")
 	}
 
-	ln, err := quic.ListenAddr(uq.Addr, tlsConfig, nil)
+	uq.ln, err = quic.ListenAddr(uq.Addr, tlsConfig, nil)
 	if err != nil {
 		return errors.Wrap(err, "listening failed")
 	}
 	fmt.Printf("Server listening on %s\n", uq.Addr)
-
-	uq.ln = ln
 
 	return uq.run()
 }

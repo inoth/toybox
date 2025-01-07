@@ -19,7 +19,7 @@ func (t *TestEntiy) Name() string {
 
 func TestNewConfiguration(t *testing.T) {
 	var (
-		dir = "../"
+		dir = "../../test_resources/config"
 	)
 	tests := []struct {
 		name   string
