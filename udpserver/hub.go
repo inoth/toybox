@@ -75,7 +75,7 @@ func (uq *UDPQuicServer) Start(ctx context.Context) error {
 	uq.output = make(chan Message, uq.ChannelSize)
 
 	if len(uq.handles) == 0 {
-		uq.handles = append(uq.handles, defaultHandle())
+		return fmt.Errorf("handles is empty")
 	}
 
 	tlsConfig, err := generateTLSConfig(uq.CertFile, uq.KeyFile)
