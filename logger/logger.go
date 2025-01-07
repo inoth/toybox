@@ -5,10 +5,10 @@ import (
 	"log"
 )
 
-var DefaultLogger Logger
+var defaultLogger Logger
 
 func init() {
-	DefaultLogger = &stdLogger{}
+	defaultLogger = &stdLogger{}
 }
 
 type Logger interface {
@@ -26,5 +26,5 @@ func (l *stdLogger) Log(ctx context.Context, level int, msg string) {
 }
 
 func Log(ctx context.Context, level int, msg string) {
-	DefaultLogger.Log(ctx, level, msg)
+	defaultLogger.Log(ctx, level, msg)
 }
