@@ -22,7 +22,7 @@ func (l *stdLogger) Log(ctx context.Context, level int, msg string) {
 		level = 3
 	}
 	traceId := ctx.Value("trace_id")
-	log.Printf("[%s][%v]%s\n", LevelName[level], traceId, msg)
+	log.Printf("[%s][%v] %s\n", LevelName[level], traceId, msg)
 }
 
 func Log(ctx context.Context, level int, msg string) {
