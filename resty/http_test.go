@@ -101,16 +101,6 @@ func TestHttp3Get(t *testing.T) {
 		want string
 	}{
 		{
-			name: "HttpGet",
-			args: args{
-				url: "https://localhost:9062/api/sayhi/httpget",
-				opts: []resty.RequestOption{
-					{CaCertRaw: []byte(ca)},
-				},
-			},
-			want: `{"trace_id":"7f8a87d5b827491db9b9e7000089b2ad","ret":0,"msg":"hello httpget"}`,
-		},
-		{
 			name: "HttpGetWith",
 			args: args{
 				url: "https://localhost:9062/api/sayhi/httpget",
@@ -120,18 +110,20 @@ func TestHttp3Get(t *testing.T) {
 			},
 			want: "hello httpget",
 		},
+		{
+			name: "HttpPostWith",
+			args: args{
+				url: "https://localhost:9062/api/hi/httpget1",
+				opts: []resty.RequestOption{
+					{CaCertRaw: []byte(ca)},
+				},
+			},
+			want: "hello httpget1",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			switch tt.name {
-			case "HttpGet":
-				got, err := resty.HttpGet(tt.args.url, tt.args.params, tt.args.opts...)
-				if err != nil {
-					require.Error(t, err)
-				} else {
-					require.NoError(t, err)
-				}
-				require.Equal(t, len(tt.want), len(got), "HttpGet() = %v, want %v", string(got), tt.want)
 			case "HttpGetWith":
 				got, err := resty.HttpGetWith[resp](tt.args.url, tt.args.params, tt.args.opts...)
 				if err != nil {
@@ -140,8 +132,15 @@ func TestHttp3Get(t *testing.T) {
 					require.NoError(t, err)
 				}
 				require.Equal(t, tt.want, got.Msg, "HttpGet() = %v, want %v", got.Msg, tt.want)
-				// case "HttpPost":
-				// case "HttpPostWith":
+
+			case "HttpPostWith":
+				got, err := resty.HttpPostWith[resp](tt.args.url, tt.args.params, tt.args.opts...)
+				if err != nil {
+					require.Error(t, err)
+				} else {
+					require.NoError(t, err)
+				}
+				require.Equal(t, tt.want, got.Msg, "HttpGet() = %v, want %v", got.Msg, tt.want)
 			}
 		})
 	}

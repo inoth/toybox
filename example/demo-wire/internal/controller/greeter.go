@@ -40,6 +40,7 @@ func (gc *GreeterController) Middlewares() []gin.HandlerFunc {
 func (gc *GreeterController) Routers() []ginserver.Router {
 	return []ginserver.Router{
 		{Method: "GET", Path: "/sayhi/:name", Handle: []gin.HandlerFunc{gc.SayHi}},
+		{Method: "POST", Path: "/hi/:name", Handle: []gin.HandlerFunc{gc.SayHi}},
 		{Method: "GET", Path: "/ws", Handle: []gin.HandlerFunc{gc.Connect}},
 	}
 }
@@ -54,9 +55,8 @@ func (gc *GreeterController) SayHi(c *gin.Context) {
 	gc.log.Log(c, logger.LevelWarn, "this is warn logger")
 	gc.log.Log(c, logger.LevelError, "this is error logger")
 
-	res.Ok(c, "", gin.H{
+	res.Ok(c, r, gin.H{
 		"trace_id": c.Value("trace_id"),
-		"msg":      r,
 	})
 }
 
