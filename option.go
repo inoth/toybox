@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/inoth/toybox/config"
-	"github.com/inoth/toybox/server"
+	"github.com/inoth/toybox/transport"
 )
 
 type Option func(opt *option)
@@ -16,7 +16,7 @@ type option struct {
 	version string
 	ctx     context.Context
 	sigs    []os.Signal
-	svcs    []server.Server
+	svcs    []transport.Transport
 	cfg     config.ConfigMate
 	watch   bool
 }
@@ -39,7 +39,7 @@ func WithContext(ctx context.Context) Option {
 	}
 }
 
-func WithServer(svcs ...server.Server) Option {
+func WithServer(svcs ...transport.Transport) Option {
 	return func(opt *option) {
 		opt.svcs = append(opt.svcs, svcs...)
 	}
