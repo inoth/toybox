@@ -93,12 +93,6 @@ func (c *Client) read(stream quic.Stream) {
 			if n < lengthPrefix {
 				continue
 			}
-			if c.svr.Gzip {
-				buf, err = util.DecompressGzip(buf)
-				if err != nil {
-					continue
-				}
-			}
 			var idx uint32 = 0
 			for int(idx) < n {
 				msgLength := binary.BigEndian.Uint32(buf[idx : idx+lengthPrefix])
@@ -139,13 +133,7 @@ func (c *Client) write(stream quic.Stream) {
 			for i := 0; i < len(message); i++ {
 				msg[i+4] = message[i]
 			}
-			if c.svr.Gzip {
-				if compressed, err := util.CompressGzip(msg); err == nil {
-					_, _ = stream.Write(compressed)
-				}
-			} else {
-				_, _ = stream.Write(msg)
-			}
+			_, _ = stream.Write(msg)
 		}
 	}
 }

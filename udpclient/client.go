@@ -18,8 +18,19 @@ const (
 )
 
 var (
-	newline = []byte{'\n'}
-	space   = []byte{' '}
+	newline       = []byte{'\n'}
+	space         = []byte{' '}
+	defaultConfig = UDPClientConfig{
+		WriteWait:      10 * time.Second,
+		PongWait:       10 * time.Second,
+		PingPeriod:     (10 * time.Second) * 9 / 10,
+		MaxMessageSize: 1 << 10,
+		Addr:           "localhost:4242",
+		TlsConf: &tls.Config{
+			InsecureSkipVerify: true, // 对于自签名证书
+			NextProtos:         []string{"quic-echo-example"},
+		},
+	}
 )
 
 type UDPClient struct {
@@ -39,7 +50,6 @@ type UDPClient struct {
 }
 
 type UDPClientConfig struct {
-	Gzip           bool
 	WriteWait      time.Duration
 	PongWait       time.Duration
 	PingPeriod     time.Duration
@@ -49,18 +59,7 @@ type UDPClientConfig struct {
 }
 
 func NewClient(ctx context.Context, cfgs ...UDPClientConfig) (*UDPClient, error) {
-	cfg := util.First(UDPClientConfig{
-		Gzip:           false,
-		WriteWait:      10 * time.Second,
-		PongWait:       10 * time.Second,
-		PingPeriod:     (10 * time.Second) * 9 / 10,
-		MaxMessageSize: 1 << 10,
-		Addr:           "localhost:4242",
-		TlsConf: &tls.Config{
-			InsecureSkipVerify: true, // 对于自签名证书
-			NextProtos:         []string{"quic-echo-example"},
-		},
-	}, cfgs)
+	cfg := util.First(defaultConfig, cfgs)
 
 	conn, err := quic.DialAddr(context.Background(), cfg.Addr, cfg.TlsConf, nil)
 	if err != nil {
@@ -117,12 +116,6 @@ func (c *UDPClient) read(stream quic.Stream) {
 			if n < lengthPrefix {
 				continue
 			}
-			if c.cfg.Gzip {
-				buf, err = util.DecompressGzip(buf)
-				if err != nil {
-					continue
-				}
-			}
 			var idx uint32 = 0
 			for int(idx) < n {
 				msgLength := binary.BigEndian.Uint32(buf[idx : idx+lengthPrefix])
@@ -163,13 +156,7 @@ func (c *UDPClient) write(stream quic.Stream) {
 			for i := 0; i < len(message); i++ {
 				msg[i+4] = message[i]
 			}
-			if c.cfg.Gzip {
-				if compressed, err := util.CompressGzip(msg); err == nil {
-					_, _ = stream.Write(compressed)
-				}
-			} else {
-				_, _ = stream.Write(msg)
-			}
+			_, _ = stream.Write(msg)
 		}
 	}
 }
