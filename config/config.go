@@ -13,6 +13,7 @@ type ConfigMate interface {
 type ConfigureMatcher interface {
 	Name() string
 }
+
 type Source interface {
 	Load(format string) (string, error)
 }
