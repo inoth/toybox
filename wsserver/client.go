@@ -29,6 +29,9 @@ type Client struct {
 
 	conn *websocket.Conn
 	hub  *WebsocketServer
+
+	afterConnection func()
+	afterClose      func()
 }
 
 func (c *Client) Close() {
@@ -61,10 +64,40 @@ func NewClient(hub *WebsocketServer, w http.ResponseWriter, r *http.Request) (st
 	return client.ID, nil
 }
 
+func NewClientWithEvent(hub *WebsocketServer, w http.ResponseWriter, r *http.Request, afterConnection, afterClose func()) (string, error) {
+	if hub == nil {
+		panic(fmt.Errorf("WebsocketServer not init"))
+	}
+	conn, err := hub.upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "init upgrader failed")
+	}
+	client := &Client{
+		ID:              util.UUID(32),
+		send:            make(chan []byte, hub.ChannelSize),
+		conn:            conn,
+		hub:             hub,
+		afterConnection: afterConnection,
+		afterClose:      afterClose,
+	}
+	client.ctx, client.cancel = context.WithCancel(hub.ctx)
+
+	if client.afterConnection != nil {
+		client.afterConnection()
+	}
+
+	go client.read()
+	go client.write()
+
+	hub.register <- client
+	return client.ID, nil
+}
+
 func (c *Client) read() {
 	defer func() {
 		c.hub.unregister <- c
 		c.conn.Close()
+		c.Close()
 	}()
 	c.conn.SetReadLimit(c.hub.MaxMessageSize)
 	_ = c.conn.SetReadDeadline(time.Now().Add(c.hub.PongWait))
@@ -99,6 +132,7 @@ func (c *Client) write() {
 		ticker.Stop()
 		c.hub.unregister <- c
 		c.conn.Close()
+		c.Close()
 	}()
 	for {
 		select {
