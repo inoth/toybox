@@ -52,7 +52,7 @@ func (h3 *GinHttp3Server) Start(ctx context.Context) error {
 	h3.loadValidation()
 
 	if h3.Cert == "" || h3.Key == "" {
-		return fmt.Errorf("server %s must be config with tls", http2name)
+		return fmt.Errorf("server %s must be config with tls", http3name)
 	}
 
 	h3.svr = &http3.Server{

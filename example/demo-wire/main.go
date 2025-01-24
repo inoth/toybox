@@ -11,6 +11,7 @@ import (
 	"github.com/inoth/toybox/config/file"
 	"github.com/inoth/toybox/config/toml"
 	"github.com/inoth/toybox/ginserver"
+	h3 "github.com/inoth/toybox/ginserver/h3"
 	"github.com/inoth/toybox/metric"
 	"github.com/inoth/toybox/profile"
 	"github.com/inoth/toybox/wsserver"
@@ -24,7 +25,7 @@ func newApp(
 	conf config.ConfigMate,
 	hs *ginserver.GinHttpServer,
 	hs2 *ginserver.GinHttp2Server,
-	hs3 *ginserver.GinHttp3Server,
+	hs3 *h3.GinHttp3Server,
 	w *wsserver.WebsocketServer,
 	p *metric.Prometheus,
 	pprof *profile.Profile,

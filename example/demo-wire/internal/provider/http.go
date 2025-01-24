@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/inoth/toybox/ginserver"
+	h3 "github.com/inoth/toybox/ginserver/h3"
 	"github.com/inoth/toybox/ginserver/middleware"
 	"github.com/inoth/toybox/metric"
 	"github.com/prometheus/client_golang/prometheus"
@@ -87,9 +88,9 @@ func NewHttp2Server(
 
 func NewHttp3Server(
 	gc *controller.GreeterController,
-) *ginserver.GinHttp3Server {
-	return ginserver.NewHttp3(
-		ginserver.WithMiddleware(middleware.SetTraceId()),
-		ginserver.WithHandlers(gc),
+) *h3.GinHttp3Server {
+	return h3.NewHttp3(
+		h3.WithMiddleware(middleware.SetTraceId()),
+		h3.WithHandlers(gc),
 	)
 }
