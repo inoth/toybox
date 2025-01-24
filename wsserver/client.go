@@ -30,14 +30,15 @@ type Client struct {
 	conn *websocket.Conn
 	hub  *WebsocketServer
 
-	afterConnection func()
-	afterClose      func()
+	afterConnection func(*Client)
+	afterClose      func(*Client)
 }
 
 func (c *Client) Close() {
 	if c.closed.CompareAndSwap(0, 1) {
 		close(c.send)
 		c.cancel()
+		c.afterClose(c)
 	}
 }
 
@@ -64,7 +65,7 @@ func NewClient(hub *WebsocketServer, w http.ResponseWriter, r *http.Request) (st
 	return client.ID, nil
 }
 
-func NewClientWithEvent(hub *WebsocketServer, w http.ResponseWriter, r *http.Request, afterConnection, afterClose func()) (string, error) {
+func NewClientWithEvent(hub *WebsocketServer, w http.ResponseWriter, r *http.Request, afterConnection, afterClose func(*Client)) (string, error) {
 	if hub == nil {
 		panic(fmt.Errorf("WebsocketServer not init"))
 	}
@@ -83,7 +84,7 @@ func NewClientWithEvent(hub *WebsocketServer, w http.ResponseWriter, r *http.Req
 	client.ctx, client.cancel = context.WithCancel(hub.ctx)
 
 	if client.afterConnection != nil {
-		client.afterConnection()
+		client.afterConnection(client)
 	}
 
 	go client.read()

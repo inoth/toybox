@@ -15,6 +15,8 @@ type GreeterController struct {
 	svr *service.GreeterService
 	hub *wsserver.WebsocketServer
 	log logger.Logger
+
+	clientIds []string
 }
 
 func NewGreeterController(
@@ -23,9 +25,10 @@ func NewGreeterController(
 	log logger.Logger,
 ) *GreeterController {
 	return &GreeterController{
-		svr: svr,
-		hub: hub,
-		log: log,
+		svr:       svr,
+		hub:       hub,
+		log:       log,
+		clientIds: make([]string, 0),
 	}
 }
 
@@ -42,6 +45,7 @@ func (gc *GreeterController) Routers() []ginserver.Router {
 		{Method: "GET", Path: "/sayhi/:name", Handle: []gin.HandlerFunc{gc.SayHi}},
 		{Method: "POST", Path: "/hi/:name", Handle: []gin.HandlerFunc{gc.SayHi}},
 		{Method: "GET", Path: "/ws", Handle: []gin.HandlerFunc{gc.Connect}},
+		{Method: "GET", Path: "/clients", Handle: []gin.HandlerFunc{gc.GetClients}},
 	}
 }
 
@@ -60,8 +64,23 @@ func (gc *GreeterController) SayHi(c *gin.Context) {
 	})
 }
 
-func (uc *GreeterController) Connect(c *gin.Context) {
-	clientID, err := wsserver.NewClient(uc.hub, c.Writer, c.Request)
+func (gc *GreeterController) GetClients(c *gin.Context) {
+	res.Ok(c, "", gc.clientIds)
+}
+
+func (gc *GreeterController) Connect(c *gin.Context) {
+	clientID, err := wsserver.NewClientWithEvent(gc.hub, c.Writer, c.Request,
+		func(c *wsserver.Client) {
+			gc.clientIds = append(gc.clientIds, c.ID)
+		},
+		func(c *wsserver.Client) {
+			for i, id := range gc.clientIds {
+				if c.ID == id {
+					gc.clientIds = append(gc.clientIds[:i], gc.clientIds[i+1:]...)
+					return
+				}
+			}
+		})
 	if err != nil {
 		c.String(200, err.Error())
 		return
