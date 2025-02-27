@@ -19,7 +19,7 @@
 
 # Go workspace file
 go.work
-
+.idea
 log
 
 # example/config
