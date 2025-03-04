@@ -45,8 +45,11 @@ func (sc *SqliteComponent) Name() string {
 	return Name
 }
 
-func (sc *SqliteComponent) GetDatabase(dbname string) *gorm.DB {
+func (sc *SqliteComponent) GetDatabase(dbname string, dst ...any) *gorm.DB {
 	if db, ok := sc.DbMap[dbname]; ok {
+		if len(dst) > 0 {
+			_ = db.AutoMigrate(dst...)
+		}
 		return db
 	}
 	panic(fmt.Errorf("not found database %s", dbname))

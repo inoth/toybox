@@ -40,7 +40,14 @@ func TestNewSqliteDBConnect(t *testing.T) {
 		}
 	}()
 
-	_ = db.AutoMigrate(&UserInfo{})
+	err := db.AutoMigrate(&UserInfo{})
+	if err != nil {
+		t.Error(err.Error())
+	}
+	err = db.AutoMigrate(&UserInfo{})
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	user := UserInfo{
 		Name:  "test",

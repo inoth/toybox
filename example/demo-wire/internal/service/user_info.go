@@ -12,8 +12,7 @@ type UserInfoService struct {
 }
 
 func NewUserInfoService(db *database.SqliteComponent) *UserInfoService {
-	user := db.GetDatabase("user")
-	user.AutoMigrate(&model.UserInfo{})
+	user := db.GetDatabase("user", &model.UserInfo{})
 	return &UserInfoService{db: user}
 }
 

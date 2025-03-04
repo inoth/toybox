@@ -46,8 +46,11 @@ func (mc *MysqlComponent) Name() string {
 	return Name
 }
 
-func (mc *MysqlComponent) GetDatabase(dbname string) *gorm.DB {
+func (mc *MysqlComponent) GetDatabase(dbname string, dst ...any) *gorm.DB {
 	if db, ok := mc.DbMap[dbname]; ok {
+		if len(dst) > 0 {
+			_ = db.AutoMigrate(dst...)
+		}
 		return db
 	}
 	panic(fmt.Errorf("not found database %s", dbname))
