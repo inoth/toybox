@@ -66,6 +66,7 @@ func RequestsTotal(p *metric.Prometheus) gin.HandlerFunc {
 
 func NewHttpServer(
 	gc *controller.GreeterController,
+	uc *controller.UserInfoController,
 	p *metric.Prometheus,
 ) *ginserver.GinHttpServer {
 	return ginserver.NewHttp(
@@ -73,7 +74,7 @@ func NewHttpServer(
 			middleware.SetTraceId(),
 			RequestsTotal(p),
 		),
-		ginserver.WithHandlers(gc),
+		ginserver.WithHandlers(gc, uc),
 	)
 }
 

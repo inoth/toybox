@@ -12,6 +12,7 @@ import (
 	"demo-wire/internal/provider"
 	"demo-wire/internal/service"
 	"github.com/inoth/toybox"
+	"github.com/inoth/toybox/component/database/sqlite"
 	"github.com/inoth/toybox/config"
 )
 
@@ -23,8 +24,11 @@ func initApp(conf config.ConfigMate) *toybox.ToyBox {
 	websocketServer := provider.NewWebsocketServer(messageController)
 	logger := provider.NewLogger(conf)
 	greeterController := controller.NewGreeterController(greeterService, websocketServer, logger)
+	sqliteComponent := database.NewGormDatabase(conf)
+	userInfoService := service.NewUserInfoService(sqliteComponent)
+	userInfoController := controller.NewUserInfoService(userInfoService)
 	prometheus := provider.NewMetric()
-	ginHttpServer := provider.NewHttpServer(greeterController, prometheus)
+	ginHttpServer := provider.NewHttpServer(greeterController, userInfoController, prometheus)
 	ginHttp2Server := provider.NewHttp2Server(greeterController)
 	ginHttp3Server := provider.NewHttp3Server(greeterController)
 	profile := provider.NewProperty()

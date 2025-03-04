@@ -84,3 +84,9 @@ func WithDELETE(path string, hs ...gin.HandlerFunc) Option {
 		opt.engine.DELETE(path, hs...)
 	}
 }
+
+func WithLoadHTMLFiles(files ...string) Option {
+	return func(opt *option) {
+		opt.engine.LoadHTMLFiles(files...)
+	}
+}
