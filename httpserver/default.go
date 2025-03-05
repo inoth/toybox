@@ -1,4 +1,4 @@
-package ginserver
+package httpserver
 
 var (
 	defaultOption = option{
@@ -6,6 +6,6 @@ var (
 		WriteTimeout:   10,
 		MaxHeaderBytes: 20,
 		Port:           ":9050",
-		handles:        make([]Controller, 0),
+		handles:        make([]Handler, 0),
 	}
 )

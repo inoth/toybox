@@ -7,10 +7,10 @@
 package main
 
 import (
-	"demo-wire/internal/controller"
-	"demo-wire/internal/controller/ws"
+	"demo-wire/internal/biz"
+	"demo-wire/internal/data/user"
+	"demo-wire/internal/handler"
 	"demo-wire/internal/provider"
-	"demo-wire/internal/service"
 	"github.com/inoth/toybox"
 	"github.com/inoth/toybox/component/database/sqlite"
 	"github.com/inoth/toybox/config"
@@ -19,19 +19,13 @@ import (
 // Injectors from wire.go:
 
 func initApp(conf config.ConfigMate) *toybox.ToyBox {
-	greeterService := service.NewGreeterService()
-	messageController := ws.NewMessageController()
-	websocketServer := provider.NewWebsocketServer(messageController)
-	logger := provider.NewLogger(conf)
-	greeterController := controller.NewGreeterController(greeterService, websocketServer, logger)
 	sqliteComponent := database.NewGormDatabase(conf)
-	userInfoService := service.NewUserInfoService(sqliteComponent)
-	userInfoController := controller.NewUserInfoService(userInfoService)
+	userRepo := user.NewUserRepo(sqliteComponent)
+	userUsecase := biz.NewUserUsecase(userRepo)
+	userInfoHandler := handler.NewUserInfoHandler(userUsecase)
 	prometheus := provider.NewMetric()
-	ginHttpServer := provider.NewHttpServer(greeterController, userInfoController, prometheus)
-	ginHttp2Server := provider.NewHttp2Server(greeterController)
-	ginHttp3Server := provider.NewHttp3Server(greeterController)
+	ginHttpServer := provider.NewHttpServer(userInfoHandler, prometheus)
 	profile := provider.NewProperty()
-	toyBox := newApp(conf, ginHttpServer, ginHttp2Server, ginHttp3Server, websocketServer, prometheus, profile)
+	toyBox := newApp(conf, ginHttpServer, prometheus, profile)
 	return toyBox
 }

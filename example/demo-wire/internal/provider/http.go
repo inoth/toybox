@@ -1,15 +1,14 @@
 package provider
 
 import (
-	"demo-wire/internal/controller"
+	"demo-wire/internal/handler"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/inoth/toybox/ginserver"
-	h3 "github.com/inoth/toybox/ginserver/h3"
-	"github.com/inoth/toybox/ginserver/middleware"
+	"github.com/inoth/toybox/httpserver"
+	"github.com/inoth/toybox/httpserver/middleware"
 	"github.com/inoth/toybox/metric"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -65,33 +64,26 @@ func RequestsTotal(p *metric.Prometheus) gin.HandlerFunc {
 }
 
 func NewHttpServer(
-	gc *controller.GreeterController,
-	uc *controller.UserInfoController,
+	u *handler.UserInfoHandler,
 	p *metric.Prometheus,
-) *ginserver.GinHttpServer {
-	return ginserver.NewHttp(
-		ginserver.WithMiddleware(
+) *httpserver.GinHttpServer {
+	return httpserver.NewHttp(
+		httpserver.WithMiddleware(
 			middleware.SetTraceId(),
 			RequestsTotal(p),
 		),
-		ginserver.WithHandlers(gc, uc),
+		httpserver.WithHandlers(u),
 	)
 }
 
-func NewHttp2Server(
-	gc *controller.GreeterController,
-) *ginserver.GinHttp2Server {
-	return ginserver.NewHttp2(
-		ginserver.WithMiddleware(middleware.SetTraceId()),
-		ginserver.WithHandlers(gc),
-	)
-}
+// func NewHttp2Server() *httpserver.GinHttp2Server {
+// 	return httpserver.NewHttp2(
+// 		httpserver.WithMiddleware(middleware.SetTraceId()),
+// 	)
+// }
 
-func NewHttp3Server(
-	gc *controller.GreeterController,
-) *h3.GinHttp3Server {
-	return h3.NewHttp3(
-		h3.WithMiddleware(middleware.SetTraceId()),
-		h3.WithHandlers(gc),
-	)
-}
+// func NewHttp3Server() *h3.GinHttp3Server {
+// 	return h3.NewHttp3(
+// 		h3.WithMiddleware(middleware.SetTraceId()),
+// 	)
+// }

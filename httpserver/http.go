@@ -1,4 +1,4 @@
-package ginserver
+package httpserver
 
 import (
 	"context"
@@ -7,13 +7,12 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/inoth/toybox/validation"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/singleflight"
 )
 
 const (
-	name = "gin"
+	name = "http"
 )
 
 type GinHttpServer struct {
@@ -45,8 +44,15 @@ func (h *GinHttpServer) Name() string {
 
 func (h *GinHttpServer) Start(ctx context.Context) error {
 
-	h.loadRouter()
-	h.loadValidation()
+	for _, handle := range h.handles {
+		for _, r := range handle.Routers() {
+			h.engine.Handle(
+				r.Method,
+				handle.Prefix()+"/"+r.Path,
+				append(handle.Middlewares(), r.Handle...)...,
+			)
+		}
+	}
 
 	h.svr = &http.Server{
 		Addr:           h.Port,
@@ -89,20 +95,4 @@ func (h *GinHttpServer) Stop(ctx context.Context) error {
 
 func (h *GinHttpServer) Do(key string, fn func() (any, error)) (v any, err error, shared bool) {
 	return h.sfg.Do(key, fn)
-}
-
-func (h *GinHttpServer) loadRouter() {
-	for _, handle := range h.handles {
-		for _, r := range handle.Routers() {
-			h.engine.Handle(
-				r.Method,
-				handle.Prefix()+"/"+r.Path,
-				append(handle.Middlewares(), r.Handle...)...,
-			)
-		}
-	}
-}
-
-func (h *GinHttpServer) loadValidation() {
-	validation.LoadValidation(h.validator)
 }

@@ -1,15 +1,12 @@
 package provider
 
 import (
-	"demo-wire/internal/controller/ws"
 	"fmt"
 
 	"github.com/inoth/toybox/wsserver"
 )
 
-func NewWebsocketServer(
-	mc *ws.MessageController,
-) *wsserver.WebsocketServer {
+func NewWebsocketServer() *wsserver.WebsocketServer {
 	return wsserver.New(
 		wsserver.WithHandler(
 			func(c *wsserver.Context) {
@@ -27,7 +24,6 @@ func NewWebsocketServer(
 				c.Next()
 				fmt.Println("mid 3 end")
 			},
-			mc.Handler(),
 		),
 	)
 }

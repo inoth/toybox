@@ -2,8 +2,7 @@ package ginserver
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/inoth/toybox/ginserver"
-	"github.com/inoth/toybox/validation"
+	"github.com/inoth/toybox/httpserver"
 )
 
 var (
@@ -12,7 +11,7 @@ var (
 		WriteTimeout:   10,
 		MaxHeaderBytes: 20,
 		Port:           ":9050",
-		handles:        make([]ginserver.Controller, 0),
+		handles:        make([]httpserver.Handler, 0),
 	}
 )
 
@@ -29,9 +28,8 @@ type option struct {
 	Key            string `toml:"key" json:"key"`
 	Port           string `toml:"port" json:"port"`
 
-	engine    *gin.Engine
-	handles   []ginserver.Controller
-	validator []validation.Validation
+	engine  *gin.Engine
+	handles []httpserver.Handler
 }
 
 func WithName(name string) Option {
@@ -54,7 +52,7 @@ func WithTLS(cert, key string) Option {
 	}
 }
 
-func WithHandlers(handles ...ginserver.Controller) Option {
+func WithHandlers(handles ...httpserver.Handler) Option {
 	return func(opt *option) {
 		opt.handles = append(opt.handles, handles...)
 	}
@@ -63,12 +61,6 @@ func WithHandlers(handles ...ginserver.Controller) Option {
 func WithMiddleware(handles ...gin.HandlerFunc) Option {
 	return func(opt *option) {
 		opt.engine.Use(handles...)
-	}
-}
-
-func WithValidator(v ...validation.Validation) Option {
-	return func(opt *option) {
-		opt.validator = append(opt.validator, v...)
 	}
 }
 

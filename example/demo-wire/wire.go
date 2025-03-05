@@ -3,9 +3,10 @@
 package main
 
 import (
-	"demo-wire/internal/controller"
+	"demo-wire/internal/biz"
+	"demo-wire/internal/data"
+	"demo-wire/internal/handler"
 	"demo-wire/internal/provider"
-	"demo-wire/internal/service"
 
 	"github.com/google/wire"
 	"github.com/inoth/toybox"
@@ -13,5 +14,5 @@ import (
 )
 
 func initApp(conf config.ConfigMate) *toybox.ToyBox {
-	panic(wire.Build(service.ProviderSet, controller.ProviderSet, provider.ProviderSet, newApp))
+	panic(wire.Build(data.ProviderSet, biz.ProviderSet, handler.ProviderSet, provider.ProviderSet, newApp))
 }

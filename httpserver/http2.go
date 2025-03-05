@@ -1,4 +1,4 @@
-package ginserver
+package httpserver
 
 import (
 	"context"
@@ -8,14 +8,13 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/inoth/toybox/validation"
 	"github.com/pkg/errors"
 	"golang.org/x/net/http2"
 	"golang.org/x/sync/singleflight"
 )
 
 const (
-	http2name = "gin2"
+	http2name = "http2"
 )
 
 type GinHttp2Server struct {
@@ -47,11 +46,18 @@ func (h2 *GinHttp2Server) Name() string {
 
 func (h2 *GinHttp2Server) Start(ctx context.Context) error {
 
-	h2.loadRouter()
-	h2.loadValidation()
-
 	if h2.Cert == "" || h2.Key == "" {
 		return fmt.Errorf("server %s must be config with tls", http2name)
+	}
+
+	for _, h := range h2.handles {
+		for _, r := range h.Routers() {
+			h2.engine.Handle(
+				r.Method,
+				h.Prefix()+"/"+r.Path,
+				append(h.Middlewares(), r.Handle...)...,
+			)
+		}
 	}
 
 	h2.svr = &http.Server{
@@ -95,20 +101,4 @@ func (h2 *GinHttp2Server) Stop(ctx context.Context) error {
 
 func (h2 *GinHttp2Server) Do(key string, fn func() (any, error)) (v any, err error, shared bool) {
 	return h2.sfg.Do(key, fn)
-}
-
-func (h2 *GinHttp2Server) loadRouter() {
-	for _, h := range h2.handles {
-		for _, r := range h.Routers() {
-			h2.engine.Handle(
-				r.Method,
-				h.Prefix()+"/"+r.Path,
-				append(h.Middlewares(), r.Handle...)...,
-			)
-		}
-	}
-}
-
-func (h2 *GinHttp2Server) loadValidation() {
-	validation.LoadValidation(h2.validator)
 }

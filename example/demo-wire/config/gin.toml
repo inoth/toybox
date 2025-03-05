@@ -1,11 +1,11 @@
-[server.gin]
+[server.http]
 
 port = ":9060"
 read_timeout = 10
 write_timeout = 10
 max_header_bytes = 20
 
-[server.gin2]
+[server.http2]
 
 port = ":9061"
 read_timeout = 10
@@ -14,7 +14,7 @@ max_header_bytes = 20
 cert = "cert/cert.pem"
 key = "cert/priv.key"
 
-[server.gin3]
+[server.http3]
 
 port = ":9062"
 read_timeout = 10

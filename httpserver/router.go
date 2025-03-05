@@ -1,11 +1,11 @@
-package ginserver
+package httpserver
 
 import "github.com/gin-gonic/gin"
 
-type Controller interface {
+type Handler interface {
 	Prefix() string
 	Middlewares() []gin.HandlerFunc
-	Routers() []Router
+	Routers() []*Router
 }
 
 type Router struct {
@@ -14,8 +14,8 @@ type Router struct {
 	Handle []gin.HandlerFunc
 }
 
-func NewRouter(method, path string, handles ...gin.HandlerFunc) Router {
-	return Router{
+func NewRouter(method, path string, handles ...gin.HandlerFunc) *Router {
+	return &Router{
 		Method: method,
 		Path:   path,
 		Handle: handles,

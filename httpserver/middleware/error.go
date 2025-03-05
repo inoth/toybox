@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/inoth/toybox/ginserver/res"
+	"github.com/inoth/toybox/httpserver/res"
 	"github.com/inoth/toybox/logger"
 )
 

@@ -6,17 +6,15 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 	"github.com/quic-go/quic-go/qlog"
-
-	"github.com/inoth/toybox/validation"
-	"github.com/pkg/errors"
 	"golang.org/x/sync/singleflight"
 )
 
 const (
-	http3name = "gin3"
+	http3name = "http3"
 )
 
 type GinHttp3Server struct {
@@ -48,11 +46,18 @@ func (h3 *GinHttp3Server) Name() string {
 
 func (h3 *GinHttp3Server) Start(ctx context.Context) error {
 
-	h3.loadRouter()
-	h3.loadValidation()
-
 	if h3.Cert == "" || h3.Key == "" {
 		return fmt.Errorf("server %s must be config with tls", http3name)
+	}
+
+	for _, h := range h3.handles {
+		for _, r := range h.Routers() {
+			h3.engine.Handle(
+				r.Method,
+				h.Prefix()+"/"+r.Path,
+				append(h.Middlewares(), r.Handle...)...,
+			)
+		}
 	}
 
 	h3.svr = &http3.Server{
@@ -76,20 +81,4 @@ func (h3 *GinHttp3Server) Stop(ctx context.Context) error {
 
 func (h3 *GinHttp3Server) Do(key string, fn func() (any, error)) (v any, err error, shared bool) {
 	return h3.sfg.Do(key, fn)
-}
-
-func (h3 *GinHttp3Server) loadRouter() {
-	for _, h := range h3.handles {
-		for _, r := range h.Routers() {
-			h3.engine.Handle(
-				r.Method,
-				h.Prefix()+"/"+r.Path,
-				append(h.Middlewares(), r.Handle...)...,
-			)
-		}
-	}
-}
-
-func (h3 *GinHttp3Server) loadValidation() {
-	validation.LoadValidation(h3.validator)
 }

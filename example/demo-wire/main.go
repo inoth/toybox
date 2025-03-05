@@ -10,11 +10,9 @@ import (
 	"github.com/inoth/toybox/config"
 	"github.com/inoth/toybox/config/file"
 	"github.com/inoth/toybox/config/toml"
-	"github.com/inoth/toybox/ginserver"
-	h3 "github.com/inoth/toybox/ginserver/h3"
+	"github.com/inoth/toybox/httpserver"
 	"github.com/inoth/toybox/metric"
 	"github.com/inoth/toybox/profile"
-	"github.com/inoth/toybox/wsserver"
 )
 
 var (
@@ -23,19 +21,19 @@ var (
 
 func newApp(
 	conf config.ConfigMate,
-	hs *ginserver.GinHttpServer,
-	hs2 *ginserver.GinHttp2Server,
-	hs3 *h3.GinHttp3Server,
-	w *wsserver.WebsocketServer,
+	hs *httpserver.GinHttpServer,
+	// hs2 *httpserver.GinHttp2Server,
+	// hs3 *h3.GinHttp3Server,
+	// w *wsserver.WebsocketServer,
 	p *metric.Prometheus,
 	pprof *profile.Profile,
 ) *toybox.ToyBox {
 	t := toybox.New(
 		toybox.WithConfig(conf),
 		toybox.WithServer(hs),
-		toybox.WithServer(hs2),
-		toybox.WithServer(hs3),
-		toybox.WithServer(w),
+		// toybox.WithServer(hs2),
+		// toybox.WithServer(hs3),
+		// toybox.WithServer(w),
 		toybox.WithServer(p),
 		toybox.WithServer(pprof),
 	)

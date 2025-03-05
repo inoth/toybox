@@ -7,9 +7,9 @@ import (
 
 var ProviderSet = wire.NewSet(
 	NewHttpServer,
-	NewHttp2Server,
-	NewHttp3Server,
-	NewWebsocketServer,
+	// NewHttp2Server,
+	// NewHttp3Server,
+	// NewWebsocketServer,
 	NewMetric,
 	NewProperty,
 	NewLogger,
