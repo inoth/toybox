@@ -8,8 +8,8 @@ import (
 
 	"github.com/inoth/toybox"
 	"github.com/inoth/toybox/config"
-	"github.com/inoth/toybox/config/file"
-	"github.com/inoth/toybox/config/toml"
+	localfile "github.com/inoth/toybox/config/file"
+	toml "github.com/inoth/toybox/config/toml"
 	"github.com/inoth/toybox/httpserver"
 	"github.com/inoth/toybox/metric"
 	"github.com/inoth/toybox/profile"
@@ -43,7 +43,7 @@ func newApp(
 func main() {
 	cfg := toml.NewConfiguration(
 		config.WithSource(
-			file.NewSource(DefaultDir),
+			localfile.NewLocalSource(DefaultDir),
 		),
 	)
 
