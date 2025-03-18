@@ -1,4 +1,4 @@
-package ginserver
+package httpserver
 
 import (
 	"context"

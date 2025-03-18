@@ -1,4 +1,4 @@
-package file
+package config
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ type LocalConfig struct {
 	Paths []string
 }
 
-func NewSource(dir string) *LocalConfig {
+func NewLocalSource(dir string) *LocalConfig {
 	return &LocalConfig{
 		Dir: dir,
 	}

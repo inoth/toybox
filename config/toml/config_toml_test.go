@@ -1,10 +1,10 @@
-package toml
+package config
 
 import (
 	"testing"
 
 	"github.com/inoth/toybox/config"
-	"github.com/inoth/toybox/config/file"
+	cfg "github.com/inoth/toybox/config/file"
 	"github.com/stretchr/testify/require"
 )
 
@@ -50,7 +50,7 @@ func TestNewConfiguration(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			got := NewConfiguration(
 				config.WithSource(
-					file.NewSource(test.dir),
+					cfg.NewLocalSource(test.dir),
 				),
 			)
 			err := got.PrimitiveDecode(&test.data)
