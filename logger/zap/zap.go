@@ -1,4 +1,4 @@
-package zap
+package logger
 
 import (
 	"context"
@@ -12,8 +12,6 @@ import (
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
-
-var _ logger.Logger = (*ZapLogger)(nil)
 
 const (
 	name = "zap"
@@ -35,7 +33,7 @@ type ZapLogger struct {
 	log *zap.Logger
 }
 
-func NewLogger(conf config.ConfigMate) logger.Logger {
+func NewZapLogger(conf config.ConfigMate) logger.Logger {
 	log := ZapLogger{
 		hooks: make([](func(zapcore.Entry) error), 0),
 	}
