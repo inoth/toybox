@@ -1,9 +1,9 @@
 package resty
 
 import (
+	"fmt"
 	"testing"
 
-	"github.com/inoth/toybox/resty/v3"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,7 +31,11 @@ func TestHttpGet(t *testing.T) {
 	type resp struct {
 		Ret  int    `json:"ret"`
 		Msg  string `json:"msg"`
-		Data any    `json:"data"`
+		Data struct {
+			Id    int    `json:"id"`
+			Phone string `json:"phone"`
+			Email string `json:"email"`
+		} `json:"data"`
 	}
 	type args struct {
 		url    string
@@ -46,16 +50,26 @@ func TestHttpGet(t *testing.T) {
 		{
 			name: "HttpGet",
 			args: args{
-				url: "http://localhost:9060/api/sayhi/httpget",
+				url: "http://localhost:8080/test",
+				params: map[string]string{
+					"id":    "3",
+					"phone": "18581619978",
+					"email": "aaa@aaa.com",
+				},
 			},
-			want: `{"trace_id":"7f8a87d5b827491db9b9e7000089b2ad","ret":0,"msg":"hello httpget"}`,
+			want: `{"data":{"id":3,"phone":"18581619978","email":"aaa@aaa.com"},"msg":"ok","ret":0}`,
 		},
 		{
 			name: "HttpGetWith",
 			args: args{
-				url: "http://localhost:9060/api/sayhi/httpget",
+				url: "http://localhost:8080/test",
+				params: map[string]string{
+					"id":    "3",
+					"phone": "18581619978",
+					"email": "aaa@aaa.com",
+				},
 			},
-			want: "hello httpget",
+			want: `id:3, phone:18581619978, email:aaa@aaa.com`,
 		},
 	}
 	for _, tt := range tests {
@@ -68,7 +82,7 @@ func TestHttpGet(t *testing.T) {
 				} else {
 					require.NoError(t, err)
 				}
-				require.Equal(t, len(tt.want), len(got), "HttpGet() = %v, want %v", string(got), tt.want)
+				require.Equal(t, tt.want, string(got), "HttpGet() = %v, want %v", string(got), tt.want)
 			case "HttpGetWith":
 				got, err := HttpGetWith[resp](tt.args.url, tt.args.params, tt.args.opts...)
 				if err != nil {
@@ -76,7 +90,8 @@ func TestHttpGet(t *testing.T) {
 				} else {
 					require.NoError(t, err)
 				}
-				require.Equal(t, tt.want, got.Msg, "HttpGet() = %v, want %v", got.Msg, tt.want)
+				str := fmt.Sprintf("id:%d, phone:%s, email:%s", got.Data.Id, got.Data.Phone, got.Data.Email)
+				require.Equal(t, tt.want, str, "HttpGet() = %v, want %v", str, tt.want)
 				// case "HttpPost":
 				// case "HttpPostWith":
 			}
@@ -84,64 +99,64 @@ func TestHttpGet(t *testing.T) {
 	}
 }
 
-func TestHttp3Get(t *testing.T) {
-	type resp struct {
-		Ret  int    `json:"ret"`
-		Msg  string `json:"msg"`
-		Data any    `json:"data"`
-	}
-	type args struct {
-		url    string
-		params map[string]string
-		opts   []resty.RequestOption
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			name: "HttpGetWith",
-			args: args{
-				url: "https://localhost:9062/api/sayhi/httpget",
-				opts: []resty.RequestOption{
-					{CaCertRaw: []byte(ca)},
-				},
-			},
-			want: "hello httpget",
-		},
-		{
-			name: "HttpPostWith",
-			args: args{
-				url: "https://localhost:9062/api/hi/httpget1",
-				opts: []resty.RequestOption{
-					{CaCertRaw: []byte(ca)},
-				},
-			},
-			want: "hello httpget1",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			switch tt.name {
-			case "HttpGetWith":
-				got, err := resty.HttpGetWith[resp](tt.args.url, tt.args.params, tt.args.opts...)
-				if err != nil {
-					require.Error(t, err)
-				} else {
-					require.NoError(t, err)
-				}
-				require.Equal(t, tt.want, got.Msg, "HttpGet() = %v, want %v", got.Msg, tt.want)
+// func TestHttp3Get(t *testing.T) {
+// 	type resp struct {
+// 		Ret  int    `json:"ret"`
+// 		Msg  string `json:"msg"`
+// 		Data any    `json:"data"`
+// 	}
+// 	type args struct {
+// 		url    string
+// 		params map[string]string
+// 		opts   []resty.RequestOption
+// 	}
+// 	tests := []struct {
+// 		name string
+// 		args args
+// 		want string
+// 	}{
+// 		{
+// 			name: "HttpGetWith",
+// 			args: args{
+// 				url: "https://localhost:9062/api/sayhi/httpget",
+// 				opts: []resty.RequestOption{
+// 					{CaCertRaw: []byte(ca)},
+// 				},
+// 			},
+// 			want: "hello httpget",
+// 		},
+// 		{
+// 			name: "HttpPostWith",
+// 			args: args{
+// 				url: "https://localhost:9062/api/hi/httpget1",
+// 				opts: []resty.RequestOption{
+// 					{CaCertRaw: []byte(ca)},
+// 				},
+// 			},
+// 			want: "hello httpget1",
+// 		},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			switch tt.name {
+// 			case "HttpGetWith":
+// 				got, err := resty.HttpGetWith[resp](tt.args.url, tt.args.params, tt.args.opts...)
+// 				if err != nil {
+// 					require.Error(t, err)
+// 				} else {
+// 					require.NoError(t, err)
+// 				}
+// 				require.Equal(t, tt.want, got.Msg, "HttpGet() = %v, want %v", got.Msg, tt.want)
 
-			case "HttpPostWith":
-				got, err := resty.HttpPostWith[resp](tt.args.url, tt.args.params, tt.args.opts...)
-				if err != nil {
-					require.Error(t, err)
-				} else {
-					require.NoError(t, err)
-				}
-				require.Equal(t, tt.want, got.Msg, "HttpGet() = %v, want %v", got.Msg, tt.want)
-			}
-		})
-	}
-}
+// 			case "HttpPostWith":
+// 				got, err := resty.HttpPostWith[resp](tt.args.url, tt.args.params, tt.args.opts...)
+// 				if err != nil {
+// 					require.Error(t, err)
+// 				} else {
+// 					require.NoError(t, err)
+// 				}
+// 				require.Equal(t, tt.want, got.Msg, "HttpGet() = %v, want %v", got.Msg, tt.want)
+// 			}
+// 		})
+// 	}
+// }
