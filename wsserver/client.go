@@ -34,11 +34,28 @@ type Client struct {
 	afterClose      func(*Client)
 }
 
+func (c *Client) Reset(sendSize ...int) {
+	n := 1024
+	if len(sendSize) > 0 {
+		n = sendSize[0]
+	}
+	c.send = make(chan []byte, n)
+	c.closed.Store(0)
+	c.afterConnection = nil
+	c.afterClose = nil
+	c.conn = nil
+	c.hub = nil
+	c.ID = util.UUID(32)
+}
+
 func (c *Client) Close() {
 	if c.closed.CompareAndSwap(0, 1) {
 		close(c.send)
 		c.cancel()
-		c.afterClose(c)
+		if c.afterClose != nil {
+			c.afterClose(c)
+		}
+		ClientPut(c)
 	}
 }
 
@@ -50,12 +67,10 @@ func NewClient(hub *WebsocketServer, w http.ResponseWriter, r *http.Request) (st
 	if err != nil {
 		return "", errors.Wrap(err, "init upgrader failed")
 	}
-	client := &Client{
-		ID:   util.UUID(32),
-		send: make(chan []byte, hub.ChannelSize),
-		conn: conn,
-		hub:  hub,
-	}
+
+	client := ClientGet(int(hub.ChannelSize))
+	client.hub = hub
+	client.conn = conn
 	client.ctx, client.cancel = context.WithCancel(hub.ctx)
 
 	go client.read()
@@ -73,14 +88,12 @@ func NewClientWithEvent(hub *WebsocketServer, w http.ResponseWriter, r *http.Req
 	if err != nil {
 		return "", errors.Wrap(err, "init upgrader failed")
 	}
-	client := &Client{
-		ID:              util.UUID(32),
-		send:            make(chan []byte, hub.ChannelSize),
-		conn:            conn,
-		hub:             hub,
-		afterConnection: afterConnection,
-		afterClose:      afterClose,
-	}
+
+	client := ClientGet(int(hub.ChannelSize))
+	client.hub = hub
+	client.conn = conn
+	client.afterConnection = afterConnection
+	client.afterClose = afterClose
 	client.ctx, client.cancel = context.WithCancel(hub.ctx)
 
 	if client.afterConnection != nil {
