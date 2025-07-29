@@ -19,3 +19,12 @@ func ConvertByUnsafe[A, B any](input *A) (output *B, err error) {
 	output = (*B)(unsafe.Pointer(input))
 	return
 }
+
+// 结构体必须结构和类型一致
+func ConvertWithUnsafe[A, B any](src *A) (dst B, ok bool) {
+	if src == nil {
+		return
+	}
+	dst = *(*B)(unsafe.Pointer(src))
+	return
+}
