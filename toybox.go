@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/inoth/toybox/config"
 	"github.com/inoth/toybox/util"
@@ -102,7 +103,10 @@ func (tb *ToyBox) Run() (err error) {
 			_ = tb.Stop()
 			return nil
 		case <-restartCh:
+			log.Printf("Done server %s ...............\n", tb.ID())
+			_ = tb.Stop()
 
+			time.Sleep(5 * time.Second) // Give some time for the server to stop gracefully
 			reload()
 			return nil
 		case <-watchCh:
@@ -110,6 +114,7 @@ func (tb *ToyBox) Run() (err error) {
 			close(watchCh)
 			_ = tb.Stop()
 
+			time.Sleep(5 * time.Second) // Give some time for the server to stop gracefully
 			reload()
 			return nil
 		}
