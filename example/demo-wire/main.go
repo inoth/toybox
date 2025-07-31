@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
-	"time"
 
 	"github.com/inoth/toybox"
 	"github.com/inoth/toybox/config"
@@ -47,13 +45,8 @@ func main() {
 		),
 	)
 
-restart:
 	app := initApp(cfg)
-	if err := app.Run(); err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, toybox.ErrRestart) {
+	if err := app.Run(); err != nil && !errors.Is(err, context.Canceled) {
 		panic(err)
-	} else if errors.Is(err, toybox.ErrRestart) {
-		log.Println("restart dbproxy, wait 5s...")
-		time.Sleep(time.Second * 5)
-		goto restart
 	}
 }
