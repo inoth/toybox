@@ -3,8 +3,10 @@ package toybox
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"os/signal"
 	"sync"
 	"syscall"
@@ -26,7 +28,7 @@ func New(opts ...Option) *ToyBox {
 		id:      util.UUID(),
 		version: util.UUID(),
 		ctx:     context.Background(),
-		sigs:    []os.Signal{syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT, syscall.SIGHUP},
+		sigs:    []os.Signal{syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT},
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -44,21 +46,24 @@ func (tb *ToyBox) Name() string    { return tb.name }
 func (tb *ToyBox) Version() string { return tb.version }
 
 func (tb *ToyBox) Run() (err error) {
-	log.Printf("server start %s\n", tb.ID())
+	log.Printf("Starting server ID:%s (PID: %d)\n", tb.ID(), os.Getpid())
 
 	if tb.cfg == nil {
-		return ErrNotConfig
+		panic(fmt.Errorf("unable to load configuration"))
 	}
 
-	ch := make(chan struct{})
+	watchCh := make(chan struct{})
 	if watch, ok := tb.cfg.(config.Watcher); ok && tb.watch {
 		log.Println("watch configuration...")
 		go watch.Next(tb.ctx)
-		go watch.Probe(ch)
+		go watch.Probe(watchCh)
 	}
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, tb.sigs...)
+	shutdownCh := make(chan os.Signal, 1)
+	signal.Notify(shutdownCh, tb.sigs...)
+
+	restartCh := make(chan os.Signal, 1)
+	signal.Notify(restartCh, syscall.SIGHUP)
 
 	wg := sync.WaitGroup{}
 	eg, ctx := errgroup.WithContext(tb.ctx)
@@ -92,18 +97,21 @@ func (tb *ToyBox) Run() (err error) {
 		case <-ctx.Done():
 			log.Printf("Done server %s ...............\n", tb.ID())
 			return nil
-		case sig := <-c:
+		case <-shutdownCh:
 			log.Printf("Done server %s ...............\n", tb.ID())
 			_ = tb.Stop()
-			if sig == syscall.SIGHUP {
-				return ErrRestart
-			}
 			return nil
-		case <-ch:
+		case <-restartCh:
+
+			reload()
+			return nil
+		case <-watchCh:
 			log.Printf("Config change detected, restarting...\n")
-			close(ch)
+			close(watchCh)
 			_ = tb.Stop()
-			return ErrRestart
+
+			reload()
+			return nil
 		}
 	})
 	if err = eg.Wait(); err != nil && !errors.Is(err, context.Canceled) {
@@ -116,5 +124,25 @@ func (tb *ToyBox) Stop() error {
 	if tb.cancel != nil {
 		tb.cancel()
 	}
+	return nil
+}
+
+func reload() error {
+	execPath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %v", err)
+	}
+
+	log.Printf("execPath=%s args = %+v\n", execPath, os.Args)
+
+	cmd := exec.Command(execPath, os.Args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start new process: %v", err)
+	}
+	log.Printf("Starting new process with PID: %d\n", cmd.Process.Pid)
+
 	return nil
 }
