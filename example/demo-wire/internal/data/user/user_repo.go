@@ -3,7 +3,6 @@ package user
 import (
 	"demo-wire/internal/biz"
 	"demo-wire/internal/data/user/model"
-	"errors"
 
 	database "github.com/inoth/toybox/component/database/sqlite"
 	"github.com/inoth/toybox/util/convert"
@@ -22,7 +21,7 @@ func NewUserRepo(db *database.SqliteComponent) biz.UserRepo {
 func (r *userRepo) CreateUser(user *biz.UserInfo) (uint, error) {
 	add, ok := convert.ConvertByUnsafe[biz.UserInfo, model.UserInfo](user)
 	if !ok {
-		return 0, errors.New("failed to convert user")
+		return 0, convert.ConvertErr
 	}
 	if err := r.db.Create(add).Error; err != nil {
 		return 0, err
@@ -38,7 +37,7 @@ func (r *userRepo) GetUserById(id uint) (*biz.UserInfo, error) {
 	}
 	res, ok := convert.ConvertByUnsafe[model.UserInfo, biz.UserInfo](&user)
 	if !ok {
-		return nil, errors.New("failed to convert user")
+		return nil, convert.ConvertErr
 	}
 	return res, nil
 }

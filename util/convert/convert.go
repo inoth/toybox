@@ -1,7 +1,12 @@
 package convert
 
 import (
+	"errors"
 	"unsafe"
+)
+
+var (
+	ConvertErr error = errors.New("conversion error")
 )
 
 // 相同接口结构体之间转换

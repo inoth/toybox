@@ -25,9 +25,9 @@ func TestConvertByUnsafe(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotOutput, err := ConvertByUnsafe[Foo, Bar](tt.input)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ConvertByUnsafe() error = %v, wantErr %v", err, tt.wantErr)
+			gotOutput, ok := ConvertByUnsafe[Foo, Bar](tt.input)
+			if (!ok) != tt.wantErr {
+				t.Errorf("ConvertByUnsafe() error = %v, wantErr %v", ok, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotOutput, tt.wantOutput) {
