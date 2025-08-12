@@ -3,6 +3,7 @@ package user
 import (
 	"demo-wire/internal/biz"
 	"demo-wire/internal/data/user/model"
+	"errors"
 
 	database "github.com/inoth/toybox/component/database/sqlite"
 	"github.com/inoth/toybox/util/convert"
@@ -19,9 +20,9 @@ func NewUserRepo(db *database.SqliteComponent) biz.UserRepo {
 }
 
 func (r *userRepo) CreateUser(user *biz.UserInfo) (uint, error) {
-	add, err := convert.ConvertByUnsafe[biz.UserInfo, model.UserInfo](user)
-	if err != nil {
-		return 0, err
+	add, ok := convert.ConvertByUnsafe[biz.UserInfo, model.UserInfo](user)
+	if !ok {
+		return 0, errors.New("failed to convert user")
 	}
 	if err := r.db.Create(add).Error; err != nil {
 		return 0, err
@@ -35,7 +36,11 @@ func (r *userRepo) GetUserById(id uint) (*biz.UserInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return convert.ConvertByUnsafe[model.UserInfo, biz.UserInfo](&user)
+	res, ok := convert.ConvertByUnsafe[model.UserInfo, biz.UserInfo](&user)
+	if !ok {
+		return nil, errors.New("failed to convert user")
+	}
+	return res, nil
 }
 
 func (r *userRepo) GetAllUsers() ([]*biz.UserInfo, error) {
@@ -46,8 +51,8 @@ func (r *userRepo) GetAllUsers() ([]*biz.UserInfo, error) {
 	}
 	res := make([]*biz.UserInfo, 0, len(users))
 	for _, user := range users {
-		r, err := convert.ConvertByUnsafe[model.UserInfo, biz.UserInfo](&user)
-		if err != nil {
+		r, ok := convert.ConvertByUnsafe[model.UserInfo, biz.UserInfo](&user)
+		if !ok {
 			continue
 		}
 		res = append(res, r)
