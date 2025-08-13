@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"path"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -54,7 +55,7 @@ func (h3 *GinHttp3Server) Start(ctx context.Context) error {
 		for _, r := range h.Routers() {
 			h3.engine.Handle(
 				r.Method,
-				h.Prefix()+"/"+r.Path,
+				path.Join(h.Prefix(), r.Path),
 				append(h.Middlewares(), r.Handle...)...,
 			)
 		}
@@ -76,7 +77,7 @@ func (h3 *GinHttp3Server) Start(ctx context.Context) error {
 }
 
 func (h3 *GinHttp3Server) Stop(ctx context.Context) error {
-	return h3.svr.Close()
+	return h3.svr.Shutdown(ctx)
 }
 
 func (h3 *GinHttp3Server) Do(key string, fn func() (any, error)) (v any, err error, shared bool) {

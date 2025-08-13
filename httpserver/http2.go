@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"path"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -54,7 +55,7 @@ func (h2 *GinHttp2Server) Start(ctx context.Context) error {
 		for _, r := range h.Routers() {
 			h2.engine.Handle(
 				r.Method,
-				h.Prefix()+"/"+r.Path,
+				path.Join(h.Prefix(), r.Path),
 				append(h.Middlewares(), r.Handle...)...,
 			)
 		}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"net/http"
+	"path"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -48,7 +49,7 @@ func (h *GinHttpServer) Start(ctx context.Context) error {
 		for _, r := range handle.Routers() {
 			h.engine.Handle(
 				r.Method,
-				handle.Prefix()+"/"+r.Path,
+				path.Join(handle.Prefix(), r.Path),
 				append(handle.Middlewares(), r.Handle...)...,
 			)
 		}
