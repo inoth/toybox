@@ -40,6 +40,7 @@ func newApp(
 
 func main() {
 	cfg := toml.NewConfiguration(
+		config.WithInterval(5),
 		config.WithSource(
 			localfile.NewLocalSource(DefaultDir),
 		),

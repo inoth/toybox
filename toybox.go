@@ -53,11 +53,9 @@ func (tb *ToyBox) Run() (err error) {
 		panic(fmt.Errorf("unable to load configuration"))
 	}
 
-	watchCh := make(chan struct{})
-	if watch, ok := tb.cfg.(config.Watcher); ok && tb.watch {
-		log.Println("watch configuration...")
-		go watch.Next(tb.ctx)
-		go watch.Probe(watchCh)
+	watchCh := make(chan struct{}, 1)
+	if watch, ok := tb.cfg.(config.Watcher); ok {
+		go watch.Watche(tb.ctx, watchCh)
 	}
 
 	shutdownCh := make(chan os.Signal, 1)
@@ -106,15 +104,14 @@ func (tb *ToyBox) Run() (err error) {
 			log.Printf("Done server %s ...............\n", tb.ID())
 			_ = tb.Stop()
 
-			time.Sleep(5 * time.Second) // Give some time for the server to stop gracefully
+			time.Sleep(5 * time.Second)
 			reload()
 			return nil
 		case <-watchCh:
 			log.Printf("Config change detected, restarting...\n")
-			close(watchCh)
 			_ = tb.Stop()
 
-			time.Sleep(5 * time.Second) // Give some time for the server to stop gracefully
+			time.Sleep(5 * time.Second)
 			reload()
 			return nil
 		}

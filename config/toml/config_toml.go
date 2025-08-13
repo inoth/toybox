@@ -9,6 +9,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/inoth/toybox/config"
 	"github.com/inoth/toybox/util/encrypt"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -19,8 +20,6 @@ type ConfigWithToml struct {
 	config.Option
 
 	hash string
-	p    chan<- struct{}
-
 	mate toml.MetaData
 	cfg  struct {
 		Server map[string]toml.Primitive `toml:"server"`
@@ -49,10 +48,10 @@ func NewConfiguration(opts ...config.Options) config.ConfigMate {
 func (ct *ConfigWithToml) decode() (err error) {
 	cfgStr, err := ct.Source.Load(format)
 	if err != nil {
-		return fmt.Errorf("load config err %v\n", err)
+		return errors.Wrap(err, "load configuration error")
 	}
 	if cfgStr == "" {
-		return fmt.Errorf("failed to load configuration")
+		return fmt.Errorf("configuration is empty")
 	}
 	ct.hash = encrypt.EncryptMd5(cfgStr)
 
@@ -75,8 +74,8 @@ func (ct *ConfigWithToml) PrimitiveDecode(vals ...config.ConfigureMatcher) error
 	return nil
 }
 
-func (ct *ConfigWithToml) Next(ctx context.Context) {
-	if ct.Interval <= 0 {
+func (ct *ConfigWithToml) Watche(ctx context.Context, p chan<- struct{}) {
+	if ct.Interval == 0 {
 		return
 	}
 	ticker := time.NewTicker(time.Second * time.Duration(ct.Interval))
@@ -101,7 +100,6 @@ func (ct *ConfigWithToml) Next(ctx context.Context) {
 			if hash == ct.hash {
 				continue
 			}
-			ct.hash = hash
 
 			ct.mate, err = toml.Decode(cfgStr, &(ct.cfg))
 			if err != nil {
@@ -109,13 +107,8 @@ func (ct *ConfigWithToml) Next(ctx context.Context) {
 				continue
 			}
 
-			ct.p <- struct{}{}
+			ct.hash = hash
+			p <- struct{}{}
 		}
-	}
-}
-
-func (ct *ConfigWithToml) Probe(p chan<- struct{}) {
-	if ct.p == nil {
-		ct.p = p
 	}
 }

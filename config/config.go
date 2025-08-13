@@ -19,6 +19,5 @@ type Source interface {
 }
 
 type Watcher interface {
-	Next(ctx context.Context)
-	Probe(chan<- struct{})
+	Watche(context.Context, chan<- struct{})
 }
