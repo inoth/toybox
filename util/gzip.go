@@ -13,16 +13,20 @@ func DecompressGzip(data []byte) ([]byte, error) {
 	}
 	defer reader.Close()
 
-	var result bytes.Buffer
-	if _, err := io.Copy(&result, reader); err != nil {
+	result := BytesBufferGet()
+	defer BytesBufferPut(result)
+
+	if _, err := io.Copy(result, reader); err != nil {
 		return nil, err
 	}
 	return result.Bytes(), nil
 }
 
 func CompressGzip(data []byte) ([]byte, error) {
-	var buffer bytes.Buffer
-	writer := gzip.NewWriter(&buffer)
+	buffer := BytesBufferGet()
+	defer BytesBufferPut(buffer)
+
+	writer := gzip.NewWriter(buffer)
 	defer writer.Close()
 
 	if _, err := writer.Write(data); err != nil {
