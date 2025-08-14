@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	Name = "mysqls"
+	name = "mysqls"
 )
 
 type Config struct {
@@ -18,7 +18,7 @@ type Config struct {
 	Port            int    `toml:"port" json:"port"`
 	User            string `toml:"user" json:"user"`
 	Passwd          string `toml:"passwd" json:"passwd"`
-	DbName          string `toml:"dbname" json:"dbname"`
+	DBName          string `toml:"dbname" json:"dbname"`
 	MaxIdleConns    int    `toml:"max_idle_conns" json:"max_idle_conns"`
 	MaxOpenConns    int    `toml:"max_open_conns" json:"max_open_conns"`
 	ConnMaxIdletime int    `toml:"conn_max_idletime" json:"conn_max_idletime"`
@@ -26,13 +26,13 @@ type Config struct {
 }
 
 type MysqlComponent struct {
-	DbMap   map[string]*gorm.DB `toml:"-"`
+	DBMap   map[string]*gorm.DB `toml:"-"`
 	Configs []Config            `toml:"configs" json:"configs"`
 }
 
 func NewGormDatabase(conf config.ConfigMate) *MysqlComponent {
 	mc := MysqlComponent{
-		DbMap: make(map[string]*gorm.DB),
+		DBMap: make(map[string]*gorm.DB),
 	}
 	err := conf.PrimitiveDecode(&mc)
 	if err != nil {
@@ -43,17 +43,17 @@ func NewGormDatabase(conf config.ConfigMate) *MysqlComponent {
 }
 
 func (mc *MysqlComponent) Name() string {
-	return Name
+	return name
 }
 
-func (mc *MysqlComponent) GetDatabase(dbname string, dst ...any) *gorm.DB {
-	if db, ok := mc.DbMap[dbname]; ok {
+func (mc *MysqlComponent) GetDatabase(dbName string, dst ...any) *gorm.DB {
+	if db, ok := mc.DBMap[dbName]; ok {
 		if len(dst) > 0 {
 			_ = db.AutoMigrate(dst...)
 		}
 		return db
 	}
-	panic(fmt.Errorf("not found database %s", dbname))
+	panic(fmt.Errorf("not found database %s", dbName))
 }
 
 func (mc *MysqlComponent) initConnect() {
@@ -63,7 +63,7 @@ func (mc *MysqlComponent) initConnect() {
 			cfg.Passwd,
 			cfg.Host,
 			cfg.Port,
-			cfg.DbName,
+			cfg.DBName,
 		)
 		client, err := gorm.Open(mysql.New(mysql.Config{
 			DSN:                       constr,
@@ -85,6 +85,6 @@ func (mc *MysqlComponent) initConnect() {
 		sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)                                    // 最大打开连接数
 		sqlDB.SetConnMaxLifetime(time.Second * time.Duration(cfg.ConnMaxLifetime)) // 连接最大生命周期
 
-		mc.DbMap[cfg.DbName] = client
+		mc.DBMap[cfg.DBName] = client
 	}
 }

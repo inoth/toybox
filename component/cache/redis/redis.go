@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	Name = "redis"
+	name = "redis"
 )
 
 type RedisComponent struct {
@@ -25,7 +25,7 @@ type RedisComponent struct {
 }
 
 func (rds *RedisComponent) Name() string {
-	return Name
+	return name
 }
 
 func NewRedisCache(conf config.ConfigMate) *RedisComponent {

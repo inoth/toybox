@@ -12,12 +12,12 @@ import (
 )
 
 const (
-	Name = "sqlites"
+	name = "sqlites"
 )
 
 type Config struct {
 	DBPath          string `toml:"db_path" json:"db_path"`
-	DbName          string `toml:"dbname" json:"dbname"`
+	DBName          string `toml:"dbname" json:"dbname"`
 	MaxIdleConns    int    `toml:"max_idle_conns" json:"max_idle_conns"`
 	MaxOpenConns    int    `toml:"max_open_conns" json:"max_open_conns"`
 	ConnMaxIdletime int    `toml:"conn_max_idletime" json:"conn_max_idletime"`
@@ -25,13 +25,13 @@ type Config struct {
 }
 
 type SqliteComponent struct {
-	DbMap   map[string]*gorm.DB `toml:"-"`
+	DBMap   map[string]*gorm.DB `toml:"-"`
 	Configs []Config            `toml:"configs" json:"configs"`
 }
 
 func NewGormDatabase(conf config.ConfigMate) *SqliteComponent {
 	sc := SqliteComponent{
-		DbMap: make(map[string]*gorm.DB),
+		DBMap: make(map[string]*gorm.DB),
 	}
 	err := conf.PrimitiveDecode(&sc)
 	if err != nil {
@@ -42,17 +42,17 @@ func NewGormDatabase(conf config.ConfigMate) *SqliteComponent {
 }
 
 func (sc *SqliteComponent) Name() string {
-	return Name
+	return name
 }
 
-func (sc *SqliteComponent) GetDatabase(dbname string, dst ...any) *gorm.DB {
-	if db, ok := sc.DbMap[dbname]; ok {
+func (sc *SqliteComponent) GetDatabase(dbName string, dst ...any) *gorm.DB {
+	if db, ok := sc.DBMap[dbName]; ok {
 		if len(dst) > 0 {
 			_ = db.AutoMigrate(dst...)
 		}
 		return db
 	}
-	panic(fmt.Errorf("not found database %s", dbname))
+	panic(fmt.Errorf("not found database %s", dbName))
 }
 
 func (sc *SqliteComponent) initConnect() {
@@ -70,6 +70,6 @@ func (sc *SqliteComponent) initConnect() {
 		sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)                                    // 最大打开连接数
 		sqlDB.SetConnMaxLifetime(time.Second * time.Duration(cfg.ConnMaxLifetime)) // 连接最大生命周期
 
-		sc.DbMap[cfg.DbName] = client
+		sc.DBMap[cfg.DBName] = client
 	}
 }

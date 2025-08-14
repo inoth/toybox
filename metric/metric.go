@@ -6,7 +6,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var (
+const (
 	Counter      string = "counter"
 	CounterVec   string = "counter_vec"
 	Gauge        string = "gauge"

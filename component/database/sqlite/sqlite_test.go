@@ -19,10 +19,10 @@ func (u *UserInfo) TableName() string {
 
 func TestNewSqliteDBConnect(t *testing.T) {
 	sc := &SqliteComponent{
-		DbMap: make(map[string]*gorm.DB),
+		DBMap: make(map[string]*gorm.DB),
 		Configs: []Config{{
 			DBPath:          "test.db",
-			DbName:          "test",
+			DBName:          "test",
 			MaxIdleConns:    100,
 			MaxOpenConns:    100,
 			ConnMaxIdletime: 30,
