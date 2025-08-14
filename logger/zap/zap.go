@@ -28,44 +28,20 @@ type ZapLogger struct {
 	Compress  bool   `toml:"compress"`
 	Json      bool   `toml:"json"`
 
-	hooks [](func(zapcore.Entry) error)
-
 	log *zap.Logger
 }
 
 func NewZapLogger(conf config.ConfigMate) logger.Logger {
-	log := ZapLogger{
-		hooks: make([](func(zapcore.Entry) error), 0),
-	}
-	if err := conf.PrimitiveDecode(&log); err != nil {
+	log := new(ZapLogger)
+	if err := conf.PrimitiveDecode(log); err != nil {
 		panic(fmt.Errorf("init logger err: %v", err))
 	}
 	log.newLogger()
-	return &log
+	return log
 }
 
 func (z *ZapLogger) Name() string {
 	return name
-}
-
-func (z *ZapLogger) Log(ctx context.Context, level int, msg string) {
-	if level > 3 || level < 0 {
-		level = 3
-	}
-	traceId := ctx.Value("trace_id")
-	if traceId == nil {
-		traceId = ""
-	}
-	switch level {
-	case logger.LevelDebug:
-		z.log.Debug(msg, zap.String("trace_id", traceId.(string)))
-	case logger.LevelInfo:
-		z.log.Info(msg, zap.String("trace_id", traceId.(string)))
-	case logger.LevelWarn:
-		z.log.Warn(msg, zap.String("trace_id", traceId.(string)))
-	case logger.LevelError:
-		z.log.Error(msg, zap.String("trace_id", traceId.(string)))
-	}
 }
 
 func (z *ZapLogger) newLogger() {
@@ -128,4 +104,56 @@ func genEncoderConf() zapcore.EncoderConfig {
 		enc.AppendString(t.Format("2006-01-02 15:04:05:000"))
 	}
 	return encoderConf
+}
+
+func (z *ZapLogger) LogDebug(ctx context.Context, msg string, args ...any) {
+	traceId := ctx.Value("trace_id")
+	if traceId == nil {
+		traceId = ""
+	}
+	fields := make([]zap.Field, 0, len(args)+1)
+	fields = append(fields, zap.String("trace_id", traceId.(string)))
+	for _, v := range args {
+		fields = append(fields, zap.Any("arg", v))
+	}
+	z.log.Debug(msg, fields...)
+}
+
+func (z *ZapLogger) LogInfo(ctx context.Context, msg string, args ...any) {
+	traceId := ctx.Value("trace_id")
+	if traceId == nil {
+		traceId = ""
+	}
+	fields := make([]zap.Field, 0, len(args)+1)
+	fields = append(fields, zap.String("trace_id", traceId.(string)))
+	for _, v := range args {
+		fields = append(fields, zap.Any("arg", v))
+	}
+	z.log.Info(msg, fields...)
+}
+
+func (z *ZapLogger) LogWarn(ctx context.Context, msg string, args ...any) {
+	traceId := ctx.Value("trace_id")
+	if traceId == nil {
+		traceId = ""
+	}
+	fields := make([]zap.Field, 0, len(args)+1)
+	fields = append(fields, zap.String("trace_id", traceId.(string)))
+	for _, v := range args {
+		fields = append(fields, zap.Any("arg", v))
+	}
+	z.log.Warn(msg, fields...)
+}
+
+func (z *ZapLogger) LogError(ctx context.Context, msg string, args ...any) {
+	traceId := ctx.Value("trace_id")
+	if traceId == nil {
+		traceId = ""
+	}
+	fields := make([]zap.Field, 0, len(args)+1)
+	fields = append(fields, zap.String("trace_id", traceId.(string)))
+	for _, v := range args {
+		fields = append(fields, zap.Any("arg", v))
+	}
+	z.log.Error(msg, fields...)
 }

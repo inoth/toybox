@@ -11,10 +11,10 @@ func Recover(log logger.Logger) gin.HandlerFunc {
 		if err := recover(); err != nil {
 			switch e := err.(type) {
 			case error:
-				log.Log(c, logger.LevelError, e.Error())
+				log.LogError(c, e.Error())
 				res.Failed(c, e.Error())
 			default:
-				log.Log(c, logger.LevelError, "InternalServerError")
+				log.LogError(c, "InternalServerError")
 				res.Failed(c, "InternalServerError")
 			}
 			c.Abort()
