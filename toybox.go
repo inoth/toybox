@@ -101,7 +101,7 @@ func (tb *ToyBox) Run() (err error) {
 			_ = tb.Stop()
 			return nil
 		case <-restartCh:
-			log.Printf("Done server %s ...............\n", tb.ID())
+			log.Printf("[%s]Received SIGHUP, restarting...\n", tb.ID())
 			_ = tb.Stop()
 
 			time.Sleep(5 * time.Second)
