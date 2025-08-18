@@ -85,8 +85,6 @@ func (ct *ConfigWithYaml) Next(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			log.Println("checking configuration...")
-
 			cfgStr, err := ct.Source.Load(format)
 			if err != nil {
 				log.Printf("load config err %v\n", err)
@@ -101,14 +99,14 @@ func (ct *ConfigWithYaml) Next(ctx context.Context) {
 			if hash == ct.hash {
 				continue
 			}
-			ct.hash = hash
 
 			err = yaml.Unmarshal([]byte(cfgStr), &(ct.cfg))
 			if err != nil {
 				log.Printf("decode configuration error: %v\n", err)
 				continue
 			}
-
+			log.Printf("Configuration changed, reloading...\n")
+			ct.hash = hash
 			ct.p <- struct{}{}
 		}
 	}

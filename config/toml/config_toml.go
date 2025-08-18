@@ -84,8 +84,6 @@ func (ct *ConfigWithToml) Watche(ctx context.Context, p chan<- struct{}) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			log.Println("checking configuration...")
-
 			cfgStr, err := ct.Source.Load(format)
 			if err != nil {
 				log.Printf("load config err %v\n", err)
@@ -107,6 +105,7 @@ func (ct *ConfigWithToml) Watche(ctx context.Context, p chan<- struct{}) {
 				continue
 			}
 
+			log.Printf("Configuration changed, reloading...\n")
 			ct.hash = hash
 			p <- struct{}{}
 		}
