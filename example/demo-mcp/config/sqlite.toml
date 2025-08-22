@@ -1,0 +1,7 @@
+[[server.sqlites.configs]]
+db_path = "toybox-layout.db"
+dbname = "toybox-layout"
+max_idle_conns = 10
+max_open_conns = 10
+conn_max_idletime = 60
+conn_max_lifetime = 60
