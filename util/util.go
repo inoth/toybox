@@ -45,7 +45,13 @@ func UUID(ns ...int) string {
 	uuidStr := uuid.New().String()
 	uuidStr = strings.ReplaceAll(uuidStr, "-", "")
 	return uuidStr[0:n]
+}
 
+func UUIDV7(ns ...int) string {
+	n := First(16, ns)
+	uuidV7, _ := uuid.NewV7()
+	uuidStr := strings.ReplaceAll(uuidV7.String(), "-", "")
+	return uuidStr[len(uuidStr)-n:]
 }
 
 func RandStr(ns ...int) string {
