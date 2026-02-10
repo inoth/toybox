@@ -1,23 +1,19 @@
-package config
+package conf
 
 import "context"
-
-const (
-	DefaultDir = "config"
-)
 
 type ConfigMate interface {
 	PrimitiveDecode(vals ...ConfigureMatcher) error
 }
 
 type ConfigureMatcher interface {
-	Name() string
+	TransportName() string
 }
 
 type Source interface {
-	Load(format string) (string, error)
+	Load(wildcard string) (string, error)
 }
 
 type Watcher interface {
-	Watche(context.Context, chan<- struct{})
+	Watche(ctx context.Context, trigger chan<- struct{})
 }

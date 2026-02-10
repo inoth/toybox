@@ -1,41 +1,18 @@
 package toybox
 
 import (
-	"context"
 	"os"
 
-	"github.com/inoth/toybox/config"
+	"github.com/inoth/toybox/conf"
 	"github.com/inoth/toybox/transport"
 )
 
 type Option func(opt *option)
 
 type option struct {
-	id      string
-	name    string
-	version string
-	ctx     context.Context
-	sigs    []os.Signal
-	svcs    []transport.Transport
-	cfg     config.ConfigMate
-}
-
-func WithName(name string) Option {
-	return func(opt *option) {
-		opt.name = name
-	}
-}
-
-func WithVersion(version string) Option {
-	return func(opt *option) {
-		opt.version = version
-	}
-}
-
-func WithContext(ctx context.Context) Option {
-	return func(opt *option) {
-		opt.ctx = ctx
-	}
+	sigs []os.Signal
+	svcs []transport.Transport
+	cfg  conf.ConfigMate
 }
 
 func WithServer(svcs ...transport.Transport) Option {
@@ -44,7 +21,7 @@ func WithServer(svcs ...transport.Transport) Option {
 	}
 }
 
-func WithConfig(cfg config.ConfigMate) Option {
+func WithConfig(cfg conf.ConfigMate) Option {
 	return func(opt *option) {
 		opt.cfg = cfg
 	}
