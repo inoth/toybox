@@ -10,14 +10,14 @@ import (
 type Option func(opt *option)
 
 type option struct {
-	sigs []os.Signal
-	svcs []transport.Transport
-	cfg  conf.ConfigMate
+	sigs       []os.Signal
+	transports []transport.Transport
+	cfg        conf.ConfigMate
 }
 
-func WithServer(svcs ...transport.Transport) Option {
+func WithServer(transport transport.Transport) Option {
 	return func(opt *option) {
-		opt.svcs = append(opt.svcs, svcs...)
+		opt.transports = append(opt.transports, transport)
 	}
 }
 
