@@ -11,7 +11,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/inoth/toybox/bootstrap"
 	"github.com/inoth/toybox/conf"
+	"github.com/inoth/toybox/registry"
 	"github.com/inoth/toybox/util"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
@@ -32,12 +34,42 @@ func New(opts ...Option) *ToyBox {
 	for _, opt := range opts {
 		opt(&o)
 	}
+	// Apply bootstrap config for fields not explicitly set.
+	if o.bootstrap != nil {
+		applyBootstrap(&o, o.bootstrap)
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	return &ToyBox{
 		option: o,
 		id:     util.UUID(),
 		ctx:    ctx,
 		cancel: cancel,
+	}
+}
+
+// applyBootstrap fills in option fields from bootstrap config when not already set.
+func applyBootstrap(o *option, cfg *bootstrap.Config) {
+	if o.serviceName == "" && cfg.ServiceName != "" {
+		o.serviceName = cfg.ServiceName
+	}
+	if o.serviceVersion == "" && cfg.ServiceVersion != "" {
+		o.serviceVersion = cfg.ServiceVersion
+	}
+	if o.registrar == nil {
+		r, err := bootstrap.SetupRegistry(cfg)
+		if err != nil {
+			log.Printf("bootstrap: setup registry failed: %v", err)
+		} else if r != nil {
+			o.registrar = r
+		}
+	}
+	if o.cfg == nil {
+		c, err := bootstrap.SetupConfig(cfg)
+		if err != nil {
+			log.Printf("bootstrap: setup config failed: %v", err)
+		} else if c != nil {
+			o.cfg = c
+		}
 	}
 }
 
@@ -71,6 +103,31 @@ func (t *ToyBox) Run() error {
 	}
 	wg.Wait()
 
+	// Service registration
+	svc := t.buildServiceInstance()
+	if t.registrar != nil && svc != nil {
+		if err := t.registrar.Register(t.ctx, svc); err != nil {
+			return errors.Wrap(err, "service register")
+		}
+		log.Printf("Registered service %s/%s", svc.Name, svc.ID)
+		eg.Go(func() error {
+			<-ctx.Done()
+			dCtx, dCancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer dCancel()
+			log.Printf("Deregistering service %s/%s", svc.Name, svc.ID)
+			return t.registrar.Deregister(dCtx, svc)
+		})
+	}
+
+	// Config watching (hot-reload)
+	if watcher, ok := t.cfg.(interface {
+		Watch(context.Context) error
+	}); ok {
+		eg.Go(func() error {
+			return watcher.Watch(ctx)
+		})
+	}
+
 	eg.Go(func() error {
 		select {
 		case <-ctx.Done():
@@ -98,6 +155,28 @@ func (t *ToyBox) Run() error {
 		return err
 	}
 	return nil
+}
+
+func (t *ToyBox) buildServiceInstance() *registry.ServiceInstance {
+	if t.serviceName == "" {
+		return nil
+	}
+	endpoints := make([]string, 0, len(t.transports))
+	for _, tr := range t.transports {
+		if e, ok := tr.(registry.Endpointer); ok {
+			ep, err := e.Endpoint()
+			if err == nil {
+				endpoints = append(endpoints, ep)
+			}
+		}
+	}
+	return &registry.ServiceInstance{
+		ID:        t.id,
+		Name:      t.serviceName,
+		Version:   t.serviceVersion,
+		Metadata:  t.metadata,
+		Endpoints: endpoints,
+	}
 }
 
 func reload() error {
