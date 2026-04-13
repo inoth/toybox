@@ -1,0 +1,5 @@
+http:
+  addr: ":8082"
+
+app:
+  name: "bootstrap-example"

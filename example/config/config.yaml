@@ -1,0 +1,8 @@
+http:
+  addr: ":8081"
+  read_timeout: 10s
+  write_timeout: 10s
+
+app:
+  name: "config-example"
+  debug: true
