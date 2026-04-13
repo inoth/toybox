@@ -22,6 +22,7 @@ type option struct {
 	metadata       map[string]string
 	bootstrap      *bootstrap.Config
 	stopTimeout    time.Duration
+	pidFile        string
 }
 
 func WithServer(transport transport.Transport) Option {
@@ -68,5 +69,14 @@ func WithBootstrap(cfg *bootstrap.Config) Option {
 func WithStopTimeout(d time.Duration) Option {
 	return func(opt *option) {
 		opt.stopTimeout = d
+	}
+}
+
+// WithPIDFile sets the path for the PID file. When configured, the server writes
+// its PID to this file on startup and removes it on shutdown.
+// This enables nginx-style reload: kill -HUP $(cat /path/to/pidfile)
+func WithPIDFile(path string) Option {
+	return func(opt *option) {
+		opt.pidFile = path
 	}
 }

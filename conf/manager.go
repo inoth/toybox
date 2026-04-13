@@ -129,6 +129,12 @@ func (m *Manager) Checksum() string {
 	return fmt.Sprintf("%x", h)
 }
 
+// Reload explicitly re-reads config from source. This supports SIGHUP-triggered
+// reload where the watcher may not have fired yet.
+func (m *Manager) Reload() error {
+	return m.load()
+}
+
 // OnChange registers a callback that fires when config is reloaded.
 func (m *Manager) OnChange(fn func()) {
 	m.onChange = append(m.onChange, fn)

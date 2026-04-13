@@ -19,6 +19,10 @@ import (
 )
 
 const defaultStopTimeout = 10 * time.Second
+const defaultPIDFile = "toybox.pid"
+
+// errReload is a sentinel error that signals a transport reload cycle.
+var errReload = errors.New("reload")
 
 type ToyBox struct {
 	option
@@ -32,6 +36,7 @@ func New(opts ...Option) *ToyBox {
 	o := option{
 		sigs:        []os.Signal{syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT},
 		stopTimeout: defaultStopTimeout,
+		pidFile:     defaultPIDFile,
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -76,74 +81,78 @@ func applyBootstrap(o *option, cfg *bootstrap.Config) {
 }
 
 func (t *ToyBox) Run() error {
-	log.Printf("Starting server ID:%s (PID: %d)\n", t.id, os.Getpid())
+	// Write PID file if configured (nginx-style, enables: kill -HUP $(cat pidfile)).
+	if t.pidFile != "" {
+		if err := t.writePIDFile(); err != nil {
+			return errors.Wrap(err, "write pid file")
+		}
+		defer t.removePIDFile()
+	}
 
-	// Signal channels
+	log.Printf("Starting server ID:%s (PID: %d)\n", t.id, os.Getpid())
+	defer t.cancel() // ensure background goroutines are cleaned up on exit
+
+	// Shutdown signals.
 	shutdownCh := make(chan os.Signal, 1)
 	signal.Notify(shutdownCh, t.sigs...)
 	defer signal.Stop(shutdownCh)
 
-	eg, ctx := errgroup.WithContext(t.ctx)
+	// Reload signal (SIGHUP, nginx-style).
+	reloadCh := make(chan os.Signal, 1)
+	signal.Notify(reloadCh, syscall.SIGHUP)
+	defer signal.Stop(reloadCh)
 
-	// Decode config into transports before starting.
-	for _, tr := range t.transports {
-		if t.cfg != nil {
-			if matcher, ok := tr.(conf.ConfigureMatcher); ok {
-				if err := t.cfg.PrimitiveDecode(matcher); err != nil {
-					return errors.Wrap(err, "PrimitiveDecode")
+	// Config change notification channel.
+	configChangeCh := make(chan struct{}, 1)
+	if t.cfg != nil {
+		if onChanger, ok := t.cfg.(interface{ OnChange(func()) }); ok {
+			onChanger.OnChange(func() {
+				select {
+				case configChangeCh <- struct{}{}:
+				default:
 				}
+			})
+		}
+	}
+
+	// Start config watcher in background (runs for the lifetime of the process).
+	if watcher, ok := t.cfg.(interface {
+		Watch(context.Context) error
+	}); ok {
+		go func() {
+			if err := watcher.Watch(t.ctx); err != nil {
+				log.Printf("config watch error: %v", err)
 			}
-		}
+		}()
 	}
 
-	// Start all transports with panic recovery.
-	for _, tr := range t.transports {
-		eg.Go(func() error {
-			return t.safeStart(ctx, tr)
-		})
-	}
-
-	// Graceful stop: once context is cancelled, stop transports with timeout.
-	// Registered before registration so Stop is always called on failure paths.
-	eg.Go(func() error {
-		<-ctx.Done()
-		return t.stopAll()
-	})
-
-	// Signal handler goroutine — always active.
-	eg.Go(func() error {
-		select {
-		case <-ctx.Done():
-			return nil
-		case sig := <-shutdownCh:
-			log.Printf("Received signal %v, shutting down server %s", sig, t.id)
-		}
-		t.cancel()
-		return nil
-	})
-
-	// Service registration.
+	// Service registration (once, for the process lifetime).
 	svc := t.buildServiceInstance()
 	if t.registrar != nil && svc != nil {
 		if err := t.registrar.Register(t.ctx, svc); err != nil {
-			t.cancel()
-			_ = eg.Wait()
 			return errors.Wrap(err, "service register")
 		}
 		log.Printf("Registered service %s/%s", svc.Name, svc.ID)
 	}
 
-	// Config watching (hot-reload).
-	if watcher, ok := t.cfg.(interface {
-		Watch(context.Context) error
-	}); ok {
-		eg.Go(func() error {
-			return watcher.Watch(ctx)
-		})
+	// Main lifecycle loop — each iteration is one transport generation.
+	// On SIGHUP or config change, transports are gracefully stopped and restarted.
+	var finalErr error
+	for {
+		err := t.runTransportCycle(shutdownCh, reloadCh, configChangeCh)
+		if errors.Is(err, errReload) {
+			log.Printf("Reloading server %s ...", t.id)
+			// Reload config from source (idempotent if already reloaded by watcher).
+			if reloader, ok := t.cfg.(interface{ Reload() error }); ok {
+				if rErr := reloader.Reload(); rErr != nil {
+					log.Printf("config reload error: %v", rErr)
+				}
+			}
+			continue
+		}
+		finalErr = err
+		break
 	}
-
-	// Block until all goroutines finish.
-	err := eg.Wait()
 
 	// Deregister service after everything stopped.
 	if t.registrar != nil && svc != nil {
@@ -156,10 +165,107 @@ func (t *ToyBox) Run() error {
 	}
 
 	log.Printf("Server %s stopped", t.id)
-	if err != nil && !errors.Is(err, context.Canceled) {
-		return err
+	if finalErr != nil && !errors.Is(finalErr, context.Canceled) {
+		return finalErr
 	}
 	return nil
+}
+
+// runTransportCycle runs one generation of transports. It blocks until all
+// transports finish. Returns errReload to signal that a new cycle should start,
+// or any other error/nil for final shutdown.
+func (t *ToyBox) runTransportCycle(shutdownCh, reloadCh <-chan os.Signal, configChangeCh <-chan struct{}) error {
+	// Drain stale signals from a previous cycle.
+	drainSignals(reloadCh, configChangeCh)
+
+	// Decode config into transports before starting.
+	for _, tr := range t.transports {
+		if t.cfg != nil {
+			if matcher, ok := tr.(conf.ConfigureMatcher); ok {
+				if err := t.cfg.PrimitiveDecode(matcher); err != nil {
+					return errors.Wrap(err, "PrimitiveDecode")
+				}
+			}
+		}
+	}
+
+	cycleCtx, cycleCancel := context.WithCancel(t.ctx)
+	defer cycleCancel()
+
+	eg, ctx := errgroup.WithContext(cycleCtx)
+
+	// Start all transports with panic recovery.
+	for _, tr := range t.transports {
+		eg.Go(func() error {
+			return t.safeStart(ctx, tr)
+		})
+	}
+
+	// Graceful stop: once this cycle's context is cancelled, drain all
+	// in-flight work by calling Stop on every transport before returning.
+	eg.Go(func() error {
+		<-ctx.Done()
+		return t.stopAll()
+	})
+
+	// Track whether this cycle ends due to a reload request.
+	reloadRequested := make(chan struct{})
+
+	// Signal / reload handler goroutine.
+	eg.Go(func() error {
+		select {
+		case <-ctx.Done():
+			return nil
+		case sig := <-shutdownCh:
+			log.Printf("Received signal %v, shutting down server %s", sig, t.id)
+			t.cancel() // cancel root context → full shutdown
+			return nil
+		case <-reloadCh:
+			log.Printf("Received SIGHUP, reloading server %s", t.id)
+			close(reloadRequested)
+			cycleCancel() // cancel only this cycle → triggers graceful stop then restart
+			return nil
+		case <-configChangeCh:
+			log.Printf("Config changed, reloading server %s", t.id)
+			close(reloadRequested)
+			cycleCancel()
+			return nil
+		}
+	})
+
+	err := eg.Wait()
+
+	// Determine if this was a reload or a shutdown.
+	select {
+	case <-reloadRequested:
+		return errReload
+	default:
+	}
+	return err
+}
+
+// drainSignals discards any pending signals left over from a previous cycle.
+func drainSignals(reloadCh <-chan os.Signal, configChangeCh <-chan struct{}) {
+	for {
+		select {
+		case <-reloadCh:
+		case <-configChangeCh:
+		default:
+			return
+		}
+	}
+}
+
+// writePIDFile writes the current process ID to the configured PID file.
+func (t *ToyBox) writePIDFile() error {
+	return os.WriteFile(t.pidFile, []byte(fmt.Sprintf("%d\n", os.Getpid())), 0644)
+}
+
+// removePIDFile removes the PID file on shutdown.
+func (t *ToyBox) removePIDFile() {
+	if err := os.Remove(t.pidFile); err != nil && !os.IsNotExist(err) {
+		log.Printf("Failed to remove pid file: %v", err)
+	}
 }
 
 // safeStart runs transport.Start with panic recovery.

@@ -3,6 +3,7 @@ package toybox
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -424,9 +425,9 @@ func TestRun_RegisterError(t *testing.T) {
 		t.Fatal("Run() did not return in time after registration failure")
 	}
 
-	// Transport should be stopped even though registration failed.
-	if !tr.stopped.Load() {
-		t.Error("expected transport to be stopped after registration failure")
+	// Transport should NOT have been started since registration fails before cycle.
+	if tr.started.Load() {
+		t.Error("expected transport to not be started after registration failure")
 	}
 }
 
@@ -619,5 +620,313 @@ func TestRun_TransportStartError(t *testing.T) {
 		t.Logf("Got expected start error: %v", err)
 	case <-time.After(5 * time.Second):
 		t.Fatal("Run() did not return in time after start error")
+	}
+}
+
+// --- Reloadable Mock Transport (supports multiple start/stop cycles) ---
+
+type reloadableMockTransport struct {
+	name       string
+	started    atomic.Int32
+	stopped    atomic.Int32
+	firstStart sync.Once
+	startCh    chan struct{} // closed on FIRST start only
+	mu         sync.Mutex
+	stopCh     chan struct{} // recreated per cycle
+}
+
+func newReloadableMockTransport(name string) *reloadableMockTransport {
+	return &reloadableMockTransport{
+		name:    name,
+		startCh: make(chan struct{}),
+	}
+}
+
+func (m *reloadableMockTransport) Start(ctx context.Context) error {
+	m.started.Add(1)
+	m.firstStart.Do(func() {
+		close(m.startCh)
+	})
+	ch := make(chan struct{})
+	m.mu.Lock()
+	m.stopCh = ch
+	m.mu.Unlock()
+	select {
+	case <-ctx.Done():
+		return nil
+	case <-ch:
+		return nil
+	}
+}
+
+func (m *reloadableMockTransport) Stop(_ context.Context) error {
+	m.stopped.Add(1)
+	m.mu.Lock()
+	ch := m.stopCh
+	m.mu.Unlock()
+	if ch != nil {
+		select {
+		case <-ch:
+		default:
+			close(ch)
+		}
+	}
+	return nil
+}
+
+func (m *reloadableMockTransport) TransportName() string {
+	return m.name
+}
+
+// --- Mock ConfigMate with OnChange and Reload support ---
+
+type mockReloadableConfig struct {
+	reloadCount int
+	mu          sync.Mutex
+	onChange    []func()
+}
+
+func (m *mockReloadableConfig) PrimitiveDecode(_ ...conf.ConfigureMatcher) error {
+	return nil
+}
+
+func (m *mockReloadableConfig) OnChange(fn func()) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.onChange = append(m.onChange, fn)
+}
+
+func (m *mockReloadableConfig) Reload() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.reloadCount++
+	return nil
+}
+
+// triggerChange simulates a config change by calling all registered onChange callbacks.
+func (m *mockReloadableConfig) triggerChange() {
+	m.mu.Lock()
+	fns := make([]func(), len(m.onChange))
+	copy(fns, m.onChange)
+	m.mu.Unlock()
+	for _, fn := range fns {
+		fn()
+	}
+}
+
+func (m *mockReloadableConfig) getReloadCount() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.reloadCount
+}
+
+// ============================================================
+// Reload Tests
+// ============================================================
+
+func TestRun_SIGHUPReload(t *testing.T) {
+	tr := newReloadableMockTransport("http")
+
+	app := New(
+		WithServer(tr),
+		WithStopTimeout(2*time.Second),
+	)
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- app.Run()
+	}()
+
+	// Wait for transport to start.
+	select {
+	case <-tr.startCh:
+	case <-time.After(3 * time.Second):
+		t.Fatal("transport did not start in time")
+	}
+
+	// Brief sleep to let signal handler goroutine be scheduled.
+	time.Sleep(50 * time.Millisecond)
+
+	// Send SIGHUP to trigger reload.
+	syscall.Kill(syscall.Getpid(), syscall.SIGHUP)
+
+	// Wait for reload to take effect.
+	time.Sleep(500 * time.Millisecond)
+
+	// The transport should have been stopped (old generation drained) and restarted.
+	if tr.stopped.Load() < 1 {
+		t.Error("expected transport to be stopped during reload")
+	}
+	if tr.started.Load() < 2 {
+		t.Error("expected transport to be started at least twice (initial + reload)")
+	}
+
+	// Process should still be running.
+	select {
+	case err := <-errCh:
+		t.Fatalf("Run() returned unexpectedly: %v", err)
+	case <-time.After(200 * time.Millisecond):
+		// Good — still running.
+	}
+
+	// Now shut down.
+	app.cancel()
+
+	select {
+	case err := <-errCh:
+		if err != nil {
+			t.Fatalf("Run() returned error: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("Run() did not return in time after cancel")
+	}
+}
+
+func TestRun_ConfigChangeReload(t *testing.T) {
+	tr := newReloadableMockTransport("http")
+	cfg := &mockReloadableConfig{}
+
+	app := New(
+		WithServer(tr),
+		WithConfig(cfg),
+		WithStopTimeout(2*time.Second),
+	)
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- app.Run()
+	}()
+
+	// Wait for transport to start.
+	select {
+	case <-tr.startCh:
+	case <-time.After(3 * time.Second):
+		t.Fatal("transport did not start in time")
+	}
+
+	time.Sleep(50 * time.Millisecond)
+
+	// Simulate config change.
+	cfg.triggerChange()
+
+	// Wait for reload to complete.
+	time.Sleep(500 * time.Millisecond)
+
+	// The transport should have been stopped for reload and restarted.
+	if tr.stopped.Load() < 1 {
+		t.Error("expected transport to be stopped during config change reload")
+	}
+	if tr.started.Load() < 2 {
+		t.Error("expected transport to be started at least twice")
+	}
+
+	// Config Reload() should have been called.
+	if cfg.getReloadCount() < 1 {
+		t.Error("expected config Reload() to be called")
+	}
+
+	// Process should still be running.
+	select {
+	case err := <-errCh:
+		t.Fatalf("Run() returned unexpectedly: %v", err)
+	case <-time.After(200 * time.Millisecond):
+		// Good.
+	}
+
+	app.cancel()
+
+	select {
+	case err := <-errCh:
+		if err != nil {
+			t.Fatalf("Run() returned error: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("Run() did not return in time after cancel")
+	}
+}
+
+func TestRun_SIGHUPWithReloadableConfig(t *testing.T) {
+	tr := newReloadableMockTransport("http")
+	cfg := &mockReloadableConfig{}
+
+	app := New(
+		WithServer(tr),
+		WithConfig(cfg),
+		WithStopTimeout(2*time.Second),
+	)
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- app.Run()
+	}()
+
+	<-tr.startCh
+	time.Sleep(50 * time.Millisecond)
+
+	// Send SIGHUP.
+	syscall.Kill(syscall.Getpid(), syscall.SIGHUP)
+
+	time.Sleep(500 * time.Millisecond)
+
+	// Verify config was explicitly reloaded (for SIGHUP-triggered reload).
+	if cfg.getReloadCount() < 1 {
+		t.Error("expected config Reload() to be called on SIGHUP")
+	}
+
+	app.cancel()
+
+	select {
+	case err := <-errCh:
+		if err != nil {
+			t.Fatalf("Run() returned error: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("Run() did not return in time")
+	}
+}
+
+func TestPIDFile(t *testing.T) {
+	pidPath := t.TempDir() + "/test.pid"
+
+	tr := newMockTransport("http")
+
+	app := New(
+		WithServer(tr),
+		WithPIDFile(pidPath),
+		WithStopTimeout(2*time.Second),
+	)
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- app.Run()
+	}()
+
+	<-tr.startCh
+	time.Sleep(50 * time.Millisecond)
+
+	// Verify PID file exists and contains correct PID.
+	data, err := os.ReadFile(pidPath)
+	if err != nil {
+		t.Fatalf("failed to read pid file: %v", err)
+	}
+	expected := fmt.Sprintf("%d\n", os.Getpid())
+	if string(data) != expected {
+		t.Errorf("pid file content = %q, want %q", string(data), expected)
+	}
+
+	app.cancel()
+
+	select {
+	case err := <-errCh:
+		if err != nil {
+			t.Fatalf("Run() returned error: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("Run() did not return in time")
+	}
+
+	// Verify PID file is removed after shutdown.
+	if _, err := os.Stat(pidPath); !os.IsNotExist(err) {
+		t.Error("expected pid file to be removed after shutdown")
 	}
 }
