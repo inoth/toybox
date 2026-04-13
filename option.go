@@ -2,6 +2,7 @@ package toybox
 
 import (
 	"os"
+	"time"
 
 	"github.com/inoth/toybox/bootstrap"
 	"github.com/inoth/toybox/conf"
@@ -20,6 +21,7 @@ type option struct {
 	serviceVersion string
 	metadata       map[string]string
 	bootstrap      *bootstrap.Config
+	stopTimeout    time.Duration
 }
 
 func WithServer(transport transport.Transport) Option {
@@ -58,5 +60,13 @@ func WithMetadata(md map[string]string) Option {
 func WithBootstrap(cfg *bootstrap.Config) Option {
 	return func(opt *option) {
 		opt.bootstrap = cfg
+	}
+}
+
+// WithStopTimeout sets the max duration to wait for transports to stop gracefully.
+// Default is 10 seconds.
+func WithStopTimeout(d time.Duration) Option {
+	return func(opt *option) {
+		opt.stopTimeout = d
 	}
 }
